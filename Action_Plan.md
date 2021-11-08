@@ -4,18 +4,25 @@
 * Comparisons with individual game and team, league, timeframe averages.
 
 ### Other Considerations
-*     
+* Stats - ELO, RAPTOR, DARKO, PIPM, RAPM, EPM    
 
 ## Basic Outline
 #### Source and Extract Data
 * APIs and Web Scraping
 * Three parts:
     * Feature Data for predicting.
-    * Target Betting Lines and Point Spreads
-    * Actual Results of Games
+    * Betting Lines and Point Spreads
+        * Sportsbookreviewsonline.com for historical opening and closing lines.
+            * May be interesting to see where and why lines move a lot.
+        * Covers.com for historical and recent.
+            * Single pull for historical based on databall project guideline.
+            * Automated daily pull for newer odds.
+        * >> Value difference from target to line.
+    * Target - Actual Results of Games
 
 #### Transform Data and Engineer Features
 * Time Adjusted Data - How to get "real time" data for past events.
+    * Basketball Reference ha team data by day and some player data via game logs. 
 * Feature Creation:
     * Pull and Utilize Features (No adjustments necessary)
     * Engineered Features using typical Data Science feature engineering techniques (interaction, poly, trig).
