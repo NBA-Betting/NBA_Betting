@@ -5,9 +5,9 @@
 
 
 # useful for handling different item types with a single interface
-from itemadapter import ItemAdapter
+# from itemadapter import ItemAdapter
 
 
-class LiveOddsDataPipeline:
-    def process_item(self, item, spider):
-        return item
+# class LiveOddsDataPipeline:
+#     def process_item(self, item, spider):
+#         return item
