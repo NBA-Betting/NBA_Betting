@@ -1,13 +1,89 @@
-# Define your item pipelines here
-#
-# Don't forget to add your pipeline to the ITEM_PIPELINES setting
-# See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
+# Used for connection to Postgres Database. Not Currently Active.
+
+import psycopg2
 
 
-# useful for handling different item types with a single interface
-# from itemadapter import ItemAdapter
+class LiveOddsToPostgresPipeline(object):
+    def open_spider(self, spider):
+        hostname = "localhost"
+        username = "postgres"
+        database = "nba_betting"
+        self.connection = psycopg2.connect(
+            host=hostname, user=username, dbname=database, password="password"
+        )
+        self.cur = self.connection.cursor()
 
+    def close_spider(self, spider):
+        self.cur.close()
+        self.connection.close()
 
-# class LiveOddsDataPipeline:
-#     def process_item(self, item, spider):
-#         return item
+    def process_item(self, item, spider):
+
+        self.cur.execute(
+            """INSERT INTO covers_live_odds(id_num,
+                    date,
+                    time,
+                    home_team_full_name,
+                    home_team_short_name,
+                    away_team_full_name,
+                    away_team_short_name,
+                    open_line_away,
+                    open_line_home,
+                    fanduel_line_away,
+                    fanduel_line_price_away,
+                    fanduel_line_home,
+                    fanduel_line_price_home,
+                    draftkings_line_away,
+                    draftkings_line_price_away,
+                    draftkings_line_home,
+                    draftkings_line_price_home,
+                    covers_away_consenses,
+                    covers_home_consenses)
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+            (
+                item["id_num"],
+                item["date"],
+                item["time"],
+                item["home_team_full_name"],
+                item["home_team_short_name"],
+                item["away_team_full_name"],
+                item["away_team_short_name"],
+                item["open_line_away"],
+                item["open_line_home"],
+                item["fanduel_line_away"],
+                item["fanduel_line_price_away"],
+                item["fanduel_line_home"],
+                item["fanduel_line_price_home"],
+                item["draftkings_line_away"],
+                item["draftkings_line_price_away"],
+                item["draftkings_line_home"],
+                item["draftkings_line_price_home"],
+                item["covers_away_consenses"],
+                item["covers_home_consenses"],
+            ),
+        )
+        self.connection.commit()
+
+    # Script to create original table in psql command line.
+
+    """CREATE TABLE covers_live_odds (
+        id_num int4 PRIMARY KEY NOT NULL,
+        date varchar NOT NULL,
+        time varchar NOT NULL,
+        home_team_full_name varchar NOT NULL,
+        home_team_short_name varchar NOT NULL,
+        away_team_full_name varchar NOT NULL,
+        away_team_short_name varchar NOT NULL,
+        open_line_away float4,
+        open_line_home float4,
+        fanduel_line_away float4,
+        fanduel_line_price_away int4,
+        fanduel_line_home float4,
+        fanduel_line_price_home int4,
+        draftkings_line_away float4,
+        draftkings_line_price_away int4,
+        draftkings_line_home float4,
+        draftkings_line_price_home int4,
+        covers_away_consenses float4,
+        covers_home_consenses float4
+    );"""

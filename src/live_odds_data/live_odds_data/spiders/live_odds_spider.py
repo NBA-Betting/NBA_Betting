@@ -12,17 +12,15 @@ class CoversLiveOddsSpider(scrapy.Spider):
 
     def parse(self, response):
 
+        # todays date for testing
+        # todays_date = 'Nov 12'
+
         todays_date = date.today().strftime("%b %d")
         game_table = response.xpath(
-            '//table[contains(@id, "spread-game-nba")]/tbody/tr'
-        )
-        todays_game_count = sum(
-            [
-                1
-                for row in game_table
-                if row.xpath('//div[@class="__date"]/text()').get().strip()
-                == todays_date
-            ]
+            '//table[contains(@id, "spread-total-game-nba")]/tbody/tr//div[@class="__date"]/text()'
+        ).getall()
+        todays_game_count = len(
+            [row for row in game_table if row.strip() == todays_date]
         )
 
         for game_num in range(1, todays_game_count + 1):
@@ -92,6 +90,18 @@ class CoversLiveOddsSpider(scrapy.Spider):
                 f"//div[contains(@id, '__spreadDiv-nba')]/table/tbody/tr[{game_num}]/td[@data-book='DraftKings']//div[contains(@class,'__homeOdds')]//div[@class='American']//span[2]/text()",
             )
             loader.add_xpath(
+                "id_num",
+                f"//table[contains(@id, 'spread-consensus-nba')]/tbody/tr[{game_num}]//a/@href",
+            )
+            loader.add_xpath(
+                "covers_away_consenses",
+                f"//table[contains(@id, 'spread-consensus-nba')]/tbody/tr[{game_num}]//div[@class='__awayConsensus']/div/text()",
+            )
+            loader.add_xpath(
+                "covers_home_consenses",
+                f"//table[contains(@id, 'spread-consensus-nba')]/tbody/tr[{game_num}]//div[@class='__homeConsensus']/div/text()",
+            )
+            loader.add_xpath(
                 "link",
                 f"//table[contains(@id, 'spread-consensus-nba')]/tbody/tr[{game_num}]//a/@href",
             )
@@ -100,6 +110,7 @@ class CoversLiveOddsSpider(scrapy.Spider):
             fields = [
                 f
                 for f in [
+                    "id_num",
                     "date",
                     "time",
                     "home_team_full_name",
@@ -116,6 +127,8 @@ class CoversLiveOddsSpider(scrapy.Spider):
                     "draftkings_line_price_away",
                     "draftkings_line_home",
                     "draftkings_line_price_home",
+                    "covers_away_consenses",
+                    "covers_home_consenses",
                 ]
                 if f not in item
             ]

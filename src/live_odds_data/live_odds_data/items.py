@@ -2,6 +2,7 @@ from scrapy import Item, Field
 
 
 class Game(Item):
+    id_num = Field()
     date = Field()
     time = Field()
     home_team_full_name = Field()
@@ -18,6 +19,6 @@ class Game(Item):
     draftkings_line_price_away = Field()
     draftkings_line_home = Field()
     draftkings_line_price_home = Field()
+    covers_away_consenses = Field()
+    covers_home_consenses = Field()
     link = Field()
-
-    pass
