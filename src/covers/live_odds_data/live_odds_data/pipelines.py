@@ -44,8 +44,9 @@ class LiveOddsToPostgresPipeline(object):
                     draftkings_line_home,
                     draftkings_line_price_home,
                     covers_away_consenses,
-                    covers_home_consenses)
-                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                    covers_home_consenses,
+                    link)
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
             (
                 item["id_num"],
                 item["date"],
@@ -66,6 +67,7 @@ class LiveOddsToPostgresPipeline(object):
                 item["draftkings_line_price_home"],
                 item["covers_away_consenses"],
                 item["covers_home_consenses"],
+                item["link"],
             ),
         )
         self.connection.commit()
@@ -91,5 +93,6 @@ class LiveOddsToPostgresPipeline(object):
         draftkings_line_home float4,
         draftkings_line_price_home int4,
         covers_away_consenses float4,
-        covers_home_consenses float4
+        covers_home_consenses float4,
+        link varchar
     );"""

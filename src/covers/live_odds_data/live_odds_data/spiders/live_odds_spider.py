@@ -129,6 +129,7 @@ class CoversLiveOddsSpider(scrapy.Spider):
                     "draftkings_line_price_home",
                     "covers_away_consenses",
                     "covers_home_consenses",
+                    "link",
                 ]
                 if f not in item
             ]

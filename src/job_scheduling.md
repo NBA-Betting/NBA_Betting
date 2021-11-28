@@ -12,8 +12,12 @@ Daily NBA_Betting Database Update
 ## INBOUND DATA STREAMS
 
 Daily Odds from Covers
-* Cron Command - ```0 18 * * * cd ~/data_feeds/covers && ~/.local/bin/scrapy crawl covers_live_odds_spider```
+* Cron Command - ```0 18 * * * cd ~/data_feeds/covers/live_odds && ~/.local/bin/scrapy crawl covers_live_odds_spider```
 * Runtime - Daily at 18:00utc/11am mountain
+
+Daily Game Results from Covers
+* Crom Command - ```0 17 * * * cd ~/data_feeds/covers/game_results && ~/.local/bin/scrapy crawl covers_game_results_spider```
+* Runtime - Daily at 17:00utc/11am mountain
 
 Daily Standings from Basketball Reference,  
 Daily Team Stats from Basketball Reference,  
