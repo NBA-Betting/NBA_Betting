@@ -16,11 +16,11 @@ SPLASH_URL = "http://0.0.0.0:8050"
 DUPEFILTER_CLASS = "scrapy_splash.SplashAwareDupeFilter"
 HTTPCACHE_STORAGE = "scrapy_splash.SplashAwareFSCacheStorage"
 
-FEEDS = {
-    "s3://nba-betting/basketball_reference/%(name)s/%(time)s.csv": {
-        "format": "csv"
-    }
-}
+# FEEDS = {
+#     "s3://nba-betting/basketball_reference/%(name)s/%(time)s.csv": {
+#         "format": "csv"
+#     }
+# }
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
@@ -77,9 +77,9 @@ DOWNLOADER_MIDDLEWARES = {
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-# ITEM_PIPELINES = {
-#    'basketball_reference.pipelines.BasketballReferencePipeline': 300,
-# }
+ITEM_PIPELINES = {
+    "basketball_reference.pipelines.SaveToPostgresPipeline": 300,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html

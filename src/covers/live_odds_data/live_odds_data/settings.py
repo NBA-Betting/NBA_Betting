@@ -12,11 +12,11 @@ BOT_NAME = "live_odds_data"
 SPIDER_MODULES = ["live_odds_data.spiders"]
 NEWSPIDER_MODULE = "live_odds_data.spiders"
 
-FEEDS = {
-    "s3://nba-betting/live_betting_data/%(name)s/%(time)s.csv": {
-        "format": "csv"
-    }
-}
+# FEEDS = {
+#     "s3://nba-betting/live_betting_data/%(name)s/%(time)s.csv": {
+#         "format": "csv"
+#     }
+# }
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
@@ -68,9 +68,9 @@ ROBOTSTXT_OBEY = True
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-# ITEM_PIPELINES = {
-#     "live_odds_data.pipelines.LiveOddsToPostgresPipeline": 300,
-# }
+ITEM_PIPELINES = {
+    "live_odds_data.pipelines.LiveOddsToPostgresPipeline": 300,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html

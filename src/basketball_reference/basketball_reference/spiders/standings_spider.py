@@ -1,4 +1,5 @@
-from datetime import datetime
+import datetime
+import pytz
 from scrapy import Request, Spider
 
 from basketball_reference.items import BR_StandingsItem
@@ -9,15 +10,16 @@ class BR_StandingsSpider(Spider):
     name = "BR_standings_spider"
     allowed_domains = ["basketball-reference.com"]
 
-    current_datetime = datetime.now()
-    current_day = current_datetime.strftime("%d")
-    current_month = current_datetime.strftime("%m")
-    current_year = current_datetime.strftime("%Y")
+    current_datetime = datetime.datetime.now(pytz.timezone("America/Denver"))
+    yesterday_datetime = current_datetime - datetime.timedelta(days=1)
+    yesterday_day = yesterday_datetime.strftime("%d")
+    yesterday_month = yesterday_datetime.strftime("%m")
+    yesterday_year = yesterday_datetime.strftime("%Y")
 
     # Start of scraping and working backwards in time.
-    start_day = 15
-    start_month = 11
-    start_year = 2021
+    start_day = yesterday_day
+    start_month = yesterday_month
+    start_year = yesterday_year
 
     start_urls = [
         f"https://www.basketball-reference.com/friv/standings.fcgi?month={start_month}&day={start_day}&year={start_year}&lg_id=NBA"
@@ -78,22 +80,24 @@ class BR_StandingsSpider(Spider):
 
                 yield item
 
-        active_date = datetime.strptime(
-            response.xpath('//span[@class="button2 index"]/text()').get(),
-            "%B %d, %Y",
-        )
-        previous_date = datetime.strptime(
-            response.xpath('//a[@class="button2 prev"]/text()').get(),
-            "%B %d, %Y",
-        )
-        stop_date = datetime.strptime("October 12, 2006", "%B %d, %Y")
+        # Uncomment below to work with more than one day at a time.
 
-        # scrape previous date if before stop date
-        if active_date > stop_date:
-            month = previous_date.month
-            day = previous_date.day
-            year = previous_date.year
+        # active_date = datetime.datetime.strptime(
+        #     response.xpath('//span[@class="button2 index"]/text()').get(),
+        #     "%B %d, %Y",
+        # )
+        # previous_date = datetime.datetime.strptime(
+        #     response.xpath('//a[@class="button2 prev"]/text()').get(),
+        #     "%B %d, %Y",
+        # )
+        # stop_date = datetime.datetime.strptime("October 12, 2006", "%B %d, %Y")
 
-            url = f"https://www.basketball-reference.com/friv/standings.fcgi?month={month}&day={day}&year={year}"
+        # # scrape previous date if before stop date
+        # if active_date > stop_date:
+        #     month = previous_date.month
+        #     day = previous_date.day
+        #     year = previous_date.year
 
-            yield Request(url, callback=self.parse)
+        #     url = f"https://www.basketball-reference.com/friv/standings.fcgi?month={month}&day={day}&year={year}"
+
+        #     yield Request(url, callback=self.parse)

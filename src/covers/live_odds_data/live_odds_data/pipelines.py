@@ -1,15 +1,21 @@
-# Used for connection to Postgres Database. Not Currently Active.
+# Used for connection to Postgres Database on AWS RDS.
 
 import psycopg2
 
 
 class LiveOddsToPostgresPipeline(object):
     def open_spider(self, spider):
-        hostname = "localhost"
+        # hostname = ""
         username = "postgres"
+        # password = ""
         database = "nba_betting"
+        port = "5432"
         self.connection = psycopg2.connect(
-            host=hostname, user=username, dbname=database, password="password"
+            host=hostname,
+            user=username,
+            dbname=database,
+            password=password,
+            port=port,
         )
         self.cur = self.connection.cursor()
 
@@ -20,7 +26,7 @@ class LiveOddsToPostgresPipeline(object):
     def process_item(self, item, spider):
 
         self.cur.execute(
-            """INSERT INTO covers_live_odds(id_num,
+            """INSERT INTO covers_odds(id_num,
                     date,
                     time,
                     home_team_full_name,
@@ -66,7 +72,7 @@ class LiveOddsToPostgresPipeline(object):
 
     # Script to create original table in psql command line.
 
-    """CREATE TABLE covers_live_odds (
+    """CREATE TABLE covers_odds (
         id_num int4 PRIMARY KEY NOT NULL,
         date varchar NOT NULL,
         time varchar NOT NULL,
