@@ -1,5 +1,13 @@
+import datetime
+import pytz
 from scrapy.loader import ItemLoader
 from itemloaders.processors import MapCompose, Identity, TakeFirst
+
+# Grabs the year based on the day the script is run
+# which should be the same day as the game.
+game_year = datetime.datetime.now(pytz.timezone("America/Denver")).strftime(
+    "%Y"
+)
 
 
 class GameLoader(ItemLoader):
@@ -7,7 +15,7 @@ class GameLoader(ItemLoader):
     default_output_processor = TakeFirst()
 
     id_num_in = MapCompose(lambda x: x[-6:], int)
-    date_in = MapCompose(str.strip)
+    date_in = MapCompose(str.strip, lambda x: x + " " + game_year)
     time_in = MapCompose(str.strip)
     draftkings_line_price_away_in = MapCompose(int)
     draftkings_line_price_home_in = MapCompose(int)

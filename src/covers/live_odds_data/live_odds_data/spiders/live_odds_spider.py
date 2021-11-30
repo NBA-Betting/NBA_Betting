@@ -1,5 +1,6 @@
 import scrapy
-from datetime import date
+import pytz
+import datetime
 
 from live_odds_data.items import Game
 from live_odds_data.item_loaders import GameLoader
@@ -15,7 +16,9 @@ class CoversLiveOddsSpider(scrapy.Spider):
         # todays date for testing
         # todays_date = 'Nov 12'
 
-        todays_date = date.today().strftime("%b %d")
+        todays_date = datetime.datetime.now(
+            pytz.timezone("America/Denver")
+        ).strftime("%b %d")
         game_table = response.xpath(
             '//table[contains(@id, "spread-total-game-nba")]/tbody/tr//div[@class="__date"]/text()'
         ).getall()
