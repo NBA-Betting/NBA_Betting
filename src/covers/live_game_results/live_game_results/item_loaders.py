@@ -15,9 +15,10 @@ class GameItemLoader(ItemLoader):
     default_output_processor = TakeFirst()
 
     date_in = MapCompose(
-        lambda x: str.split(x, ".")[1],
+        lambda x: x.split(".")[1],
         str.strip,
         lambda x: x + " " + yesterday_year,
+        lambda x: datetime.datetime.strptime(x, "%b %d %Y").strftime("%Y%m%d"),
     )
     home_score_in = MapCompose(int)
     away_score_in = MapCompose(int)

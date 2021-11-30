@@ -15,7 +15,11 @@ class GameLoader(ItemLoader):
     default_output_processor = TakeFirst()
 
     id_num_in = MapCompose(lambda x: x[-6:], int)
-    date_in = MapCompose(str.strip, lambda x: x + " " + game_year)
+    date_in = MapCompose(
+        str.strip,
+        lambda x: x + " " + game_year,
+        lambda x: datetime.datetime.strptime(x, "%b %d %Y").strftime("%Y%m%d"),
+    )
     time_in = MapCompose(str.strip)
     draftkings_line_price_away_in = MapCompose(int)
     draftkings_line_price_home_in = MapCompose(int)

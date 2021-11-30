@@ -1,3 +1,4 @@
+import datetime
 from scrapy.loader import ItemLoader
 from itemloaders.processors import MapCompose, TakeFirst
 
@@ -42,6 +43,12 @@ class BR_StandingsItemLoader(ItemLoader):
     default_input_processor = MapCompose(str.strip)
     default_output_processor = TakeFirst()
 
+    date_in = MapCompose(
+        str.strip,
+        lambda x: datetime.datetime.strptime(x, "%B %d, %Y").strftime(
+            "%Y%m%d"
+        ),
+    )
     wins_in = MapCompose(int)
     losses_in = MapCompose(int)
     win_perc_in = MapCompose(float)
@@ -56,7 +63,12 @@ class BR_TeamStatsItemLoader(ItemLoader):
     default_output_processor = TakeFirst()
 
     team_in = MapCompose(str.strip)
-    date_in = MapCompose(str.strip)
+    date_in = MapCompose(
+        str.strip,
+        lambda x: datetime.datetime.strptime(x, "%B %d, %Y").strftime(
+            "%Y%m%d"
+        ),
+    )
     fg_pct_in = MapCompose(float)
     fg3_pct_in = MapCompose(float)
     ft_pct_in = MapCompose(float)
@@ -68,7 +80,12 @@ class BR_OpponentStatsItemLoader(ItemLoader):
     default_output_processor = TakeFirst()
 
     team_in = MapCompose(str.strip)
-    date_in = MapCompose(str.strip)
+    date_in = MapCompose(
+        str.strip,
+        lambda x: datetime.datetime.strptime(x, "%B %d, %Y").strftime(
+            "%Y%m%d"
+        ),
+    )
     opp_fg_pct_in = MapCompose(float)
     opp_fg3_pct_in = MapCompose(float)
     opp_ft_pct_in = MapCompose(float)
