@@ -7,7 +7,13 @@ Job Name, Description, Run Time and Interval, Logging
 
 ## DATABASE ETL
 
+Daily NBA_Betting Database Record Creation
+* Cron Command - ```30 18 * * * cd ~/etl && python3 daily_db_game_record_creation.py```
+* Runtime - Daily at 18:30utc/11:30am mountain
+
 Daily NBA_Betting Database Update
+* Cron Command - ```30 17 * * * cd ~/etl && python3 daily_db_game_record_update.py```
+* Runtime - Daily at 17:30utc/10:30am mountain
 
 ## INBOUND DATA STREAMS
 
@@ -16,14 +22,14 @@ Daily Odds from Covers
 * Runtime - Daily at 18:00utc/11am mountain
 
 Daily Game Results from Covers
-* Crom Command - ```0 17 * * * cd ~/data_feeds/covers/game_results && ~/.local/bin/scrapy crawl covers_game_results_spider```
-* Runtime - Daily at 17:00utc/11am mountain
+* Cron Command - ```0 17 * * * cd ~/data_feeds/covers/game_results && ~/.local/bin/scrapy crawl covers_game_results_spider```
+* Runtime - Daily at 17:00utc/10am mountain
 
 Daily Standings from Basketball Reference,  
 Daily Team Stats from Basketball Reference,  
 Daily Opponent Stats from Basketball Reference  
 * Cron Command - ```0 17 * * * cd ~/data_feeds/basketball_reference && bash br_basic_cron.sh```
-* Runtime - Daily at 17:00utc/11am mountain
+* Runtime - Daily at 17:00utc/10am mountain
 * Script:
 ```sudo docker start condescending_newton
 cd ~/data_feeds/basketball_reference
