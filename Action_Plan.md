@@ -22,15 +22,15 @@
 
 #### Transform Data and Engineer Features
 * Time Adjusted Data - How to get "real time" data for past events.
-    * Basketball Reference ha team data by day and some player data via game logs. 
+    * Basketball Reference has some player data via game logs. 
 * Feature Creation:
     * Pull and Utilize Features (No adjustments necessary)
     * Engineered Features using typical Data Science feature engineering techniques (interaction, poly, trig).
     * Manually engineered features. Where can I use my NBA knowledge to gain an advantage?
 
 #### Machine Learning Modeling
-* AutoML for Basic Modeling
-* Deep Learning for Advanced Modeling
+* AutoML for Basic Modeling - PyCaret
+* Deep Learning for Advanced Modeling - Keras
 
 #### Integrate Models with other non-ML info sources.
 * Injuries, Rest

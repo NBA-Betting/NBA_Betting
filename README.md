@@ -57,6 +57,8 @@ Combining both historic and live data from various sources into a single clean a
 
 # Exploratory Data Analysis
 
+Dataprep.eda for AutoEDA
+
 Interesting Questions:
 * Vegas Point Spread vs. Actual Game Spread over time. How has Vegas improved at predicting?
 * Biggest Outliers Vegas vs. Actual
@@ -65,6 +67,10 @@ Interesting Questions:
 * How much is being at home worth over time, Both vegas lines and actual results
 * Team Quality vs. Against the Spread results. Are good, average, or bad teams more likely to over-perform the vegas spread?
 * Actual Team Record vs. Expected Record, Which is a better predictor of vegas lines and actual results?
+
+### Average Point Spread Error Per Game Over Time
+
+![Average Point Spread Error Per Game Over Time](images/average_point_spread_error_per_game_over_time.png)
 
 
 <br/><br/>

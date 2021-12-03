@@ -17,9 +17,9 @@ class BR_StandingsSpider(Spider):
     yesterday_year = yesterday_datetime.strftime("%Y")
 
     # Start of scraping and working backwards in time.
-    start_day = yesterday_day
-    start_month = yesterday_month
-    start_year = yesterday_year
+    start_day = 30
+    start_month = 11
+    start_year = 2021
 
     start_urls = [
         f"https://www.basketball-reference.com/friv/standings.fcgi?month={start_month}&day={start_day}&year={start_year}&lg_id=NBA"
@@ -90,7 +90,9 @@ class BR_StandingsSpider(Spider):
         #     response.xpath('//a[@class="button2 prev"]/text()').get(),
         #     "%B %d, %Y",
         # )
-        # stop_date = datetime.datetime.strptime("October 12, 2006", "%B %d, %Y")
+        # stop_date = datetime.datetime.strptime(
+        #     "November 14, 2021", "%B %d, %Y"
+        # )
 
         # # scrape previous date if before stop date
         # if active_date > stop_date:
