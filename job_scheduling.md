@@ -7,12 +7,16 @@ Job Name, Description, Run Time and Interval, Logging
 
 ## DATABASE ETL
 
-Daily NBA_Betting Database Record Creation
+Daily NBA_Betting Inbound Data Record Creation
 * Cron Command - ```30 18 * * * cd ~/etl && python3 daily_db_game_record_creation.py```
 * Runtime - Daily at 18:30utc/11:30am mountain
 
-Daily NBA_Betting Database Update
+Daily NBA_Betting Inbound Data Update
 * Cron Command - ```30 17 * * * cd ~/etl && python3 daily_db_game_record_update.py```
+* Runtime - Daily at 17:30utc/10:30am mountain
+
+Daily NBA_Betting Model Ready Data Creation
+* Cron Command - ```0 18 * * * cd ~/feature_creation && python3 feature_creation.py```
 * Runtime - Daily at 17:30utc/10:30am mountain
 
 ## INBOUND DATA STREAMS
