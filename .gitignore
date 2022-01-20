@@ -1,3 +1,8 @@
+# Tensorboard and PyCaret Logs
+tensorboard_logs/
+mlruns/
+0/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
