@@ -103,7 +103,7 @@ PyCaret Full Workthrough
 
 # Next Steps
 
-* Add deep learning model.
+* Improve Models
 * Add more data sources.
 * Create more useful features.
 
@@ -132,9 +132,18 @@ Jeff Johannsen - [LinkedIn](https://www.linkedin.com/in/jeffjohannsen/) - jeffjo
 
 Python
 * Scrapy
+* Pandas
+* SQLAlchemy
+* PyCaret
+* Keras
+* Tensorflow
+* Scikit-Learn
+SQL
+* Postgres
 AWS
 * S3
 * EC2
+* RDS
 Docker
 
 
