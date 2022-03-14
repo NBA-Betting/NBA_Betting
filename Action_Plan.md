@@ -43,34 +43,13 @@
 * Home, Away Advantages. Altitude Effects for Denver and Utah
 
 #### Final Dataset Creation
-1. Determine how to define and organize Home and Away Lines, Predicted Results, Actual Results, Cover By
+0. Fix League Year data import bug.
+1. Determine how to define and organize Home and Away Lines, Predicted Results, Actual Results, Cover By, etc.
     * Lining up Amounts and Directions is tricky. Be Careful!
-2. Use models to predict game results.
-    * Ability to use multiple models as inputs.
-    * Save model predictions to RDS table.
-        * Model predictions and probabilities
-3. Create Final Algorithm
-    * DL/ML Win % - based on prediction difference from actual line (margin of error) and model probability
-    * DL/ML EV - expected value over time of betting $100 given Win %
-    * Game Score - based on Model predictions plus non-ML info.
-    * Recommended Bet Amount - based on Game Scores and Bankroll Management Plan
+2. Improve Models and Re-test
+3. Create Final Algorithms
 4. Add data to be displayed to RDS table.
-    * Column Notes
-        * Game ID - Maybe Don't Show
-        * Time - Only Hours and Minutes Mountain Time
-        * Game Info - Covers matchup link pregame, boxscore link postgame
-        * Bet Info - Button to Form to fill/update Actual Bet Amount, Bet Location, and Bet Price
-    * Outline Below:
-
-| Headings | Game ID          | Date       | Time           | Home | Away | Home Line, Line Price | Away Line, Line Price | ML Prediction | ML Win % | ML EV   | DL Prediction | DL Win % | DL EV   | Game Score  | Recommended Bet Amount | Game Info | Game Result  | Bet Result | Actual Bet Amount | Predicted W/L          | Actual W/L | Bet Location | Bet Price | Bet Info |
-|----------|------------------|------------|----------------|------|------|------|------------|---------------|----------|---------|---------------|----------|---------|-------------|------------------------|-----------|--------------|------------|-------------------|------------------------|------------|--------------|-----------|----------|
-| Notes    | Maybe Don't Show |            | HH:MM Military |      |      | Home |            |               |          | on $100 |               |          | on $100 | out off 100 |                        | Button    | Bet Cover By | W/L        |                   | Not EV, All or Nothing |            |              |           | Button   |
-| Example  | 20220212WASSAC   | 2022-02-12 | 19:00          | WAS  | SAC  | 3    | -110       | 7             | 72.3%    | $42.45  | 9             | 85.5%    | $67.34  | 58          | $100                   | Link      | 13           | W          | $100              | $190                   | $190       | Draftkings   | -110      |          |
-
-5. Bankroll Management
-    * Create separate database table for keeping track of money.
-    * Bankroll Amount
-    * Gain/Loss by day
+6. Test, Debug, and Schedule Daily Process
 
 #### Frontend, Web App, Dashboard   
 Page 1
