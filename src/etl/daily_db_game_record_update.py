@@ -57,8 +57,8 @@ def update_previous_days_records(date, engine, team_map):
 
 if __name__ == "__main__":
     username = "postgres"
-    # password = ""
-    # endpoint = ""
+    password = ""
+    endpoint = ""
     database = "nba_betting"
 
     engine = create_engine(
@@ -105,6 +105,7 @@ if __name__ == "__main__":
 
     team_abrv_map = {
         "BK": "BKN",
+        "BKN": "BKN",
         "BOS": "BOS",
         "MIL": "MIL",
         "ATL": "ATL",
@@ -115,6 +116,7 @@ if __name__ == "__main__":
         "DEN": "DEN",
         "DET": "DET",
         "GS": "GSW",
+        "GSW": "GSW",
         "HOU": "HOU",
         "IND": "IND",
         "LAC": "LAC",
@@ -123,13 +125,16 @@ if __name__ == "__main__":
         "MIA": "MIA",
         "MIN": "MIN",
         "NO": "NOP",
+        "NOP": "NOP",
         "NY": "NYK",
+        "NYK": "NYK",
         "OKC": "OKC",
         "ORL": "ORL",
         "PHI": "PHI",
         "PHO": "PHX",
         "POR": "POR",
         "SA": "SAS",
+        "SAS": "SAS",
         "SAC": "SAC",
         "TOR": "TOR",
         "UTA": "UTA",
