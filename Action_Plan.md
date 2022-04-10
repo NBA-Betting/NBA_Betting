@@ -1,5 +1,11 @@
 # NBA Betting Outline and Action Plan
 
+## Current TODO
+1. Seperate Model Ready into Creation and Update steps.
+2. Create Game Record database based on scheduled:
+    * Creation Step
+    * Update Step
+
 ### Feature Ideas
 * Comparisons with individual game and team, league, timeframe averages.
 * How to introduce the time of the season into ML training?
@@ -43,7 +49,6 @@
 * Home, Away Advantages. Altitude Effects for Denver and Utah
 
 #### Final Dataset Creation
-0. Fix League Year data import bug.
 1. Determine how to define and organize Home and Away Lines, Predicted Results, Actual Results, Cover By, etc.
     * Lining up Amounts and Directions is tricky. Be Careful!
 2. Improve Models and Re-test

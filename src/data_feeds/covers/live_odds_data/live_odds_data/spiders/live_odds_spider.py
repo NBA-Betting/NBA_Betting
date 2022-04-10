@@ -19,85 +19,79 @@ class CoversLiveOddsSpider(scrapy.Spider):
         todays_date = datetime.datetime.now(
             pytz.timezone("America/Denver")
         ).strftime("%b %d")
+        todays_year = datetime.datetime.now(
+            pytz.timezone("America/Denver")
+        ).strftime("%Y")
         game_table = response.xpath(
             '//table[contains(@id, "spread-total-game-nba")]/tbody/tr//div[@class="__date"]/text()'
         ).getall()
         todays_game_count = len(
-            [
-                row
-                for row in game_table
-                if datetime.datetime.strptime(row.strip(), "%b %d").strftime(
-                    "%b %d"
-                )
-                == todays_date
-            ]
+            [row for row in game_table if row.strip() == "Today"]
         )
 
         for game_num in range(1, todays_game_count + 1):
             loader = GameLoader(item=Game(), response=response)
-            loader.add_xpath(
-                "date",
-                f"//table[contains(@id, 'spread-game-nba')]/tbody/tr[{game_num}]/td[1]//div[@class='__date']/text()",
-            )
+            loader.add_value("date", todays_date)
+            loader.add_value("league_year", todays_year)
             loader.add_xpath(
                 "time",
                 f"//table[contains(@id, 'spread-game-nba')]/tbody/tr[{game_num}]/td[1]//div[@class='__time']/text()",
             )
             loader.add_xpath(
                 "home_team_full_name",
-                f"//table[contains(@id, 'spread-game-nba')]/tbody/tr[{game_num}]/td[2]//div[@class='__home']//span[@class='__fullname']/text()",
+                f"//table[contains(@id, 'spread-game-nba')]/tbody/tr[{game_num}]/td[2]//div[@class='__home']//a//img/@title",
             )
             loader.add_xpath(
                 "home_team_short_name",
-                f"//table[contains(@id, 'spread-game-nba')]/tbody/tr[{game_num}]/td[2]//div[@class='__home']//span[@class='__shortname']/text()",
+                f"//table[contains(@id, 'spread-game-nba')]/tbody/tr[{game_num}]/td[2]//div[@class='__home']//a/text()[2]",
             )
             loader.add_xpath(
                 "away_team_full_name",
-                f"//table[contains(@id, 'spread-game-nba')]/tbody/tr[{game_num}]/td[2]//div[@class='__away']//span[@class='__fullname']/text()",
+                f"//table[contains(@id, 'spread-game-nba')]/tbody/tr[{game_num}]/td[2]//div[@class='__away']//a//img/@title",
             )
             loader.add_xpath(
                 "away_team_short_name",
-                f"//table[contains(@id, 'spread-game-nba')]/tbody/tr[{game_num}]/td[2]//div[@class='__away']//span[@class='__shortname']/text()",
+                f"//table[contains(@id, 'spread-game-nba')]/tbody/tr[{game_num}]/td[2]//div[@class='__away']//a/text()[2]",
             )
             loader.add_xpath(
                 "open_line_away",
-                f"//table[contains(@id, 'spread-game-nba')]/tbody/tr[{game_num}]/td[4]//div[@class='__awayOdds']/div[@class='American']//span[@class='__oddValue']/text()",
+                f"//table[contains(@id, 'spread-game-nba')]/tbody/tr[{game_num}]/td[4]//div[@class='__awayOdds']/div[@class='American __american']/text()",
             )
             loader.add_xpath(
                 "open_line_home",
-                f"//table[contains(@id, 'spread-game-nba')]/tbody/tr[{game_num}]/td[4]//div[@class='__homeOdds']/div[@class='American']//span[@class='__oddValue']/text()",
+                f"//table[contains(@id, 'spread-game-nba')]/tbody/tr[{game_num}]/td[4]//div[@class='__homeOdds']/div[@class='American __american']/text()",
             )
             loader.add_xpath(
                 "fanduel_line_away",
-                f"//div[contains(@id, '__spreadDiv-nba')]/table/tbody/tr[{game_num}]/td[@data-book='FanDuel']//div[contains(@class,'__awayOdds')]//div[@class='American']//span[1]/text()",
+                f"//div[contains(@id, '__spreadDiv-nba')]/table/tbody/tr[{game_num}]/td[@data-book='FanDuel']//div[@class='__awayOdds  ']//div[@class='American __american']/text()",
             )
             loader.add_xpath(
                 "fanduel_line_price_away",
-                f"//div[contains(@id, '__spreadDiv-nba')]/table/tbody/tr[{game_num}]/td[@data-book='FanDuel']//div[contains(@class,'__awayOdds')]//div[@class='American']//span[2]/text()",
+                f"//div[contains(@id, '__spreadDiv-nba')]/table/tbody/tr[{game_num}]/td[@data-book='FanDuel']//div[@class='__awayOdds  ']//div[@class='American __american']/span/text()",
             )
             loader.add_xpath(
                 "fanduel_line_home",
-                f"//div[contains(@id, '__spreadDiv-nba')]/table/tbody/tr[{game_num}]/td[@data-book='FanDuel']//div[contains(@class,'__homeOdds')]//div[@class='American']/span/span[1]/text()",
+                f"//div[contains(@id, '__spreadDiv-nba')]/table/tbody/tr[{game_num}]/td[@data-book='FanDuel']//div[@class='__homeOdds  ']//div[@class='American __american']/text()",
             )
             loader.add_xpath(
                 "fanduel_line_price_home",
-                f"//div[contains(@id, '__spreadDiv-nba')]/table/tbody/tr[{game_num}]/td[@data-book='FanDuel']//div[contains(@class,'__homeOdds')]//div[@class='American']//span[2]/text()",
+                f"//div[contains(@id, '__spreadDiv-nba')]/table/tbody/tr[{game_num}]/td[@data-book='FanDuel']//div[@class='__homeOdds  ']//div[@class='American __american']/span/text()",
             )
             loader.add_xpath(
                 "draftkings_line_away",
-                f"//div[contains(@id, '__spreadDiv-nba')]/table/tbody/tr[{game_num}]/td[@data-book='DraftKings']//div[contains(@class,'__awayOdds')]//div[@class='American']//span[1]/text()",
+                f"//div[contains(@id, '__spreadDiv-nba')]/table/tbody/tr[{game_num}]/td[@data-book='DraftKings']//div[@class='__awayOdds  ']//div[@class='American __american']/text()",
             )
             loader.add_xpath(
                 "draftkings_line_price_away",
-                f"//div[contains(@id, '__spreadDiv-nba')]/table/tbody/tr[{game_num}]/td[@data-book='DraftKings']//div[contains(@class,'__awayOdds')]//div[@class='American']//span[2]/text()",
+                f"//div[contains(@id, '__spreadDiv-nba')]/table/tbody/tr[{game_num}]/td[@data-book='DraftKings']//div[@class='__awayOdds  ']//div[@class='American __american']/span/text()",
             )
             loader.add_xpath(
                 "draftkings_line_home",
-                f"//div[contains(@id, '__spreadDiv-nba')]/table/tbody/tr[{game_num}]/td[@data-book='DraftKings']//div[contains(@class,'__homeOdds')]//div[@class='American']/span/span[1]/text()",
+                f"//div[contains(@id, '__spreadDiv-nba')]/table/tbody/tr[{game_num}]/td[@data-book='DraftKings']//div[@class='__homeOdds  ']//div[@class='American __american']/text()",
             )
             loader.add_xpath(
                 "draftkings_line_price_home",
-                f"//div[contains(@id, '__spreadDiv-nba')]/table/tbody/tr[{game_num}]/td[@data-book='DraftKings']//div[contains(@class,'__homeOdds')]//div[@class='American']//span[2]/text()",
+                f"//div[contains(@id, '__spreadDiv-nba')]/table/tbody/tr[{game_num}]/td[@data-book='DraftKings']//div[@class='__homeOdds  ']//div[@class='American __american']/span/text()",
             )
             loader.add_xpath(
                 "id_num",

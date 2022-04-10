@@ -5,9 +5,9 @@ import psycopg2
 
 class LiveOddsToPostgresPipeline(object):
     def open_spider(self, spider):
-        # hostname = ""
+        hostname = ""
         username = "postgres"
-        # password = ""
+        password = ""
         database = "nba_betting"
         port = "5432"
         self.connection = psycopg2.connect(
@@ -45,8 +45,9 @@ class LiveOddsToPostgresPipeline(object):
                     draftkings_line_price_home,
                     covers_away_consenses,
                     covers_home_consenses,
-                    link)
-                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                    link,
+                    league_year)
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
             (
                 item["id_num"],
                 item["date"],
@@ -68,6 +69,7 @@ class LiveOddsToPostgresPipeline(object):
                 item["covers_away_consenses"],
                 item["covers_home_consenses"],
                 item["link"],
+                item["league_year"],
             ),
         )
         self.connection.commit()
@@ -94,5 +96,6 @@ class LiveOddsToPostgresPipeline(object):
         draftkings_line_price_home int4,
         covers_away_consenses float4,
         covers_home_consenses float4,
-        link varchar
+        link varchar,
+        league_year varchar
     );"""
