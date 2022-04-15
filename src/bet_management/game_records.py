@@ -1,3 +1,5 @@
+import datetime
+import pytz
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -23,12 +25,11 @@ class Game_Record:
         self.ml_predictions = None
         self.dl_predictions = None
 
-    def load_data(self, connection):
+    def load_data(self, connection, date):
         """
         Wrapper for SQL query to load data.
-        TODO: Ability to input date or dates to be loaded.
         """
-        query = """
+        query = f"""
         SELECT cdi.game_id,
         cdi.game_date,
         cdi.home_team,
@@ -120,7 +121,7 @@ class Game_Record:
         FROM combined_data_inbound AS cdi
         LEFT OUTER JOIN model_ready AS mr
         ON cdi.game_id = mr.game_id
-        WHERE cdi.game_id LIKE '20220214%%'"""
+        WHERE cdi.game_id LIKE '{date}%%'"""
 
         self.inbound_data = pd.read_sql(sql=query, con=connection)
 
@@ -210,9 +211,13 @@ class Game_Record:
         Currently using -110 as a typical line price.
         TODO: Bring in actual line prices. Lower Priority
         """
-        self.game_records["home_line"] = self.inbound_data["open_line_home"]
+        self.game_records["home_line"] = self.inbound_data[
+            "open_line_home"
+        ].fillna(self.inbound_data["home_spread"])
         self.game_records["home_line_price"] = -110
-        self.game_records["away_line"] = self.inbound_data["open_line_away"]
+        self.game_records["away_line"] = self.inbound_data[
+            "open_line_away"
+        ].fillna(-self.inbound_data["home_spread"])
         self.game_records["away_line_price"] = -110
 
     def expected_value(self):
@@ -338,6 +343,9 @@ class Game_Record:
 
 
 if __name__ == "__main__":
+    todays_datetime = datetime.datetime.now(pytz.timezone("America/Denver"))
+    todays_date_str = todays_datetime.strftime("%Y%m%d")
+
     username = "postgres"
     password = ""
     endpoint = ""
@@ -350,11 +358,11 @@ if __name__ == "__main__":
 
     ml_model_path = "../../models/AutoML/Baseline_Ridge_Reg_PyCaret"
     dl_model_path = (
-        "../../models/Deep_Learning/original_baseline_2022-01-20_01:59:27"
+        "../../models/Deep_Learning/original_baseline_2022_01_20_01_59_27"
     )
 
     game_records = Game_Record()
-    game_records.load_data(connection)
+    game_records.load_data(connection, todays_date_str)
     game_records.load_models(ml_model_path, dl_model_path)
     game_records.create_predictions()
     game_records.set_up_table()
@@ -368,5 +376,5 @@ if __name__ == "__main__":
     game_records.bet_amount()
     game_records.pred_win_loss()
     game_records.game_info_and_cleanup()
-    # print(game_records.game_records.head(10))
+    # print(game_records.game_records.sample(n=100))
     game_records.save_records(connection)

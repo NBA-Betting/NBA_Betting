@@ -1,11 +1,5 @@
 # NBA Betting Outline and Action Plan
 
-## Current TODO
-1. Seperate Model Ready into Creation and Update steps.
-2. Create Game Record database based on scheduled:
-    * Creation Step
-    * Update Step
-
 ### Feature Ideas
 * Comparisons with individual game and team, league, timeframe averages.
 * How to introduce the time of the season into ML training?

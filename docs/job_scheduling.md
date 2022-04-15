@@ -19,6 +19,10 @@ Daily NBA_Betting Model Ready Data Creation
 * Cron Command - ```30 18 * * * cd ~/feature_creation && python3 feature_creation.py```
 * Runtime - Daily at 18:30utc/11:30am mountain
 
+Daily NBA_Betting Game Record Creation
+* Cron Command - ```0 19 * * * cd ~/bet_management && python3 game_records.py```
+* Runtime - Daily at 19:00utc/12:00pm mountain
+
 ## INBOUND DATA STREAMS
 
 Daily Odds from Covers
