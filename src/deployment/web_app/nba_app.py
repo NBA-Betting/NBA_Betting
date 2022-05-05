@@ -1,3 +1,4 @@
+import pandas as pd
 import flask
 from sqlalchemy import create_engine
 
@@ -12,7 +13,22 @@ def nba_data_inbound():
                         date,
                         time,
                         home,
-                        away
+                        away,
+                        home_line,
+                        home_line_price,
+                        away_line,
+                        away_line_price,
+                        game_score,
+                        rec_bet_direction,
+                        rec_bet_amount,
+                        predicted_win_loss,
+                        game_result,
+                        bet_amount,
+                        bet_direction,
+                        bet_price,
+                        bet_location,
+                        bet_win_loss,
+                        game_info
                         FROM game_records
                         ORDER BY game_id DESC LIMIT 50
                     """
@@ -20,9 +36,18 @@ def nba_data_inbound():
     with engine.connect() as connection:
         records = connection.execute(records_query).fetchall()
     # Python/Data Formatting
-
+    records_df = pd.DataFrame(records)
+    records_df[2] = records_df[2].apply(lambda x: x.strftime("%H:%M"))
+    records_df[9] = records_df[9].apply(lambda x: round(x, 2))
+    records_df[12] = records_df[12].apply(lambda x: f"${round(x)}")
+    records_df[14] = records_df[14].apply(lambda x: "-" if x is None else x)
+    records_df[15] = records_df[15].apply(lambda x: "-" if x is None else x)
+    records_df[16] = records_df[16].apply(lambda x: "-" if x is None else x)
+    records_df[17] = records_df[17].apply(lambda x: "-" if x is None else x)
+    records_df[18] = records_df[18].apply(lambda x: "-" if x is None else x)
     # Return Data
-    return {"records": records}
+    output_records = list(records_df.to_records(index=False))
+    return {"records": output_records}
 
 
 def nba_dashboard_data_inbound():
@@ -56,8 +81,8 @@ def about():
 
 if __name__ == "__main__":
     username = "postgres"
-    password = ""
-    endpoint = ""
+    password = None
+    endpoint = None
     database = "nba_betting"
 
     engine = create_engine(
