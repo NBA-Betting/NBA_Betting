@@ -12,10 +12,6 @@ BOT_NAME = "past_odds_data"
 SPIDER_MODULES = ["past_odds_data.spiders"]
 NEWSPIDER_MODULE = "past_odds_data.spiders"
 
-FEEDS = {
-    "s3://nba-betting/past_odds_data/%(name)s/%(time)s.csv": {"format": "csv"}
-}
-
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 # USER_AGENT = 'past_odds_data (+http://www.yourdomain.com)'
 

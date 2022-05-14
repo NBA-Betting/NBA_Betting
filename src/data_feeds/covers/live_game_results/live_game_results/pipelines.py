@@ -26,7 +26,7 @@ class GameResultsToPostgresPipeline(object):
     def process_item(self, item, spider):
 
         self.cur.execute(
-            """INSERT INTO covers_game_results(
+            """INSERT INTO dfc_covers_game_results(
                     date,
                     home_team,
                     away_team,
@@ -45,7 +45,7 @@ class GameResultsToPostgresPipeline(object):
 
     # Script to create original table in psql command line.
 
-    """CREATE TABLE covers_game_results (
+    """CREATE TABLE dfc_covers_game_results (
         date varchar NOT NULL,
         home_team varchar NOT NULL,
         away_team varchar NOT NULL,

@@ -26,7 +26,11 @@ class CoversLiveOddsSpider(scrapy.Spider):
             '//table[contains(@id, "spread-total-game-nba")]/tbody/tr//div[@class="__date"]/text()'
         ).getall()
         todays_game_count = len(
-            [row for row in game_table if row.strip() == "Today"]
+            [
+                row
+                for row in game_table
+                if row.strip() in ["Today", todays_date]
+            ]
         )
 
         for game_num in range(1, todays_game_count + 1):

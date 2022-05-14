@@ -26,7 +26,7 @@ class SaveToPostgresPipeline(object):
     def process_item(self, item, spider):
         if spider.name == "BR_standings_spider":
             self.cur.execute(
-                """INSERT INTO basketball_reference_standings(
+                """INSERT INTO dfc_br_standings(
                     team,
                     date,
                     wins,
@@ -52,7 +52,7 @@ class SaveToPostgresPipeline(object):
             self.connection.commit()
         elif spider.name == "BR_team_stats_spider":
             self.cur.execute(
-                """INSERT INTO basketball_reference_team_stats(
+                """INSERT INTO dfc_br_team_stats(
                     team,
                     date,
                     g,
@@ -110,7 +110,7 @@ class SaveToPostgresPipeline(object):
             self.connection.commit()
         elif spider.name == "BR_opponent_stats_spider":
             self.cur.execute(
-                """INSERT INTO basketball_reference_opponent_stats(
+                """INSERT INTO dfc_br_opponent_stats(
                     team,
                     date,
                     opp_g,
@@ -173,7 +173,7 @@ class SaveToPostgresPipeline(object):
 
     # Basketball Reference Standings
     """
-    CREATE TABLE basketball_reference_standings (
+    CREATE TABLE dfc_br_standings (
         team varchar NOT NULL,
         date varchar NOT NULL,
         wins int4,
@@ -188,7 +188,7 @@ class SaveToPostgresPipeline(object):
 
     # Basketball Reference Team Stats
     """
-    CREATE TABLE basketball_reference_team_stats (
+    CREATE TABLE dfc_br_team_stats (
         team varchar NOT NULL,
         date varchar NOT NULL,
         g int4,
@@ -219,7 +219,7 @@ class SaveToPostgresPipeline(object):
 
     # Basketball Reference Opponent Stats
     """
-    CREATE TABLE basketball_reference_opponent_stats (
+    CREATE TABLE dfc_br_opponent_stats (
         team varchar NOT NULL,
         date varchar NOT NULL,
         opp_g int4,

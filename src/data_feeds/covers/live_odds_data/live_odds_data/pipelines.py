@@ -26,7 +26,7 @@ class LiveOddsToPostgresPipeline(object):
     def process_item(self, item, spider):
 
         self.cur.execute(
-            """INSERT INTO covers_odds(id_num,
+            """INSERT INTO dfc_covers_odds(id_num,
                     date,
                     time,
                     home_team_full_name,
@@ -76,7 +76,7 @@ class LiveOddsToPostgresPipeline(object):
 
     # Script to create original table in psql command line.
 
-    """CREATE TABLE covers_odds (
+    """CREATE TABLE dfc_covers_odds (
         id_num int4 PRIMARY KEY NOT NULL,
         date varchar NOT NULL,
         time varchar NOT NULL,

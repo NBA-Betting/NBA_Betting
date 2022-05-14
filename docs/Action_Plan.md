@@ -1,17 +1,14 @@
 # NBA Betting Outline and Action Plan
 
 # RESEARCH LIST
-* Cron scheduled jobs monitoring and reporting
-* Simulation systems
 * NBA analytic sources (preferably with historic data)
 
 # MUST HAVE TODO LIST
 ## SPECIAL PROJECTS
-* Simulation System
-    * Ability to test scheduled jobs and other programs
-    * Ability to test the outputs of models and overall system performance
+* Testing/Simulation System
+    2. ETL and Feature Creation code can be tested by running on individual past days or multiple days. Restructure code to make it possible to more easily choose dates of data and overwrite specific dates.
+    3. Test Models and bet recommendation systems by running on past data.
 ## Inbound Data
-* Debug/Streamline/Rerun
 * Set up monitoring and reporting of scheduled jobs.
 ## ETL
 * Debug/Streamline/Rerun 
