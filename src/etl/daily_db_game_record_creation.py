@@ -25,18 +25,18 @@ def create_record_batch(date, engine, team_map):
 
         # Loading relevent data from RDS.
         cd_covers_odds = pd.read_sql(
-            f"SELECT * FROM covers_odds WHERE date = '{date}'", connection
+            f"SELECT * FROM dfc_covers_odds WHERE date = '{date}'", connection
         )
         pd_BR_standings = pd.read_sql(
-            f"SELECT * FROM basketball_reference_standings WHERE date = '{prev_date}'",
+            f"SELECT * FROM dfc_br_standings WHERE date = '{prev_date}'",
             connection,
         )
         pd_BR_team_stats = pd.read_sql(
-            f"SELECT * FROM basketball_reference_team_stats WHERE date = '{prev_date}'",
+            f"SELECT * FROM dfc_br_team_stats WHERE date = '{prev_date}'",
             connection,
         )
         pd_BR_opponent_stats = pd.read_sql(
-            f"SELECT * FROM basketball_reference_opponent_stats WHERE date = '{prev_date}'",
+            f"SELECT * FROM dfc_br_opponent_stats WHERE date = '{prev_date}'",
             connection,
         )
 
@@ -357,6 +357,7 @@ if __name__ == "__main__":
         "ORL": "ORL",
         "PHI": "PHI",
         "PHO": "PHX",
+        "PHX": "PHX",
         "POR": "POR",
         "SA": "SAS",
         "SAS": "SAS",

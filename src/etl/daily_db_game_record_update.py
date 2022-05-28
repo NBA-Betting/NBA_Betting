@@ -18,7 +18,7 @@ def update_previous_days_records(date, engine, team_map):
     with engine.connect() as connection:
         # Loading relevent data from RDS.
         pd_covers_game_results = pd.read_sql(
-            f"SELECT * FROM covers_game_results WHERE date = '{date}'",
+            f"SELECT * FROM dfc_covers_game_results WHERE date = '{date}'",
             connection,
         )
 
@@ -45,9 +45,9 @@ def update_previous_days_records(date, engine, team_map):
             away_score = game_result["away_score"]
 
             stmt = f"""
-                UPDATE combined_data_inbound 
-                SET home_score = {home_score}, 
-                    away_score = {away_score} 
+                UPDATE combined_data_inbound
+                SET home_score = {home_score},
+                    away_score = {away_score}
                 WHERE game_id = '{game_id}'
                 ;
                 """
@@ -132,6 +132,7 @@ if __name__ == "__main__":
         "ORL": "ORL",
         "PHI": "PHI",
         "PHO": "PHX",
+        "PHX": "PHX",
         "POR": "POR",
         "SA": "SAS",
         "SAS": "SAS",
