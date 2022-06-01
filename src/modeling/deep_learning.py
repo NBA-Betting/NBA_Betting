@@ -127,5 +127,5 @@ if __name__ == "__main__":
     # Save Model
     model_save_location = "/home/jeff/Documents/Data_Science_Projects/NBA_Betting/models/Deep_Learning/"
     model_name = "original_baseline"
-    model_creation = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    model_creation = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     model.save(f"{model_save_location}{model_name}_{model_creation}")
