@@ -13,17 +13,16 @@
 ## ETL
 *  
 ## Feature Creation
-* Debug/Streamline/Rerun
+* 
 ## Modeling
-* Debug/Streamline/Rerun
+* 
 ## Bet Management
 * Complete functions and system/process.
 * Debug/Streamline/Rerun
 ## Deployment
-* Command Line Tool with Daily Email Report
+* 
 ## Readme and Cleanup
 * Quality over Quantity
-
 # NEXT STEPS TODO
 ## Inbound Data
 * Add sources
