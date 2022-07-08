@@ -8,6 +8,8 @@ from tensorflow import keras
 from sqlalchemy import create_engine
 from pycaret.regression import *
 
+pd.set_option("display.width", 200)
+
 
 class Game_Record:
     """
@@ -25,11 +27,11 @@ class Game_Record:
         self.ml_predictions = None
         self.dl_predictions = None
 
-    def load_data(self, connection, date):
+    def load_data(self, connection):
         """
         Wrapper for SQL query to load data.
         """
-        query = f"""
+        query = """
         SELECT cdi.game_id,
         cdi.game_date,
         cdi.home_team,
@@ -121,30 +123,165 @@ class Game_Record:
         FROM combined_data_inbound AS cdi
         LEFT OUTER JOIN model_ready AS mr
         ON cdi.game_id = mr.game_id
-        WHERE cdi.game_id LIKE '{date}%%'"""
+        """
 
         self.inbound_data = pd.read_sql(sql=query, con=connection)
 
     def load_models(self, ml_model_path, dl_model_path):
+        """
+        Choosing which models to use for predictions.
+        Make sure feature set matches model.
+        """
         self.ml_model = load_model(ml_model_path)
         self.dl_model = keras.models.load_model(dl_model_path)
 
     def create_predictions(self):
         """
-        TODO: Improve choice of inbound features. (iloc[:, 21:])
-        TODO: Functionality for diff models with diff features. (with or without fd and dk lines)
+        Choosing feature set that matches models to be used.
         """
+
+        ml_pred_feature_set = [
+            "home_team_num",
+            "away_team_num",
+            "league_year_end",
+            "home_line",
+            "fd_line_home",
+            "dk_line_home",
+            "covers_consenses_home",
+            "wins",
+            "losses",
+            "win_pct",
+            "expected_wins",
+            "expected_losses",
+            "home_ppg",
+            "home_papg",
+            "away_wins",
+            "away_losses",
+            "away_win_pct",
+            "away_expected_wins",
+            "away_expected_losses",
+            "away_ppg",
+            "away_papg",
+            "g",
+            "mp",
+            "pts",
+            "ast",
+            "trb",
+            "blk",
+            "stl",
+            "tov",
+            "pf",
+            "drb",
+            "orb",
+            "fg",
+            "fga",
+            "fg_pct",
+            "fg2",
+            "fg2a",
+            "fg2_pct",
+            "fg3",
+            "fg3a",
+            "fg3_pct",
+            "ft",
+            "fta",
+            "ft_pct",
+            "away_g",
+            "away_mp",
+            "away_pts",
+            "away_ast",
+            "away_trb",
+            "away_blk",
+            "away_stl",
+            "away_tov",
+            "away_pf",
+            "away_drb",
+            "away_orb",
+            "away_fg",
+            "away_fga",
+            "away_fg_pct",
+            "away_fg2",
+            "away_fg2a",
+            "away_fg2_pct",
+            "away_fg3",
+            "away_fg3a",
+            "away_fg3_pct",
+            "away_ft",
+            "away_fta",
+            "away_fta_pct",
+        ]
+
+        dl_pred_feature_set = [
+            "home_team_num",
+            "away_team_num",
+            "league_year_end",
+            "home_line",
+            "wins",
+            "losses",
+            "win_pct",
+            "expected_wins",
+            "expected_losses",
+            "home_ppg",
+            "home_papg",
+            "away_wins",
+            "away_losses",
+            "away_win_pct",
+            "away_expected_wins",
+            "away_expected_losses",
+            "away_ppg",
+            "away_papg",
+            "g",
+            "mp",
+            "pts",
+            "ast",
+            "trb",
+            "blk",
+            "stl",
+            "tov",
+            "pf",
+            "drb",
+            "orb",
+            "fg",
+            "fga",
+            "fg_pct",
+            "fg2",
+            "fg2a",
+            "fg2_pct",
+            "fg3",
+            "fg3a",
+            "fg3_pct",
+            "ft",
+            "fta",
+            "ft_pct",
+            "away_g",
+            "away_mp",
+            "away_pts",
+            "away_ast",
+            "away_trb",
+            "away_blk",
+            "away_stl",
+            "away_tov",
+            "away_pf",
+            "away_drb",
+            "away_orb",
+            "away_fg",
+            "away_fga",
+            "away_fg_pct",
+            "away_fg2",
+            "away_fg2a",
+            "away_fg2_pct",
+            "away_fg3",
+            "away_fg3a",
+            "away_fg3_pct",
+            "away_ft",
+            "away_fta",
+            "away_fta_pct",
+        ]
+
         self.ml_predictions = predict_model(
-            self.ml_model, data=self.inbound_data.iloc[:, 21:]
+            self.ml_model, data=self.inbound_data[ml_pred_feature_set]
         )
         self.dl_predictions = self.dl_model.predict(
-            self.inbound_data.iloc[:, 21:].drop(
-                columns=[
-                    "fd_line_home",
-                    "dk_line_home",
-                    "covers_consenses_home",
-                ]
-            )
+            self.inbound_data[dl_pred_feature_set]
         ).flatten()
 
     def set_up_table(self):
@@ -153,6 +290,8 @@ class Game_Record:
                 "line_hv": 0 - self.inbound_data["home_line"],
                 "ml_prediction": self.ml_predictions["Label"],
                 "dl_prediction": self.dl_predictions,
+                "home_score": self.inbound_data["home_score"],
+                "away_score": self.inbound_data["away_score"],
             }
         )
 
@@ -209,7 +348,7 @@ class Game_Record:
     def line_and_line_price(self):
         """
         Currently using -110 as a typical line price.
-        TODO: Bring in actual line prices. Lower Priority
+        TODO: Bring in actual line prices. Low Priority
         """
         self.game_records["home_line"] = self.inbound_data[
             "open_line_home"
@@ -219,59 +358,111 @@ class Game_Record:
             "open_line_away"
         ].fillna(-self.inbound_data["home_spread"])
         self.game_records["away_line_price"] = -110
+        self.game_records["ml_pred_vig"] = self.game_records.apply(
+            lambda x: x["home_line_price"]
+            if x["ml_pred_direction"] == "Home"
+            else x["away_line_price"],
+            axis=1,
+        )
+
+        self.game_records["dl_pred_vig"] = self.game_records.apply(
+            lambda x: x["home_line_price"]
+            if x["dl_pred_direction"] == "Home"
+            else x["away_line_price"],
+            axis=1,
+        )
 
     def expected_value(self):
         """
         Long-term expected value on $100 bets given win_pct and vig.
-        TODO: Use formula actual line price from above instead of hard coded "91" for vig.
         """
+
+        def vig_ev_calc(vig):
+            return round(1 / (-vig) * 100, 2) * 100
+
         self.game_records["ml_ev"] = self.game_records["ml_win_prob"].apply(
             lambda x: 100 * x - 100 * (1 - x)
         )
         self.game_records["dl_ev"] = self.game_records["dl_win_prob"].apply(
             lambda x: 100 * x - 100 * (1 - x)
         )
-        self.game_records["ml_ev_vig"] = self.game_records[
-            "ml_win_prob"
-        ].apply(lambda x: 91 * x - 100 * (1 - x))
-        self.game_records["dl_ev_vig"] = self.game_records[
-            "dl_win_prob"
-        ].apply(lambda x: 91 * x - 100 * (1 - x))
+        self.game_records["ml_ev_vig"] = self.game_records.apply(
+            lambda x: vig_ev_calc(x["ml_pred_vig"]) * x["ml_win_prob"]
+            - 100 * (1 - x["ml_win_prob"]),
+            axis=1,
+        )
+        self.game_records["dl_ev_vig"] = self.game_records.apply(
+            lambda x: vig_ev_calc(x["dl_pred_vig"]) * x["dl_win_prob"]
+            - 100 * (1 - x["dl_win_prob"]),
+            axis=1,
+        )
 
     def bet_direction(self):
         """
         Logic for choosing between models with differing reccommended bet directions.
-        TODO: Determine optimal formula and implement.
         """
-        self.game_records["rec_bet_direction"] = self.game_records[
-            "ml_pred_direction"
-        ]
+        self.game_records["rec_bet_direction"] = self.game_records.apply(
+            lambda x: x["ml_pred_direction"]
+            if x["ml_pred_direction"] == x["dl_pred_direction"]
+            else "Warning-Models Differ",
+            axis=1,
+        )
 
     def game_score(self):
         """
         Overall score for the desirability of betting on a game.
         Incorporates model predictions with outside knowledge.
         0 to 100 scale.
-        TODO: Determine optimal formula and implement.
+        TODO: Combine ML and DL EVs once models become more effective
+              and generally agree on recommended bet direction.
+        TODO: Incorporate outside factors and personal opinion
+              once modeling becomes more effective.
         """
-        self.game_records["game_score"] = self.game_records["ml_ev"]
 
-    def bet_amount(self):
+        def game_score_calc(x):
+            ml_ev = x["ml_ev"]
+            dl_ev = x["dl_ev"]
+
+            return ml_ev
+
+        self.game_records["game_score"] = self.game_records.apply(
+            game_score_calc, axis=1
+        )
+
+    def bet_amount(self, connection):
         """
         How much should be bet on each game based on
         game scores, available funds, and overall bankroll management plan.
-        TODO: Determine optimal formula and implement.
+        TODO: Update formula to be more effective based on simulations and testing.
         """
-        self.game_records["rec_bet_amount"] = 100
 
-    def pred_win_loss(self):
-        """
-        Bet expected value scaled for bet amount.
-        TODO: Add logic to incorporate both ML and DL EV and EV with Vig
-        """
-        self.game_records["predicted_win_loss"] = (
-            self.game_records["ml_ev"] / 100
-        ) * self.game_records["rec_bet_amount"]
+        available_funds_query = """SELECT balance
+                                   FROM bank_account
+                                   WHERE datetime = (SELECT MAX(datetime)
+                                   FROM bank_account);"""
+
+        current_available_funds = pd.read_sql(
+            sql=available_funds_query, con=connection
+        )["balance"]
+
+        unit_size = 0.01
+        unit_amount = current_available_funds * unit_size
+
+        def calc_amount_to_bet(x, unit_size):
+            if x["game_score"] > 95:
+                units_to_bet = 5
+            elif x["game_score"] > 90:
+                units_to_bet = 3
+            elif x["game_score"] > 85:
+                units_to_bet = 1
+            else:
+                units_to_bet = 0
+            amount_to_bet = unit_size * units_to_bet
+            return amount_to_bet
+
+        self.game_records["rec_bet_amount"] = self.game_records.apply(
+            calc_amount_to_bet, unit_size=unit_amount, axis=1
+        )
 
     def game_info_and_cleanup(self):
         """
@@ -285,11 +476,22 @@ class Game_Record:
         self.game_records["home"] = self.inbound_data["home_team"]
         self.game_records["away"] = self.inbound_data["away_team"]
         self.game_records["bet_amount"] = None  # Updates on user input
+        self.game_records["bet_line"] = None  # Updates on user input
         self.game_records["bet_direction"] = None  # Updates on user input
         self.game_records["bet_price"] = None  # Updates on user input
         self.game_records["bet_location"] = None  # Updates on user input
-        self.game_records["game_result"] = 0  # Updates after game end
+        self.game_records["game_result"] = self.game_records.apply(
+            lambda x: x["home_score"] - x["away_score"]
+            if x["home_score"]
+            else "Pending",
+            axis=1,
+        )
         self.game_records["bet_result"] = "No Bet"  # Updates after game end
+
+        # def calc_bet_result(x):
+        #     home_facing_game_result = x['game_result']
+        #     home_facing_bet_line = -x['bet_line'] if x['bet_direction'] == 'Home' else x['bet_line']
+
         self.game_records["bet_win_loss"] = None  # Updates after game end
 
         ordered_cols = [
@@ -318,10 +520,10 @@ class Game_Record:
             "game_score",
             "rec_bet_direction",
             "rec_bet_amount",
-            "predicted_win_loss",
             "game_result",
             "bet_result",
             "bet_amount",
+            "bet_line",
             "bet_direction",
             "bet_price",
             "bet_location",
@@ -338,7 +540,7 @@ class Game_Record:
             name="game_records",
             con=connection,
             index=False,
-            if_exists="append",
+            if_exists="replace",
         )
 
 
@@ -361,20 +563,19 @@ if __name__ == "__main__":
         "../../models/Deep_Learning/original_baseline_2022_01_20_01_59_27"
     )
 
-    game_records = Game_Record()
-    game_records.load_data(connection, todays_date_str)
-    game_records.load_models(ml_model_path, dl_model_path)
-    game_records.create_predictions()
-    game_records.set_up_table()
-    game_records.model_pred_bet_direction()
-    game_records.line_v_pred_margin()
-    game_records.win_pct()
-    game_records.line_and_line_price()
-    game_records.expected_value()
-    game_records.bet_direction()
-    game_records.game_score()
-    game_records.bet_amount()
-    game_records.pred_win_loss()
-    game_records.game_info_and_cleanup()
-    # print(game_records.game_records.sample(n=100))
-    game_records.save_records(connection)
+    games = Game_Record()
+    games.load_data(connection)
+    games.load_models(ml_model_path, dl_model_path)
+    games.create_predictions()
+    games.set_up_table()
+    games.model_pred_bet_direction()
+    games.line_v_pred_margin()
+    games.win_pct()
+    games.line_and_line_price()
+    games.expected_value()
+    games.bet_direction()
+    games.game_score()
+    games.bet_amount(connection)
+    games.game_info_and_cleanup()
+    # print(games.game_records)
+    games.save_records(connection)
