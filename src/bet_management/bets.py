@@ -167,7 +167,7 @@ class Bet:
 
             self.bet_record = pd.read_sql(stmt, connection)
             self.bet_datetime = self.bet_record["bet_datetime"][0].strftime(
-                "%Y-%m-%d %H:%M:%S.%f"
+                "%Y-%m-%d %H:%M:%S"
             )
             self.bet_outcome = self.bet_record["bet_outcome"]
             self.bet_direction = self.bet_record["bet_direction"]
@@ -213,7 +213,7 @@ class Bet:
 
     def create_bet_record(self):
         self.bet_datetime = datetime.datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S.%f"
+            "%Y-%m-%d %H:%M:%S"
         )
 
         while True:
@@ -389,7 +389,7 @@ class Bet:
         do_update_datetime = input("Update bet datetime? Y/N: ")
         if do_update_datetime in ["Y", "y"]:
             new_bet_datetime = datetime.datetime.now().strftime(
-                "%Y-%m-%d %H:%M:%S.%f"
+                "%Y-%m-%d %H:%M:%S"
             )
         else:
             new_bet_datetime = self.bet_datetime
@@ -569,7 +569,7 @@ class Bet:
             self.bet_status = new_bet_status
             self.bet_profit_loss = new_bet_profit_loss
             self.update_bet_record_save()
-            self.bank.deposit(diff_bet_profit_loss)
+            self.bank.deposit(diff_bet_profit_loss[0])
             print("Bet record updated successfully.")
         else:
             return

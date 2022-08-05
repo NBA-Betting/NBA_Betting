@@ -1,3 +1,4 @@
+import pytz
 from datetime import datetime
 from sqlalchemy import create_engine
 
@@ -34,8 +35,11 @@ class BankAccount:
         return self.connection.execute(stmt).fetchone()[0]
 
     def save_balance(self):
+        current_datetime = datetime.now(
+            pytz.timezone("America/Denver")
+        ).strftime("%Y-%m-%d %H:%M:%S")
         stmt = f"""INSERT INTO bank_account (datetime, balance)
-                  VALUES ('{datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")}',{self.balance})
+                  VALUES ('{current_datetime}',{self.balance})
                 ;"""
 
         self.connection.execute(stmt)
@@ -54,7 +58,7 @@ if __name__ == "__main__":
 
     with engine.connect() as connection:
         bank = BankAccount(connection)
-        bank.set_balance(0)
+        bank.save_balance()
 
 
 # Script to create original table in psql command line.

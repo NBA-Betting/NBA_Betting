@@ -3,11 +3,6 @@
 # RESEARCH LIST
 * NBA analytic sources (preferably with historic data)
 
-# MUST HAVE TODO LIST
-## SPECIAL PROJECTS
-* Testing/Simulation System
-    2. ETL and Feature Creation code can be tested by running on individual past days or multiple days. Restructure code to make it possible to more easily choose dates of data and overwrite specific dates.
-    3. Test Models and bet recommendation systems by running on past data.
 ## Inbound Data
 * 
 ## ETL
@@ -35,7 +30,7 @@
 ## Bet Management
 
 ## Deployment
-* Web App
+* Deploy Web App
 * Dashboard
 
 ### Feature Ideas

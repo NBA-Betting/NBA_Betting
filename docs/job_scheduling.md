@@ -5,6 +5,11 @@
 
 Job Name, Description, Run Time and Interval, Logging
 
+## MISC
+Daily Bank Account Update
+* Cron Command - ```0 9 * * * cd ~/bet_management && python3 financials.py```
+* Runtime - Daily at 09:00utc/2:00am mountain
+
 ## DATABASE ETL
 
 Daily NBA_Betting Inbound Data Record Creation

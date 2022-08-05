@@ -35,20 +35,41 @@
         <div class="row">
             <div class="col">
                 <h2 class="text-center">Available Funds</h2>
-                <h1 class="text-success text-center">$12700</h1>
+                {% if current_balance > 0 %}
+                <h1 class="text-success text-center">${{current_balance}}</h1>
+                {% else %}
+                <h1 class="text-danger text-center">${{current_balance}}</h1>
+                {% endif %}
 
                 <div class="row">
                     <div class="col">
                         <h3 class="text-center">Alltime</h3>
-                        <h3 class="text-success text-center">$3270<br>(34.7%)</h3>
-                        <h3 class="text-center">Year</h3>
-                        <h3 class="text-success text-center">$2170<br>(21.4%)</h3>
+                        {% if alltime_diff >= 0 %}
+                        <h3 class="text-success text-center">${{alltime_diff}}<br>({{alltime_pct_diff}}%)</h3>
+                        {% else %}
+                        <h3 class="text-danger text-center">${{alltime_diff}}<br>({{alltime_pct_diff}}%)</h3>
+                        {% endif %}
+                        <h3 class="text-center">Month</h3>
+                        {% if month_diff >= 0 %}
+                        <h3 class="text-success text-center">${{month_diff}}<br>({{month_pct_diff}}%)</h3>
+                        {% else %}
+                        <h3 class="text-danger text-center">${{month_diff}}<br>({{month_pct_diff}}%)</h3>
+                        {% endif %}
+
                     </div>
                     <div class="col">
-                        <h3 class="text-center">Month</h3>
-                        <h3 class="text-danger text-center">-$456<br>(-6.3%)</h3>
+                        <h3 class="text-center">Year</h3>
+                        {% if year_diff >= 0 %}
+                        <h3 class="text-success text-center">${{year_diff}}<br>({{year_pct_diff}}%)</h3>
+                        {% else %}
+                        <h3 class="text-danger text-center">${{year_diff}}<br>({{year_pct_diff}}%)</h3>
+                        {% endif %}
                         <h3 class="text-center">Week</h3>
-                        <h3 class="text-success text-center">$200<br>(2.5%)</h3>
+                        {% if week_diff >= 0 %}
+                        <h3 class="text-success text-center">${{week_diff}}<br>({{week_pct_diff}}%)</h3>
+                        {% else %}
+                        <h3 class="text-danger text-center">${{week_diff}}<br>({{week_pct_diff}}%)</h3>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -57,17 +78,23 @@
 
             <div class="col">
                 <h2 class="text-center">Yesterday's Win/Loss</h2>
-                <h1 class="text-center text-success">$94</h1>
-
+                {% if yest_win_loss >= 0 %}
+                <h1 class="text-center text-success">${{yest_win_loss}}</h1>
+                {% else %}
+                <h1 class="text-center text-danger">${{yest_win_loss}}</h1>
+                {% endif %}
+                <br>
                 <h2 class="text-center">Today's Action</h2>
-                <h4 class="text-center">7 Recommended Bets<br>4 Active Bets<br>$700 In Play<br>$210 Expected Win/Loss
-                </h4>
+                <h3 class="text-center">{{rec_bets_count}} Recommended Bets</h3>
+                <h3 class="text-center">{{active_bets_count}} Active Bets</h3>
+                <h3 class="text-center">${{money_in_play}} In Play</h3>
             </div>
 
             <!--GRAPH-->
 
-            <div class="col border">
-                I'm a Graph!
+            <div class="col-4">
+                <h2 class="text-center">Bank Account Balance</h2>
+                <img src='home_page_plot.png' alt="Bank Account Profit Loss" class='img-fluid' />
             </div>
         </div>
     </div>
@@ -82,28 +109,28 @@
                 <tr>
                     <th scope="col" class="cell-center">Game ID</th>
                     <th scope="col" class="cell-center">Date</th>
-                    <th scope="col" class="cell-center">Time</th>
                     <th scope="col" class="cell-center">Home</th>
                     <th scope="col" class="cell-center">Away</th>
                     <th scope="col" class="cell-center">Home Line</th>
-                    <th scope="col" class="cell-center">Home Line Price</th>
                     <th scope="col" class="cell-center">Game Score</th>
                     <th scope="col" class="cell-center">Recommended Bet Direction</th>
                     <th scope="col" class="cell-center">Recommended Bet Amount</th>
-                    <th scope="col" class="cell-center">Predicted Win/Loss</th>
                     <th scope="col" class="cell-center">Game Result</th>
-                    <th scope="col" class="cell-center">Bet Win/Loss</th>
+                    <th scope="col" class="cell-center">Bet Status</th>
+                    <th scope="col" class="cell-center">Bet Outcome</th>
                     <th scope="col" class="cell-center">Bet Amount</th>
+                    <th scope="col" class="cell-center">Bet Line</th>
                     <th scope="col" class="cell-center">Bet Direction</th>
                     <th scope="col" class="cell-center">Bet Price</th>
                     <th scope="col" class="cell-center">Bet Location</th>
+                    <th scope="col" class="cell-center">Bet Profit/Loss</th>
                     <th scope="col" class="cell-center"></th>
                 </tr>
             </thead>
             <tbody>
                 {% for rec in records %}
                 <tr>
-                    <td class="cell-center"><a href="https://www.covers.com{{rec[19]}}" target="_blank">{{rec[0]}}</a>
+                    <td class="cell-center"><a href="https://www.covers.com{{rec[18]}}" target="_blank">{{rec[0]}}</a>
                     </td>
                     <td class="cell-center">{{rec[1]}}</td>
                     <td class="cell-center">{{rec[2]}}</td>
@@ -111,6 +138,8 @@
                     <td class="cell-right">{{rec[4]}}</td>
                     <td class="cell-center">{{rec[5]}}</td>
                     <td class="cell-center">{{rec[6]}}</td>
+                    <td class="cell-center">{{rec[7]}}</td>
+                    <td class="cell-center">{{rec[8]}}</td>
                     <td class="cell-center">{{rec[9]}}</td>
                     <td class="cell-center">{{rec[10]}}</td>
                     <td class="cell-center">{{rec[11]}}</td>
@@ -119,12 +148,27 @@
                     <td class="cell-center">{{rec[14]}}</td>
                     <td class="cell-center">{{rec[15]}}</td>
                     <td class="cell-center">{{rec[16]}}</td>
-                    <td class="cell-center">{{rec[17]}}</td>
-                    <td class="cell-center">{{rec[18]}}</td>
+                    {% if rec[9] == '-' %}
                     <td class="cell-center"><button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                            data-bs-target="#place_bet_modal">
+                            data-bs-target="#place_bet_modal" data-bs-gameId="{{rec[0]}}"
+                            data-bs-betDatetime="{{rec[17]}}" data-bs-betLocation="{{rec[15]}}"
+                            data-bs-betLine="{{rec[12]}}" data-bs-betAmount="{{rec[11]}}"
+                            data-bs-betDirection="{{rec[13]}}" data-bs-betPrice="{{rec[14]}}"
+                            data-bs-betOutcome="{{rec[10]}}" data-bs-betStatus="{{rec[9]}}"
+                            data-bs-betProfitLoss="{{rec[16]}}" data-bs-bankBalance="{{current_balance}}">
                             Place Bet
                         </button></td>
+                    {% else %}
+                    <td class="cell-center"><button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                            data-bs-target="#place_bet_modal" data-bs-gameId="{{rec[0]}}"
+                            data-bs-betDatetime="{{rec[17]}}" data-bs-betLocation="{{rec[15]}}"
+                            data-bs-betLine="{{rec[12]}}" data-bs-betAmount="{{rec[11]}}"
+                            data-bs-betDirection="{{rec[13]}}" data-bs-betPrice="{{rec[14]}}"
+                            data-bs-betOutcome="{{rec[10]}}" data-bs-betStatus="{{rec[9]}}"
+                            data-bs-betProfitLoss="{{rec[16]}}" data-bs-bankBalance="{{current_balance}}">
+                            Update Bet
+                        </button></td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
             </tbody>
@@ -138,33 +182,122 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="staticBackdropLabel">Betting Details</h5>
+                    <h4 class="modal-title" id="modal-title-js">Betting Details for GAMEID</h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form>
-                        <p>BOS at DET at 18:30 on 4/17/2022</p>
-                        <div class="mb-3">
-                            <label for="bet_amount" class="form-label">Bet Amount</label>
-                            <input type="text" class="form-control" id="bet_amount">
-                        </div>
-                        <div class="mb-3">
-                            <label for="bet_direction" class="form-label">Bet Direction</label>
-                            <input type="text" class="form-control" id="bet_direction">
-                        </div>
-                        <div class="mb-3">
-                            <label for="bet_price" class="form-label">Bet Price</label>
-                            <input type="text" class="form-control" id="bet_price">
-                        </div>
-                        <div class="mb-3">
-                            <select class="form-select">
-                                <option selected>Bet Location</option>
-                                <option value="1">DraftKings</option>
-                                <option value="2">FanDuel</option>
-                                <option value="3">Three</option>
-                            </select>
-                        </div>
-                    </form>
+                    <div class="container-fluid">
+                        <h5>Current Bet Details</h5>
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Datetime</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Outcome</th>
+                                    <th scope="col">Amount</th>
+
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td id="bet-datetime-js">Datetime</td>
+                                    <td id="bet-status-js">Status</td>
+                                    <td id="bet-outcome-js">Outcome</td>
+                                    <td id="bet-amount-js">Amount</td>
+
+                                </tr>
+                            </tbody>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Line</th>
+                                    <th scope="col">Direction</th>
+                                    <th scope="col">Price</th>
+                                    <th scope="col">Location</th>
+                                    <th scope="col">Profit/Loss</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td id="bet-line-js">Line</td>
+                                    <td id="bet-direction-js">Direction</td>
+                                    <td id="bet-price-js">Price</td>
+                                    <td id="bet-location-js">Location</td>
+                                    <td id="bet-profitloss-js">Profit/Loss</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="container-fluid">
+                        <h5>New Bet Details</h5>
+                        <form class="needs-validation" method="POST" novalidate>
+                            <div class="mb-3">
+                                <input type="hidden" class="form-control" id="form-gameID-js" name="bet_game_id"
+                                    required>
+                            </div>
+                            <div class="mb-3">
+                                <input type="hidden" class="form-control" id="form-oldPF-js" name="old_profit_loss"
+                                    required>
+                            </div>
+                            <div class="mb-3">
+                                <input type="hidden" class="form-control" id="form-bankBalance-js" name="bankBalance"
+                                    required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="bet_status" class="form-label">Bet Status</label>
+                                <input type="text" class="form-control" id="bet_status" name="bet_status"
+                                    placeholder="Active or Inactive"
+                                    pattern="^(active|Active|ACTIVE|inactive|Inactive|INACTIVE)$" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="bet_outcome" class="form-label">Bet Outcome</label>
+                                <input type="text" class="form-control" id="bet_outcome" name="bet_outcome"
+                                    placeholder="Win, Loss, Unknown, or No Bet"
+                                    pattern="^(win|Win|WIN|loss|Loss|LOSS|unknown|Unknown|UNKNOWN|no bet|No Bet|NO BET)$"
+                                    required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="bet_amount" class="form-label">Bet Amount</label>
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text">$</span>
+                                    <input type="text" class="form-control" name="bet_amount"
+                                        aria-label="Amount (to the nearest dollar)" pattern="\d+(\.\d{2})?" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="bet_line" class="form-label">Bet Line</label>
+                                <input type="text" class="form-control" id="bet_line" name="bet_line"
+                                    pattern="[\-]?\d+(\.\d{1})?" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="bet_direction" class="form-label">Bet Direction</label>
+                                <input type="text" class="form-control" id="bet_direction" name="bet_direction"
+                                    placeholder="Home or Away" pattern="^(home|Home|HOME|away|Away|AWAY)$" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="bet_price" class="form-label">Bet Price</label>
+                                <input type="text" class="form-control" id="bet_price" name="bet_price"
+                                    pattern="^[-]?\d{3}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="bet_location" class="form-label">Bet Location</label>
+                                <input type="text" class="form-control" id="bet_location" name="bet_location"
+                                    placeholder="Draftkings, Fanduel, etc."
+                                    pattern="^(draftkings|Draftkings|DRAFTKINGS|fanduel|Fanduel|FANDUEL|mgm|MGM|test|Test|TEST)$"
+                                    required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="bet_profit_loss" class="form-label">Bet Profit/Loss</label>
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text">$</span>
+                                    <input type="text" class="form-control" name="bet_profitloss"
+                                        aria-label="Amount (to the nearest dollar)" pattern="[\-]?\d+(\.\d{2})?"
+                                        required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -200,6 +333,15 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
         crossorigin="anonymous"></script>
+
+    <script src="static/js/modal_form.js"></script>
+
+    <script>
+        if (window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.href);
+        }
+    </script>
+
 </body>
 
 </html>

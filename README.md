@@ -1,4 +1,4 @@
-![Header Image](images/header_image.jpg)
+![Header Image](images/header-nba.jpg)
 
 # NBA Betting
 
@@ -138,13 +138,21 @@ Python
 * Keras
 * Tensorflow
 * Scikit-Learn
+* Flask  
+
 SQL
 * Postgres
+
 AWS
 * S3
 * EC2
 * RDS
+
 Docker
+Cron/Cronitor
+HTML/CSS
+Bootstrap
+
 
 
 
