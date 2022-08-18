@@ -1,13 +1,13 @@
-import scrapy
 import pytz
 import datetime
+from scrapy import Spider
 
-from live_odds_data.items import Game
-from live_odds_data.item_loaders import GameLoader
+from items import LiveGameItem
+from item_loaders import LiveGameItemLoader
 
 
-class CoversLiveOddsSpider(scrapy.Spider):
-    name = "covers_live_odds_spider"
+class CoversLiveGameSpider(Spider):
+    name = "Covers_live_game_spider"
     allowed_domains = ["www.covers.com"]
     start_urls = ["https://www.covers.com/sport/basketball/nba/odds"]
 
@@ -34,7 +34,7 @@ class CoversLiveOddsSpider(scrapy.Spider):
         )
 
         for game_num in range(1, todays_game_count + 1):
-            loader = GameLoader(item=Game(), response=response)
+            loader = LiveGameItemLoader(item=LiveGameItem(), response=response)
             loader.add_value("date", todays_date)
             loader.add_value("league_year", todays_year)
             loader.add_xpath(

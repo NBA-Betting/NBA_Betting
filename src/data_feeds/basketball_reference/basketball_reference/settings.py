@@ -29,7 +29,7 @@ HTTPCACHE_STORAGE = "scrapy_splash.SplashAwareFSCacheStorage"
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
 
-LOG_STDOUT = True
+# LOG_STDOUT = True
 # LOG_FILE = "/tmp/scrapy_output.txt"
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)

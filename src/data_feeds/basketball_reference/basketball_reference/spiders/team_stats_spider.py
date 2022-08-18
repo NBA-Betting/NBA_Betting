@@ -37,9 +37,7 @@ class BR_StatsSpider(Spider):
     def parse(self, response):
         date = response.xpath('//span[@class="button2 index"]/text()').get()
 
-        for row in response.xpath(
-            f'//table[@id="team"]/tbody/tr[not(@class)]'
-        ):
+        for row in response.xpath('//table[@id="team"]/tbody/tr[not(@class)]'):
             loader = BR_TeamStatsItemLoader(
                 item=BR_TeamStatsItem(), selector=row
             )

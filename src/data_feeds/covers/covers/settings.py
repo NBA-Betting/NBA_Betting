@@ -1,4 +1,4 @@
-# Scrapy settings for live_odds_data project
+# Scrapy settings for covers project
 #
 # For simplicity, this file contains only settings considered important or
 # commonly used. You can find more settings consulting the documentation:
@@ -7,20 +7,14 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
-BOT_NAME = "live_odds_data"
+BOT_NAME = "covers"
 
-SPIDER_MODULES = ["live_odds_data.spiders"]
-NEWSPIDER_MODULE = "live_odds_data.spiders"
-
-# FEEDS = {
-#     "s3://nba-betting/live_betting_data/%(name)s/%(time)s.csv": {
-#         "format": "csv"
-#     }
-# }
+SPIDER_MODULES = ["covers.spiders"]
+NEWSPIDER_MODULE = "covers.spiders"
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-# USER_AGENT = 'live_odds_data (+http://www.yourdomain.com)'
+# USER_AGENT = 'covers (+http://www.yourdomain.com)'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
@@ -31,7 +25,7 @@ ROBOTSTXT_OBEY = True
 # Configure a delay for requests for the same website (default: 0)
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-# DOWNLOAD_DELAY = 3
+DOWNLOAD_DELAY = 3
 # The download delay setting will honor only one of:
 # CONCURRENT_REQUESTS_PER_DOMAIN = 16
 # CONCURRENT_REQUESTS_PER_IP = 16
@@ -51,13 +45,13 @@ ROBOTSTXT_OBEY = True
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 # SPIDER_MIDDLEWARES = {
-#    'live_odds_data.middlewares.LiveOddsDataSpiderMiddleware': 543,
+#    'covers.middlewares.CoversSpiderMiddleware': 543,
 # }
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 # DOWNLOADER_MIDDLEWARES = {
-#    'live_odds_data.middlewares.LiveOddsDataDownloaderMiddleware': 543,
+#    'covers.middlewares.CoversDownloaderMiddleware': 543,
 # }
 
 # Enable or disable extensions
@@ -69,7 +63,7 @@ ROBOTSTXT_OBEY = True
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    "live_odds_data.pipelines.LiveOddsToPostgresPipeline": 300,
+    "covers.pipelines.CoversPostgresPipeline": 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

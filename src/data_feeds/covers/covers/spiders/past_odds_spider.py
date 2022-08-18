@@ -1,11 +1,8 @@
 import re
-from collections import deque
-
-import pandas as pd
 from scrapy import Request, Spider
 
-from past_odds_data.items import Game
-from past_odds_data.item_loaders import GameLoader
+from items import PastGameItem
+from loaders import PastGameItemLoader
 
 base_url = "https://www.covers.com"
 
@@ -43,8 +40,8 @@ teams = [
 ]
 
 
-class GameSpider(Spider):
-    name = "covers_past_odds_spider"
+class CoversPastGameSpider(Spider):
+    name = "Covers_past_game_spider"
     allowed_domains = ["covers.com"]
 
     # start_urls = [
@@ -60,7 +57,7 @@ class GameSpider(Spider):
         for row in response.xpath(
             '//table[@class="table covers-CoversMatchups-Table covers-CoversResults-Table"]/tbody/tr'
         ):
-            loader = GameLoader(item=Game(), selector=row)
+            loader = PastGameItemLoader(item=PastGameItem(), selector=row)
             loader.add_xpath("game_id", "td[3]/a/@href")
             loader.add_xpath("game_url", "td[3]/a/@href")
             loader.add_xpath("date", "td[1]/text()")

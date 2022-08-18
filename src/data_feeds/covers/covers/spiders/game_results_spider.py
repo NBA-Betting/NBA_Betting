@@ -1,13 +1,13 @@
 import datetime
 import pytz
-from scrapy import Request, Spider
+from scrapy import Spider
 
-from live_game_results.items import GameItem
-from live_game_results.item_loaders import GameItemLoader
+from items import LiveGameResultsItem
+from item_loaders import LiveGameResultsItemLoader
 
 
-class CoversGameResultsSpider(Spider):
-    name = "covers_game_results_spider"
+class CoversLiveGameResultsSpider(Spider):
+    name = "Covers_live_game_results_spider"
     allowed_domains = ["https://www.covers.com/"]
 
     current_datetime = datetime.datetime.now(pytz.timezone("America/Denver"))
@@ -33,7 +33,9 @@ class CoversGameResultsSpider(Spider):
         for row in response.xpath(
             '//div[@class="cmg_matchup_game_box cmg_game_data"]'
         ):
-            loader = GameItemLoader(item=GameItem(), selector=row)
+            loader = LiveGameResultsItemLoader(
+                item=LiveGameResultsItem(), selector=row
+            )
             loader.add_value("date", date)
             loader.add_xpath("home_team", "@data-home-team-nickname-search")
             loader.add_xpath("away_team", "@data-away-team-nickname-search")

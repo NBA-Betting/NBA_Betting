@@ -1,10 +1,16 @@
+import re
+
 import datetime
 import pytz
 from scrapy.loader import ItemLoader
-from itemloaders.processors import MapCompose, Identity, TakeFirst
+from itemloaders.processors import MapCompose, TakeFirst, Identity
 
-# Grabs the year based on the day the script is run
-# which should be the same day as the game!!!!!
+# Grabs the year based on the day before the script is run
+# which should be the same day as the game.
+today = datetime.datetime.now(pytz.timezone("America/Denver"))
+yesterday = today - datetime.timedelta(5)
+yesterday_year = yesterday.strftime("%Y")
+
 game_year = datetime.datetime.now(pytz.timezone("America/Denver")).strftime(
     "%Y"
 )
@@ -44,6 +50,39 @@ team_abrv_map = {
     "TOR": "TOR",
     "UTA": "UTA",
     "WAS": "WAS",
+    "boston-celtics": "BOS",
+    "brooklyn-nets": "BKN",
+    "new-jersey-nets": "BKN",
+    "toronto-raptors": "TOR",
+    "new-york-knicks": "NYK",
+    "philadelphia-76ers": "PHI",
+    "chicago-bulls": "CHI",
+    "cleveland-cavaliers": "CLE",
+    "detroit-pistons": "DET",
+    "indiana-pacers": "IND",
+    "milwaukee-bucks": "MIL",
+    "atlanta-hawks": "ATL",
+    "charlotte-hornets": "CHA",
+    "charlotte-bobcats": "CHA",
+    "miami-heat": "MIA",
+    "orlando-magic": "ORL",
+    "washington-wizards": "WAS",
+    "denver-nuggets": "DEN",
+    "minnesota-timberwolves": "MIN",
+    "oklahoma-city-thunder": "OKC",
+    "portland-trail-blazers": "POR",
+    "utah-jazz": "UTA",
+    "golden-state-warriors": "GSW",
+    "phoenix-suns": "PHX",
+    "sacramento-kings": "SAC",
+    "los-angeles-clippers": "LAC",
+    "los-angeles-lakers": "LAL",
+    "dallas-mavericks": "DAL",
+    "houston-rockets": "HOU",
+    "memphis-grizzlies": "MEM",
+    "new-orleans-pelicans": "NOP",
+    "new-orleans-hornets": "NOP",
+    "san-antonio-spurs": "SAS",
 }
 
 
@@ -57,7 +96,26 @@ def get_league_year(game_year, game_month):
     return f"{start_year}-{end_year}"
 
 
-class GameLoader(ItemLoader):
+def get_score(score, group):
+    match = re.search(r"(\d+)-(\d+)", score)
+    return match.group(group)
+
+
+class LiveGameResultsItemLoader(ItemLoader):
+    default_input_processor = MapCompose(str.strip)
+    default_output_processor = TakeFirst()
+
+    date_in = MapCompose(
+        lambda x: x.split(".")[1],
+        str.strip,
+        lambda x: x + " " + yesterday_year,
+        lambda x: datetime.datetime.strptime(x, "%b %d %Y").strftime("%Y%m%d"),
+    )
+    home_score_in = MapCompose(int)
+    away_score_in = MapCompose(int)
+
+
+class LiveGameItemLoader(ItemLoader):
     default_input_processor = Identity()
     default_output_processor = TakeFirst()
 
@@ -101,3 +159,17 @@ class GameLoader(ItemLoader):
     covers_home_consenses_in = MapCompose(
         lambda x: x.replace("%", ""), str.strip, int, lambda x: x / 100
     )
+
+
+class PastGameItemLoader(ItemLoader):
+    default_input_processor = MapCompose(str.strip)
+    default_output_processor = TakeFirst()
+
+    team_in = MapCompose(lambda x: team_abrv_map[x])
+    game_id_in = MapCompose(lambda x: re.sub("[^0-9]", "", x), int)
+    home_in = MapCompose(lambda x: "@" not in x)
+    opponent_in = MapCompose(lambda x: x.replace("@", ""), str.strip)
+    result_in = MapCompose(str.strip, str.split)
+    score_in = MapCompose(lambda x: get_score(x, 1), int)
+    opponent_score_in = MapCompose(lambda x: get_score(x, 2), int)
+    spread_in = MapCompose(str.strip, lambda x: 0 if x == "PK" else x, float)
