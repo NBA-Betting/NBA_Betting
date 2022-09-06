@@ -1,61 +1,85 @@
 # NBA Betting Outline and Action Plan
 
-# RESEARCH LIST
-* NBA analytic sources (preferably with historic data)
-
-## Inbound Data
-* 
-## ETL
-*  
-## Feature Creation
-* 
-## Modeling
-* 
-## Bet Management
-* Complete functions and system/process.
-* Debug/Streamline/Rerun
-## Deployment
-* 
-## Readme and Cleanup
-* Quality over Quantity
 # NEXT STEPS TODO
 ## Inbound Data
-* Add sources
+* Daily Updating
 ## ETL
-
+* Daily Updating
 ## Feature Creation
-* Add Features
+* Daily Updating
 ## Modeling
-* Play around with options and optimize.
+* DL Exploration
 ## Bet Management
-
+* Complete functions and system/process.
+* Debug/Streamline/Rerun 
 ## Deployment
-* Deploy Web App
-* Dashboard
+* Deploy Web App on AWS
+* Web App Dashboard with Plotly Dash
+* Convert Readme to Web App About Page
+## Readme and Cleanup
+* Quality over Quantity
 
-### Feature Ideas
-* Comparisons with individual game and team, league, timeframe averages.
-* How to introduce the time of the season into ML training?
-    * Currently only including the end of season 2-digit year. 
-* How to introduce the teams involved as a feature?
-    * Currently using team names encoded to int.
-* ELO, RAPTOR, DARKO, PIPM, RAPM, EPM
-* Feature Creation:
-    * Pull and Utilize Features (No adjustments necessary)
-    * Engineered Features using typical Data Science feature engineering techniques (interaction, ratio, poly, trig).
-    * Manually engineered features. Where can I use my NBA knowledge to gain an advantage?
+# Adding Data, Features
+* Can I get or create historic data? If so incorporate into ML/DL models. Labeled "Historic" Below.
+* If I can't get historic data I need to recreate/create metrics with a way to transfer them to a predicted line between two teams on a given date. These will be aggregated with ML/DL model results.
 
-### Other Considerations
-* Need to determine a value for the difference in Home Margin, Predicted Home Margin, and Home Line
-    * Dollar value or similar.
-    * May not be linear like the differences are.     
-    * Injuries, Rest
-    * Personal Opinion
-    * Schedule Effects
-    * Home, Away Advantages. Altitude Effects for Denver and Utah
+## All in One Team and/or Player Advanced Stats
+* RAPTOR - FiveThirtyEight
+    * https://fivethirtyeight.com/features/introducing-raptor-our-new-metric-for-the-modern-nba/
+* DARKO - The Athletic
+    * https://theathletic.com/2613015/2021/05/26/introducing-darko-an-nba-playoffs-game-projection-and-betting-guide/
+    * https://apanalytics.shinyapps.io/DARKO/
+* LEBRON - BBall Index
+    * https://www.bball-index.com/lebron-database/
+* EPM - Dunks and Threes
+    * https://dunksandthrees.com/epm
 
-### Bankroll Management
+## Long-Run Team Quality and Opponent Team Quality
+* General Traditional and Advanced Stats - Done
+* League Adjusted - Done
+    * Plus or Minus League Average
+    * Standard Deviations from League Average
+* League Rankings - Done
+* Elo Ratings
+    * Historic --> ML/DL
+    * FiveThirtyEight
+        * https://fivethirtyeight.com/features/how-we-calculate-nba-elo-ratings/
+        * https://projects.fivethirtyeight.com/complete-history-of-the-nba/#warriors
+* Power Rankings
+    * Decision Rules --> Post ML/DL
+    * Combination of various power rankings weighted by age.
+
+
+## Short-Run Team Performance
+* Last 3, 5, 10, 20, X Days or Games - Results and Stats - Mainstream and Advanced
+* Win/Loss Streaks
+
+## Injuries, Rest, Fatigue
+Who is playing, who is not? Quantify value of absences. Estimated Performance % for Players - Injury % and Fatigue %
+* Schedule Effects - Back2Backs, 3in4
+    * Decision Rules --> Post ML/DL
+
+## Game Location
+* Home vs. Road Adjustment - Baked Into ML/DL
+* Altitude Effects for Denver and Utah - Partially baked Into ML/DL
+    * Game Altitude(Feet) 
+
+## Seasonal Effects
+* Day of Season Feature - Done
+* Late Season Tanking
+* Early Season Small Sample Size Adjustment
+    * Weight rows in modeling
+
+## Other
+* Ref Assignments
+    * Decision Rules --> Post ML/DL
+* Against the Spread Record
+    * Decision Rules --> Post ML/DL
+
+# Bankroll Management
 * Bet in units instead of a fixed dollar amount
 * 1 unit = 1% of current bankroll
 * Each bet can have 1 to 5 units
 * Aim for 2 to 10 units per day
+
+

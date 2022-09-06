@@ -1,4 +1,6 @@
-![Header Image](images/header-nba.jpg)
+<!-- ![Header Image](images/header-nba.jpg) -->
+
+<img src='images/header-nba.jpg' alt='NBA' width=1400 height=400/>
 
 # NBA Betting
 
@@ -8,8 +10,7 @@
 * [Introduction](#Introduction)
     * [Motivation](#Motivation)
     * [Goals](#Goals)
-* [Data Acquisition](#Data-Acquisition)
-* [Data Storage and ETL](#Data-Storage-and-ETL)
+* [Data Engineering](#Data-Engineering)
 * [Exploratory Data Analysis](#Exploratory-Data-Analysis)
 * [Feature Engineering](#Feature-Engineering)
 * [Data Modeling](#Data-Modeling)
@@ -41,17 +42,22 @@ The main goal of this project is create an automated system that collects data a
 
 <br/><br/>
 
-# Data Acquisition
+# Data Engineering
 
-Web Scraping - Scrapy, Splash, Selenium, BeautifulSoup, Chrome Dev Tools (Inspect)
-API Calls - 
+* Needed historic data for models. Data points as of a date in the past. More difficult to locate.
+* Combined historic data with current data via daily cron jobs.
 
-<br/><br/>
+## Data Acquisition and Storage
 
-# Data Storage and ETL
+<!-- ![Date Acquisition and Storage](images/data_engineering_flowchart_1.png) -->
 
-Image of Diagram showing data sources and how they connect.
-Combining both historic and live data from various sources into a single clean and verified database.
+<img src='images/data_engineering_flowchart_1.png' alt='Data Acquisition and Storage' width=1200 height=600/>
+
+## ETL
+
+<!-- ![ETL](images/data_engineering_flowchart_2.png) -->
+
+<img src='images/data_engineering_flowchart_2.png' alt='ETL' width=1200 height=500/>
 
 <br/><br/>
 
@@ -68,10 +74,11 @@ Interesting Questions:
 * Team Quality vs. Against the Spread results. Are good, average, or bad teams more likely to over-perform the vegas spread?
 * Actual Team Record vs. Expected Record, Which is a better predictor of vegas lines and actual results?
 
-### Average Point Spread Error Per Game Over Time
+## Average Point Spread Error Per Game Over Time
 
-![Average Point Spread Error Per Game Over Time](images/average_point_spread_error_per_game_over_time.png)
+<!-- ![Average Point Spread Error Per Game Over Time](images/average_point_spread_error_per_game_over_time.png) -->
 
+<img src='images/average_point_spread_error_per_game_over_time.png' alt='Average Point Spread Error Per Game Over Time' width=1200 height=700/>
 
 <br/><br/>
 
@@ -120,7 +127,8 @@ Jeff Johannsen - [LinkedIn](https://www.linkedin.com/in/jeffjohannsen/) - jeffjo
 ## Data
 
 * [Covers](https://www.covers.com/) - Main source of odds data both live and historic.
-* [Basketball Reference](https://www.basketball-reference.com/) - Main source of NBA data.
+* [NBA Stats](https://www.nba.com/stats) - Main source of NBA data.
+* [Basketball Reference](https://www.basketball-reference.com/)
 
 ## Images
 
@@ -132,6 +140,7 @@ Jeff Johannsen - [LinkedIn](https://www.linkedin.com/in/jeffjohannsen/) - jeffjo
 
 Python
 * Scrapy
+* Splash
 * Pandas
 * SQLAlchemy
 * PyCaret
@@ -152,6 +161,7 @@ Docker
 Cron/Cronitor
 HTML/CSS
 Bootstrap
+Chrome Dev Tools
 
 
 
