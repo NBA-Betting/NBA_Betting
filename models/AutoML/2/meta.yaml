@@ -1,0 +1,4 @@
+artifact_location: file:///home/jeff/Documents/Data_Science_Projects/NBA_Betting/models/AutoML/2
+experiment_id: '2'
+lifecycle_stage: active
+name: NBA_Betting_CLS_vla_only

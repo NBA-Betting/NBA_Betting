@@ -1,0 +1,15 @@
+artifact_uri: file:///home/jeff/Documents/Data_Science_Projects/NBA_Betting/models/AutoML/1/c3cf49879237432e991c725e4a5c60ad/artifacts
+end_time: 1662449858130
+entry_point_name: ''
+experiment_id: '1'
+lifecycle_stage: active
+name: ''
+run_id: c3cf49879237432e991c725e4a5c60ad
+run_uuid: c3cf49879237432e991c725e4a5c60ad
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1662449858074
+status: 3
+tags: []
+user_id: jeff
