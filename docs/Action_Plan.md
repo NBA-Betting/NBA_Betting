@@ -2,17 +2,17 @@
 
 # NEXT STEPS TODO
 ## Inbound Data
-* Daily Updating
+
 ## ETL
-* Daily Updating
+
 ## Feature Creation
-* Daily Updating
+
 ## Modeling
 * DL Exploration
 ## Bet Management
-* Complete functions and system/process.
-* Debug/Streamline/Rerun 
+
 ## Deployment
+* Rework Daily Updating
 * Deploy Web App on AWS
 * Web App Dashboard with Plotly Dash
 * Convert Readme to Web App About Page
