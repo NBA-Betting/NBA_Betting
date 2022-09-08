@@ -247,7 +247,7 @@ if __name__ == "__main__":
         model_ready_df = feature_pipeline.wdf
         print(model_ready_df.info(verbose=True, show_counts=True))
 
-        # model_ready_df.to_sql("model_ready",
-        #                       connection,
-        #                       index=False,
-        #                       if_exists="replace")
+        model_ready_df.to_sql("nba_model_ready",
+                              connection,
+                              index=False,
+                              if_exists="replace")

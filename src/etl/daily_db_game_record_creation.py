@@ -18,182 +18,113 @@ def create_record_batch(date, engine, team_map):
     """
     with engine.connect() as connection:
         # Getting correct date format for querying db tables.
-        prev_date = (
-            datetime.datetime.strptime(date, "%Y%m%d")
-            - datetime.timedelta(days=1)
-        ).strftime("%Y%m%d")
+        prev_date = (datetime.datetime.strptime(date, "%Y%m%d") -
+                     datetime.timedelta(days=1)).strftime("%Y%m%d")
 
         # Loading relevent data from RDS.
         cd_covers_odds = pd.read_sql(
-            f"SELECT * FROM dfc_covers_odds WHERE date = '{date}'", connection
-        )
-        pd_BR_standings = pd.read_sql(
-            f"SELECT * FROM dfc_br_standings WHERE date = '{prev_date}'",
-            connection,
-        )
-        pd_BR_team_stats = pd.read_sql(
-            f"SELECT * FROM dfc_br_team_stats WHERE date = '{prev_date}'",
-            connection,
-        )
-        pd_BR_opponent_stats = pd.read_sql(
-            f"SELECT * FROM dfc_br_opponent_stats WHERE date = '{prev_date}'",
-            connection,
-        )
+            f"SELECT * FROM dfc_covers_odds WHERE date = '{date}'", connection)
+        traditional = pd.read_sql(
+            f"SELECT * FROM traditional WHERE date = '{prev_date}'",
+            connection)
+        advanced = pd.read_sql(
+            f"SELECT * FROM advanced WHERE date = '{prev_date}'", connection)
+        four_factors = pd.read_sql(
+            f"SELECT * FROM four_factors WHERE date = '{prev_date}'",
+            connection)
+        misc = pd.read_sql(f"SELECT * FROM misc WHERE date = '{prev_date}'",
+                           connection)
+        scoring = pd.read_sql(
+            f"SELECT * FROM scoring WHERE date = '{prev_date}'", connection)
+        opponent = pd.read_sql(
+            f"SELECT * FROM opponent WHERE date = '{prev_date}'", connection)
+        speed_distance = pd.read_sql(
+            f"SELECT * FROM speed_distance WHERE date = '{prev_date}'",
+            connection)
+        shooting = pd.read_sql(
+            f"SELECT * FROM shooting WHERE date = '{prev_date}'", connection)
+        opponent_shooting = pd.read_sql(
+            f"SELECT * FROM opponent_shooting WHERE date = '{prev_date}'",
+            connection)
+        hustle = pd.read_sql(
+            f"SELECT * FROM hustle WHERE date = '{prev_date}'", connection)
 
         # Standardize team names using team map argument.
-        cd_covers_odds["home_teamname"] = cd_covers_odds[
-            "home_team_short_name"
-        ].map(team_map)
-        cd_covers_odds["away_teamname"] = cd_covers_odds[
-            "away_team_short_name"
-        ].map(team_map)
-        pd_BR_standings["teamname"] = pd_BR_standings["team"].map(team_map)
-        pd_BR_team_stats["teamname"] = pd_BR_team_stats["team"].map(team_map)
-        pd_BR_opponent_stats["teamname"] = pd_BR_opponent_stats["team"].map(
-            team_map
-        )
+        cd_covers_odds["team"] = cd_covers_odds["home_team_short_name"].map(
+            team_map)
+        cd_covers_odds["opponent"] = cd_covers_odds[
+            "away_team_short_name"].map(team_map)
+
+        traditional['team'] = traditional['team'].map(team_map)
+        advanced['team'] = advanced['team'].map(team_map)
+        four_factors['team'] = four_factors['team'].map(team_map)
+        misc['team'] = misc['team'].map(team_map)
+        scoring['team'] = scoring['team'].map(team_map)
+        opponent['team'] = opponent['team'].map(team_map)
+        speed_distance['team'] = speed_distance['team'].map(team_map)
+        shooting['team'] = shooting['team'].map(team_map)
+        opponent_shooting['team'] = opponent_shooting['team'].map(team_map)
+        hustle['team'] = hustle['team'].map(team_map)
 
         # Combining data into one dataframe.
         full_dataset = cd_covers_odds.merge(
-            pd_BR_standings,
+            traditional,
             how="left",
-            left_on=["home_teamname"],
-            right_on=["teamname"],
-            suffixes=(None, "_sta"),
+            left_on=["team"],
+            right_on=["team"],
+            suffixes=(None, "_nba"),
             validate="1:m",
         )
-        full_dataset = full_dataset.merge(
-            pd_BR_standings,
-            how="left",
-            left_on=["away_teamname"],
-            right_on=["teamname"],
-            suffixes=(None, "_osta"),
-            validate="1:m",
-        )
-        full_dataset = full_dataset.merge(
-            pd_BR_team_stats,
-            how="left",
-            left_on=["home_teamname"],
-            right_on=["teamname"],
-            suffixes=(None, "_ts"),
-            validate="1:m",
-        )
-        full_dataset = full_dataset.merge(
-            pd_BR_opponent_stats,
-            how="left",
-            left_on=["away_teamname"],
-            right_on=["teamname"],
-            suffixes=(None, "_os"),
-            validate="1:m",
-        )
+        for stat_group in [
+                advanced, four_factors, misc, scoring, opponent,
+                speed_distance, shooting, opponent_shooting, hustle
+        ]:
+            full_dataset = full_dataset.merge(stat_group,
+                                              how='left',
+                                              left_on=['team'],
+                                              right_on=['team'],
+                                              suffixes=(None, '_nba'),
+                                              validate='1:m')
+            full_dataset = full_dataset.merge(stat_group,
+                                              how='left',
+                                              left_on=['opponent'],
+                                              right_on=['team'],
+                                              suffixes=(None, '_opp'),
+                                              validate='1:m')
 
         # Unique Record ID
-        full_dataset["id"] = (
-            full_dataset["date"]
-            + full_dataset["home_teamname"]
-            + full_dataset["away_teamname"]
-        )
+        full_dataset["game_id"] = (full_dataset["date"] +
+                                   full_dataset["team"] +
+                                   full_dataset["opponent"])
 
         # Datetime Fields
-        full_dataset["datetime_str"] = (
-            full_dataset["date"] + " " + full_dataset["time"]
-        )
+        full_dataset["datetime_str"] = (full_dataset["date"] + " " +
+                                        full_dataset["time"])
         full_dataset["datetime"] = full_dataset["datetime_str"].apply(
-            lambda x: datetime.datetime.strptime(x, "%Y%m%d %I:%M %p")
-        )
-        full_dataset["pred_datetime"] = full_dataset["date_sta"].apply(
-            lambda x: datetime.datetime.strptime(x, "%Y%m%d")
-        )
+            lambda x: datetime.datetime.strptime(x, "%Y%m%d %I:%M %p"))
+        full_dataset['pred_date'] = full_dataset['date'] - pd.DateOffset(1)
 
         # Cleanup - Rename, Remove, and Reorder
-        columns_to_keep = [
-            "id",
-            "datetime",
-            "league_year",
-            "home_teamname",
-            "away_teamname",
-            "link",
-            "open_line_home",
-            "open_line_away",
-            "fanduel_line_home",
-            "fanduel_line_price_home",
-            "fanduel_line_away",
-            "fanduel_line_price_away",
-            "draftkings_line_home",
-            "draftkings_line_price_home",
-            "draftkings_line_away",
-            "draftkings_line_price_away",
-            "covers_home_consenses",
-            "covers_away_consenses",
-            "pred_datetime",
-            "wins",
-            "losses",
-            "win_perc",
-            "expected_wins",
-            "expected_losses",
-            "points_scored_per_game",
-            "points_allowed_per_game",
-            "wins_osta",
-            "losses_osta",
-            "win_perc_osta",
-            "expected_wins_osta",
-            "expected_losses_osta",
-            "points_scored_per_game_osta",
-            "points_allowed_per_game_osta",
-            "g",
-            "mp",
-            "pts",
-            "ast",
-            "trb",
-            "blk",
-            "stl",
-            "tov",
-            "pf",
-            "drb",
-            "orb",
-            "fg",
-            "fga",
-            "fg_pct",
-            "fg2",
-            "fg2a",
-            "fg2_pct",
-            "fg3",
-            "fg3a",
-            "fg3_pct",
-            "ft",
-            "fta",
-            "ft_pct",
-            "opp_g",
-            "opp_mp",
-            "opp_pts",
-            "opp_ast",
-            "opp_trb",
-            "opp_blk",
-            "opp_stl",
-            "opp_tov",
-            "opp_pf",
-            "opp_drb",
-            "opp_orb",
-            "opp_fg",
-            "opp_fga",
-            "opp_fg_pct",
-            "opp_fg2",
-            "opp_fg2a",
-            "opp_fg2_pct",
-            "opp_fg3",
-            "opp_fg3a",
-            "opp_fg3_pct",
-            "opp_ft",
-            "opp_fta",
-            "opp_ft_pct",
+        main_features = [
+            "game_id", "game_date", "league_year", "team", "opponent", "link",
+            "open_line_home", "open_line_away", "fanduel_line_home",
+            "fanduel_line_price_home", "fanduel_line_away",
+            "fanduel_line_price_away", "draftkings_line_home",
+            "draftkings_line_price_home", "draftkings_line_away",
+            "draftkings_line_price_away", "covers_home_consenses",
+            "covers_away_consenses", "pred_date"
         ]
-        full_dataset = full_dataset[columns_to_keep]
+
+        all_features = main_features + [
+            i for i in list(full_dataset) if i not in main_features
+        ]
+        full_dataset = full_dataset[all_features]
+
         column_rename_dict = {
-            "id": "game_id",
             "datetime": "game_date",
             "league_year": "league_year",
-            "home_teamname": "home_team",
-            "away_teamname": "away_team",
+            "team": "home_team",
+            "opponent": "away_team",
             "link": "covers_game_url",
             "open_line_home": "open_line_home",
             "open_line_away": "open_line_away",
@@ -207,73 +138,12 @@ def create_record_batch(date, engine, team_map):
             "draftkings_line_price_away": "dk_line_price_away",
             "covers_home_consenses": "covers_consenses_home",
             "covers_away_consenses": "covers_consenses_away",
-            "pred_datetime": "pred_date",
-            "wins": "wins",
-            "losses": "losses",
-            "win_perc": "win_pct",
-            "expected_wins": "expected_wins",
-            "expected_losses": "expected_losses",
-            "points_scored_per_game": "home_ppg",
-            "points_allowed_per_game": "home_papg",
-            "wins_osta": "away_wins",
-            "losses_osta": "away_losses",
-            "win_perc_osta": "away_win_pct",
-            "expected_wins_osta": "away_expected_wins",
-            "expected_losses_osta": "away_expected_losses",
-            "points_scored_per_game_osta": "away_ppg",
-            "points_allowed_per_game_osta": "away_papg",
-            "g": "g",
-            "mp": "mp",
-            "pts": "pts",
-            "ast": "ast",
-            "trb": "trb",
-            "blk": "blk",
-            "stl": "stl",
-            "tov": "tov",
-            "pf": "pf",
-            "drb": "drb",
-            "orb": "orb",
-            "fg": "fg",
-            "fga": "fga",
-            "fg_pct": "fg_pct",
-            "fg2": "fg2",
-            "fg2a": "fg2a",
-            "fg2_pct": "fg2_pct",
-            "fg3": "fg3",
-            "fg3a": "fg3a",
-            "fg3_pct": "fg3_pct",
-            "ft": "ft",
-            "fta": "fta",
-            "ft_pct": "ft_pct",
-            "opp_g": "away_g",
-            "opp_mp": "away_mp",
-            "opp_pts": "away_pts",
-            "opp_ast": "away_ast",
-            "opp_trb": "away_trb",
-            "opp_blk": "away_blk",
-            "opp_stl": "away_stl",
-            "opp_tov": "away_tov",
-            "opp_pf": "away_pf",
-            "opp_drb": "away_drb",
-            "opp_orb": "away_orb",
-            "opp_fg": "away_fg",
-            "opp_fga": "away_fga",
-            "opp_fg_pct": "away_fg_pct",
-            "opp_fg2": "away_fg2",
-            "opp_fg2a": "away_fg2a",
-            "opp_fg2_pct": "away_fg2_pct",
-            "opp_fg3": "away_fg3",
-            "opp_fg3a": "away_fg3a",
-            "opp_fg3_pct": "away_fg3_pct",
-            "opp_ft": "away_ft",
-            "opp_fta": "away_fta",
-            "opp_ft_pct": "away_fta_pct",
         }
         full_dataset = full_dataset.rename(columns=column_rename_dict)
 
         # Save to RDS
         full_dataset.to_sql(
-            name="combined_data_inbound",
+            name="combined_nba_covers",
             con=connection,
             index=False,
             if_exists="append",
@@ -287,8 +157,7 @@ if __name__ == "__main__":
     database = "nba_betting"
 
     engine = create_engine(
-        f"postgresql+psycopg2://{username}:{password}@{endpoint}/{database}"
-    )
+        f"postgresql+psycopg2://{username}:{password}@{endpoint}/{database}")
 
     team_full_name_map = {
         "Washington Wizards": "WAS",
@@ -400,11 +269,9 @@ if __name__ == "__main__":
         "Wizards": "WAS",
     }
 
-    team_map = dict(
-        team_full_name_map.items()
-        | team_abrv_map.items()
-        | team_short_name_map.items()
-    )
+    team_map = dict(team_full_name_map.items()
+                    | team_abrv_map.items()
+                    | team_short_name_map.items())
 
     todays_datetime = datetime.datetime.now(pytz.timezone("America/Denver"))
     yesterdays_datetime = todays_datetime - datetime.timedelta(days=1)

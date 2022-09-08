@@ -24,18 +24,15 @@ def update_previous_days_records(date, engine, team_map):
 
         # Standardize team names using team map argument.
         pd_covers_game_results["home_teamname"] = pd_covers_game_results[
-            "home_team"
-        ].map(team_map)
+            "home_team"].map(team_map)
         pd_covers_game_results["away_teamname"] = pd_covers_game_results[
-            "away_team"
-        ].map(team_map)
+            "away_team"].map(team_map)
 
         # Unique Record ID
         pd_covers_game_results["game_id"] = (
-            pd_covers_game_results["date"]
-            + pd_covers_game_results["home_teamname"]
-            + pd_covers_game_results["away_teamname"]
-        )
+            pd_covers_game_results["date"] +
+            pd_covers_game_results["home_teamname"] +
+            pd_covers_game_results["away_teamname"])
 
         # Save to RDS
         record_list_of_dicts = pd_covers_game_results.to_dict(orient="records")
@@ -45,7 +42,7 @@ def update_previous_days_records(date, engine, team_map):
             away_score = game_result["away_score"]
 
             stmt = f"""
-                UPDATE combined_data_inbound
+                UPDATE combined_nba_covers
                 SET home_score = {home_score},
                     away_score = {away_score}
                 WHERE game_id = '{game_id}'
@@ -62,8 +59,7 @@ if __name__ == "__main__":
     database = "nba_betting"
 
     engine = create_engine(
-        f"postgresql+psycopg2://{username}:{password}@{endpoint}/{database}"
-    )
+        f"postgresql+psycopg2://{username}:{password}@{endpoint}/{database}")
 
     team_full_name_map = {
         "Washington Wizards": "WAS",
@@ -175,11 +171,9 @@ if __name__ == "__main__":
         "Wizards": "WAS",
     }
 
-    team_map = dict(
-        team_full_name_map.items()
-        | team_abrv_map.items()
-        | team_short_name_map.items()
-    )
+    team_map = dict(team_full_name_map.items()
+                    | team_abrv_map.items()
+                    | team_short_name_map.items())
 
     todays_datetime = datetime.datetime.now(pytz.timezone("America/Denver"))
     yesterdays_datetime = todays_datetime - datetime.timedelta(days=1)

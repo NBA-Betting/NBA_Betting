@@ -122,8 +122,7 @@ class Bet:
             )
             active_game_id_input = input("Enter game id of game to bet: ")
             pattern = re.compile(
-                "^(\d{4})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])([A-Z]{6})$"
-            )
+                "^(\d{4})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])([A-Z]{6})$")
             if pattern.match(active_game_id_input):
                 self.game_id = active_game_id_input
                 break
@@ -140,9 +139,9 @@ class Bet:
             game_record_query = (
                 f"SELECT * FROM game_records WHERE game_id = '{self.game_id}';"
             )
-            self.game_record = pd.read_sql(
-                game_record_query, connection, parse_dates=["date"]
-            )
+            self.game_record = pd.read_sql(game_record_query,
+                                           connection,
+                                           parse_dates=["date"])
             print(self.game_record)
         else:
             print(f"No records available for game_id {self.game_id}")
@@ -167,8 +166,7 @@ class Bet:
 
             self.bet_record = pd.read_sql(stmt, connection)
             self.bet_datetime = self.bet_record["bet_datetime"][0].strftime(
-                "%Y-%m-%d %H:%M:%S"
-            )
+                "%Y-%m-%d %H:%M:%S")
             self.bet_outcome = self.bet_record["bet_outcome"]
             self.bet_direction = self.bet_record["bet_direction"]
             self.bet_amount = self.bet_record["bet_amount"]
@@ -213,8 +211,7 @@ class Bet:
 
     def create_bet_record(self):
         self.bet_datetime = datetime.datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+            "%Y-%m-%d %H:%M:%S")
 
         while True:
             print(
@@ -358,24 +355,21 @@ class Bet:
                 self.bet_profit_loss = float(pf_input)
                 break
 
-        new_bet_record = pd.Series(
-            {
-                "bet_datetime": self.bet_datetime,
-                "bet_location": self.bet_location,
-                "bet_line": self.bet_line,
-                "bet_direction": self.bet_direction,
-                "bet_amount": self.bet_amount,
-                "bet_price": self.bet_price,
-                "bet_profit_loss": self.bet_profit_loss,
-                "bet_status": self.bet_status,
-                "bet_outcome": self.bet_outcome,
-            }
-        )
+        new_bet_record = pd.Series({
+            "bet_datetime": self.bet_datetime,
+            "bet_location": self.bet_location,
+            "bet_line": self.bet_line,
+            "bet_direction": self.bet_direction,
+            "bet_amount": self.bet_amount,
+            "bet_price": self.bet_price,
+            "bet_profit_loss": self.bet_profit_loss,
+            "bet_status": self.bet_status,
+            "bet_outcome": self.bet_outcome,
+        })
         print("\n")
         print(new_bet_record)
         is_confirm_new_record = input(
-            "Create bet record with above details? Y/N: "
-        )
+            "Create bet record with above details? Y/N: ")
         if is_confirm_new_record in ["Y", "y"]:
             self.bet_record = new_bet_record
             self.create_bet_record_save()
@@ -389,8 +383,7 @@ class Bet:
         do_update_datetime = input("Update bet datetime? Y/N: ")
         if do_update_datetime in ["Y", "y"]:
             new_bet_datetime = datetime.datetime.now().strftime(
-                "%Y-%m-%d %H:%M:%S"
-            )
+                "%Y-%m-%d %H:%M:%S")
         else:
             new_bet_datetime = self.bet_datetime
 
@@ -536,27 +529,24 @@ class Bet:
                 new_bet_profit_loss = float(pf_input)
                 break
 
-        new_bet_record = pd.Series(
-            {
-                "bet_datetime": new_bet_datetime,
-                "bet_location": new_bet_location,
-                "bet_line": new_bet_line,
-                "bet_direction": new_bet_direction,
-                "bet_amount": new_bet_amount,
-                "bet_price": new_bet_price,
-                "bet_profit_loss": new_bet_profit_loss,
-                "bet_status": new_bet_status,
-                "bet_outcome": new_bet_outcome,
-            }
-        )
+        new_bet_record = pd.Series({
+            "bet_datetime": new_bet_datetime,
+            "bet_location": new_bet_location,
+            "bet_line": new_bet_line,
+            "bet_direction": new_bet_direction,
+            "bet_amount": new_bet_amount,
+            "bet_price": new_bet_price,
+            "bet_profit_loss": new_bet_profit_loss,
+            "bet_status": new_bet_status,
+            "bet_outcome": new_bet_outcome,
+        })
 
         diff_bet_profit_loss = new_bet_profit_loss - self.bet_profit_loss
 
         print("\n")
         print(new_bet_record)
         is_confirm_new_record = input(
-            "Update bet record with above details? Y/N: "
-        )
+            "Update bet record with above details? Y/N: ")
         if is_confirm_new_record in ["Y", "y"]:
             self.bet_record = new_bet_record
             self.bet_datetime = new_bet_datetime
@@ -634,14 +624,12 @@ if __name__ == "__main__":
     port = "5432"
 
     engine = create_engine(
-        f"postgresql+psycopg2://{username}:{password}@{endpoint}/{database}"
-    )
+        f"postgresql+psycopg2://{username}:{password}@{endpoint}/{database}")
 
     with engine.connect() as connection:
         show_game_records(connection)
         while True:
             active_bet = Bet()
-
 
 # Script to create original table in psql command line.
 """CREATE TABLE bets (
