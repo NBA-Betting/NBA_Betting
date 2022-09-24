@@ -17,26 +17,29 @@
 
 # Introduction
 
-## Motivation
-
-Sports Stats - MLB, Sports Game Simulations, Personal Sports League Record Keeping (Papers from Childhood)
-NBA - Steph Curry and 2015-2016 Warriors, Why I think NBA is the best league in sports
-Investing - Sports Betting as an investment??
-
 ## Goal
 
-The main goal of this project is create an automated system that collects data about NBA games and predicts point spreads at a level that is consistently profitable.
+The goal of this project is to create a profitable system for betting on NBA basketball games by leveraging data science and machine learning.
+
+## Motivation
+
+NBA betting sits at an intersection of my interests, knowledge, skills, and goals which makes it a project that is both beneficial and exciting for me. A lucky combination!
+* NBA - Huge fan of professional basketball. Especially since 2015. Main focus is on the analytical and financial aspects of the league.
+* Data Science - Past Education and Current Career Focus. 
+* Sports Stats - Lifelong interest starting with baseball and moving into other sports.
+* Investing - Education in Finance - Sportsbetting as an investment option.
 
 ## Plan
 
-How I plan on achieving the goal. Action Plan Data Info
+### How to predict a NBA game result?
+|             |             |             |
+| ----------- | ----------- | ----------- |
+|All in One Team and Player Advanced Stats<ul><li>RAPTOR - FiveThirtyEight</li><li>DARKO - The Athletic</li><li>LEBRON - BBall Index</li><li>EPM - Dunks and Threes</li></ul>|Long-Run Team Quality and Opponent Quality<ul><li>Traditional Box Score Stats</li><li>Advanced Stats</li><li>Elo Ratings</li><li>Power Rankings</li></ul>|Recent Team Performance<ul><li>Last 3, 5, 10, 20 Days</li><li>Game Results</li><li>Traditional Stats</li><li>Advanced Stats</li><ul>|
+|Injuries, Rest, Fatigue<ul><li>Estimated Performance % for Players - Injury % and Fatigue %</li><li>Schedule Effects - Back2Backs, 3 Games in 4 Nights</li></ul>|Game Location<ul><li>Home vs. Road Adjustment</li><li>Altitude Effects for Denver and Utah</li></ul>|Seasonal Effects<ul><li>Tanking for Draft Position</li><li>Playoff Seed Positioning</li></ul>|
 
 <br/><br/>
 
 # Data Engineering
-
-* Needed historic data for models. Data points as of a date in the past. More difficult to locate.
-* Combined historic data with current data via daily cron jobs.
 
 ## Data Acquisition and Storage
 
@@ -50,20 +53,11 @@ How I plan on achieving the goal. Action Plan Data Info
 
 # Exploratory Data Analysis
 
-Dataprep.eda for AutoEDA
+## Average Vegas Point Spread Error Per Game Over Time
 
-Interesting Questions:
-* Vegas Point Spread vs. Actual Game Spread over time. How has Vegas improved at predicting?
-* Biggest Outliers Vegas vs. Actual
-* Home vs. Road over time
-* Home/Road against the spread over time
-* How much is being at home worth over time, Both vegas lines and actual results
-* Team Quality vs. Against the Spread results. Are good, average, or bad teams more likely to over-perform the vegas spread?
-* Actual Team Record vs. Expected Record, Which is a better predictor of vegas lines and actual results?
+There is a possibility for improvement over the vegas lines for NBA games. The average miss for the vegas line vs the actual game result is over 9 points since 2006!
 
-## Average Point Spread Error Per Game Over Time
-
-<img src='images/average_point_spread_error_per_game_over_time.png' alt='Average Point Spread Error Per Game Over Time' width=1200 height=700/>
+<img src='images/average_point_spread_error_per_game_over_time.png' alt='Average Point Spread Error Per Game Over Time' width=1200 height=600/>
 
 <br/><br/>
 
@@ -73,11 +67,13 @@ Interesting Questions:
 
 <img src='images/classification_model_accuracy.png' alt='Classification Model Accuracy' width=1200/>
 
+Baseline Machine Learning and Deep Learning Model Accuracy is greater than chance but less than what is necessary to be profitable after accounting for the vig (Sportsbook cut for taking bet). This is not troubling for two reasons:
+1. Current models and feature set are very simple. Improved models and enhanced feature set coming in the future.
+2. Model predictions are only a part of the overall bet decision.
+
 <br/><br/>
 
 # Bet Decision
-
-At the end of the day you win or loss money based on which bets you place. Below is an outline of the formula I use to determine whether to bet on a particular game or not.
 
 <img src='images/bet_decisions.png' alt='Bet Decisions' width=1200 height=600/>
 
@@ -121,16 +117,19 @@ Jeff Johannsen - [LinkedIn](https://www.linkedin.com/in/jeffjohannsen/) - jeffjo
 ## Tools
 
 Python
-* Scrapy
-* Splash
 * Pandas
+* Matplotlib
+* Seaborn
 * SQLAlchemy
 * PyCaret
+* AutoKeras
 * Keras
 * Tensorflow
 * Scikit-Learn
 * Flask
-* Plotly Dash  
+* Plotly Dash
+* Scrapy
+* Scrapy Splash  
 
 SQL
 * Postgres
@@ -141,11 +140,7 @@ AWS
 
 Other
 * Docker
-* Cron/Cronitor
+* Cron/Crontab
 * HTML/CSS
 * Bootstrap
 * Chrome Dev Tools
-
-
-
-
