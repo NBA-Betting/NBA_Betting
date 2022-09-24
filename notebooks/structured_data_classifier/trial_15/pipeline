@@ -1,0 +1,1 @@
+{"inputs": [[]], "outputs": [[{"class_name": "AddOneDimension", "config": {}}, {"class_name": "SigmoidPostprocessor", "config": {}}]]}

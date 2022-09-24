@@ -1,7 +1,0 @@
-channels:
-- conda-forge
-dependencies:
-- pip
-- pip:
-  - pycaret==2.3.5
-name: NBA_Betting_CLS_vla_only-env

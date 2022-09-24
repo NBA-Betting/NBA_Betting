@@ -1,9 +1,19 @@
+import ssl
+import sys
+import pytz
+import json
 import datetime
 import requests
 import pandas as pd
+import urllib.request
+import urllib.parse as urlparse
+from urllib.parse import urlencode
 from sqlalchemy import create_engine
 
 from nba.spiders.helpers import return_season_dates
+
+sys.path.append('../../../')
+from passkeys import RDS_ENDPOINT, RDS_PASSWORD, WEB_UNLOCKER_PROXY_HANDLER
 
 pd.set_option('display.max_columns', 100)
 pd.options.display.width = 0
@@ -26,11 +36,14 @@ def scrape_nba_stats(years, url_stat_type, inbound_params, header_row,
     """
     for year in years:
         season_dates = return_season_dates(year)
-        # dates = [season_dates["final_date"]]
-        dates = pd.date_range(start=season_dates["start_date"],
-                              end=season_dates["final_date"],
-                              freq='D')
-        # dates = [pd.to_datetime("2018-11-3", format="%Y-%m-%d")]
+        # dates = pd.date_range(start=season_dates["start_date"],
+        #                       end=season_dates["final_date"],
+        #                       freq='D')
+        current_datetime = datetime.datetime.now(
+            pytz.timezone("America/Denver"))
+        yesterday_datetime = current_datetime - datetime.timedelta(days=1)
+        # dates = [yesterday_datetime]
+        dates = [pd.to_datetime("2022-04-10", format="%Y-%m-%d")]
 
         errors = []
         try:
@@ -61,8 +74,31 @@ def scrape_nba_stats(years, url_stat_type, inbound_params, header_row,
                 params['DateTo'] = f'{date.strftime("%m/%d/%Y")}'
                 params['Season'] = f'{season_dates["season_years"]}'
 
-                response = requests.get(url, params=params, headers=headers)
-                data = response.json()
+                # Local - Easy
+
+                # response = requests.get(url, params=params, headers=headers)
+                # data = response.json()
+
+                # EC2 AWS - Hard
+
+                ssl._create_default_https_context = ssl._create_unverified_context
+
+                url_parts = list(urlparse.urlparse(url))
+                query = dict(urlparse.parse_qsl(url_parts[4]))
+                query.update(params)
+                url_parts[4] = urlencode(query)
+                full_url = urlparse.urlunparse(url_parts)
+
+                nba_stats_request = urllib.request.Request(full_url,
+                                                           headers=headers)
+
+                opener = urllib.request.build_opener(
+                    urllib.request.ProxyHandler(WEB_UNLOCKER_PROXY_HANDLER))
+                response = opener.open(nba_stats_request).read().decode(
+                    "utf-8")
+
+                data = json.loads(response)
+
                 if database_table_name in [
                         'nba_shooting', 'nba_opponent_shooting'
                 ]:
@@ -90,7 +126,6 @@ def scrape_nba_stats(years, url_stat_type, inbound_params, header_row,
 
 
 if __name__ == "__main__":
-    years = [2018]
     nba_stats_header_rows = {
         'traditional': [
             "date", "team", "gp", "win", "loss", "w_pct", "mins", "pts", "fgm",
@@ -518,18 +553,27 @@ if __name__ == "__main__":
         'hustle': [1, 8, 9, 6, 10, 11, 12, 13, 14, 7, 4, 5, 3]
     }
 
-    stat_datatype = 'scoring'
+    years = [2022]
 
-    username = 'postgres'
-    password = ''
-    endpoint = ''
-    database = 'nba_betting'
-    engine = create_engine(
-        f'postgresql+psycopg2://{username}:{password}@{endpoint}/{database}')
+    # stat_datatype = 'scoring'
 
-    with engine.connect() as connection:
-        scrape_nba_stats(years, nba_stats_url_postfix[stat_datatype],
-                         nba_stats_params[stat_datatype],
-                         nba_stats_header_rows[stat_datatype],
-                         nba_stats_data_rows[stat_datatype],
-                         f'nba_{stat_datatype}')
+    for stat_datatype in [
+            'traditional', 'advanced', 'four_factors', 'misc', 'scoring',
+            'opponent', 'speed_distance', 'shooting', 'opponent_shooting',
+            'hustle'
+    ]:
+
+        username = 'postgres'
+        password = RDS_PASSWORD
+        endpoint = RDS_ENDPOINT
+        database = 'nba_betting'
+        engine = create_engine(
+            f'postgresql+psycopg2://{username}:{password}@{endpoint}/{database}'
+        )
+
+        with engine.connect() as connection:
+            scrape_nba_stats(years, nba_stats_url_postfix[stat_datatype],
+                             nba_stats_params[stat_datatype],
+                             nba_stats_header_rows[stat_datatype],
+                             nba_stats_data_rows[stat_datatype],
+                             f'nba_{stat_datatype}')

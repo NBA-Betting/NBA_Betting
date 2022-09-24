@@ -10,45 +10,42 @@ Daily Bank Account Update
 * Cron Command - ```0 9 * * * cd ~/bet_management && python3 financials.py```
 * Runtime - Daily at 09:00utc/2:00am mountain
 
-## DATABASE ETL
-
-Daily NBA_Betting Inbound Data Record Creation
-* Cron Command - ```0 18 * * * cd ~/etl && python3 daily_db_game_record_creation.py```
-* Runtime - Daily at 18:00utc/11:00am mountain
-
-Daily NBA_Betting Inbound Data Update
-* Cron Command - ```30 17 * * * cd ~/etl && python3 daily_db_game_record_update.py```
-* Runtime - Daily at 17:30utc/10:30am mountain
-
-Daily NBA_Betting Model Ready Data Creation
-* Cron Command - ```30 18 * * * cd ~/feature_creation && python3 feature_creation.py```
-* Runtime - Daily at 18:30utc/11:30am mountain
-
-Daily NBA_Betting Game Record Creation
-* Cron Command - ```0 19 * * * cd ~/bet_management && python3 game_records.py```
-* Runtime - Daily at 19:00utc/12:00pm mountain
-
-## INBOUND DATA STREAMS
-
-Daily Odds from Covers
-* Cron Command - ```30 17 * * * cd ~/data_feeds/covers/live_odds && ~/.local/bin/scrapy crawl covers_live_odds_spider```
-* Runtime - Daily at 17:30utc/10:00am mountain
-
-Daily Game Results from Covers
-* Cron Command - ```0 17 * * * cd ~/data_feeds/covers/game_results && ~/.local/bin/scrapy crawl covers_game_results_spider```
-* Runtime - Daily at 17:00utc/10:00am mountain
-
-Daily Standings from Basketball Reference,  
-Daily Team Stats from Basketball Reference,  
-Daily Opponent Stats from Basketball Reference  
-* Cron Command - ```0 17 * * * cd ~/data_feeds/basketball_reference && bash br_basic_cron.sh```
+## INBOUND DATA STREAMS and DATABASE ETL 
+All Daily Database Updating 
+* Cron Command - ```0 17 * * * cd ~ && daily_db_update_script.sh```
 * Runtime - Daily at 17:00utc/10:00am mountain
 * Script:
-```sudo docker start condescending_newton
-cd ~/data_feeds/basketball_reference
-~/.local/bin/scrapy crawl BR_standings_spider
-~/.local/bin/scrapy crawl BR_team_stats_spider
-~/.local/bin/scrapy crawl BR_opponent_stats_spider
-sudo docker stop condescending_newton
+```
+#!/bin/bash
 
+# exit when any command fails
+set -e
 
+# Data Inbound
+cd ~/data_feeds/covers
+~/.local/bin/scrapy crawl Covers_live_game_results_spider
+~/.local/bin/scrapy crawl Covers_live_game_spider
+echo "----- Covers Scrapy Complete -----"
+cd ~/data_feeds/nba
+python3 data_requests.py
+echo "----- Data Requests Complete -----"
+
+# Feature Creation and ETL
+cd ~/feature_creation
+python3 feature_creation_pre_etl.py
+echo "----- Feature Creation Pre-ETL Complete -----"
+cd ~/etl
+python3 daily_db_game_record_update.py
+echo "----- Record Update Complete -----"
+python3 daily_db_game_record_creation.py
+echo "----- Record Creation Complete -----"
+cd ~/feature_creation
+python3 feature_creation_post_etl.py
+echo "----- Feature Creation Post-ETL Complete -----"
+
+# Game Records
+cd ~/bet_management
+python3 game_records.py
+echo "----- Game Records Complete -----"
+echo "----- Done -----"
+```

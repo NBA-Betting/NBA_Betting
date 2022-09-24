@@ -1,8 +1,11 @@
 # Used for connection to Postgres Database on AWS RDS.
-
+import sys
 import psycopg2
 from datetime import datetime
 from scrapy.exceptions import DropItem
+
+sys.path.append('../../../../')
+from passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 
 class CoversPostgresPipeline(object):
@@ -19,9 +22,9 @@ class CoversPostgresPipeline(object):
     }
 
     def open_spider(self, spider):
-        # hostname = ""
+        hostname = RDS_ENDPOINT
         username = "postgres"
-        # password = ""
+        password = RDS_PASSWORD
         database = "nba_betting"
         port = "5432"
         self.connection = psycopg2.connect(
@@ -114,16 +117,13 @@ class CoversPostgresPipeline(object):
                 end_year = league_year.split("-")[1]
                 date = item["date"]
                 if date.split()[0] in ["Nov", "Dec"]:
-                    date = datetime.strptime(
-                        f"{date} {start_year}", "%b %d %Y"
-                    )
+                    date = datetime.strptime(f"{date} {start_year}",
+                                             "%b %d %Y")
                     item["date"] = date.strftime("%Y-%m-%d")
-                elif (date.split()[0] == "Oct") and (
-                    int(date.split()[1]) > 12
-                ):
-                    date = datetime.strptime(
-                        f"{date} {start_year}", "%b %d %Y"
-                    )
+                elif (date.split()[0]
+                      == "Oct") and (int(date.split()[1]) > 12):
+                    date = datetime.strptime(f"{date} {start_year}",
+                                             "%b %d %Y")
                     item["date"] = date.strftime("%Y-%m-%d")
                 else:
                     date = datetime.strptime(f"{date} {end_year}", "%b %d %Y")
@@ -162,7 +162,6 @@ class CoversPostgresPipeline(object):
 
 
 # Scripts to create original tables in psql command line.
-
 """CREATE TABLE dfc_covers_game_results (
     date varchar NOT NULL,
     home_team varchar NOT NULL,
@@ -170,7 +169,6 @@ class CoversPostgresPipeline(object):
     home_score int4 NOT NULL,
     away_score int4 NOT NULL
 );"""
-
 """CREATE TABLE dfc_covers_odds (
     id_num int4 PRIMARY KEY NOT NULL,
     date varchar NOT NULL,
@@ -194,7 +192,6 @@ class CoversPostgresPipeline(object):
     link varchar,
     league_year varchar
 );"""
-
 """CREATE TABLE past_covers_odds (
     game_id int4 PRIMARY KEY NOT NULL,
     date varchar NOT NULL,

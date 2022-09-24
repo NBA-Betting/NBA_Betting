@@ -1,5 +1,10 @@
+import sys
 import pandas as pd
 from sqlalchemy import create_engine
+
+sys.path.append('../../')
+from passkeys import RDS_ENDPOINT, RDS_PASSWORD
+
 pd.options.display.max_columns = 100
 pd.options.display.width = 0
 
@@ -109,6 +114,11 @@ class FeatureCreation:
 
     def seasonal_effects(self):
         seasons = {
+            "2023": {
+                "abbrv": "2022-23",
+                "start": "October 18, 2022",
+                "end": "April 10, 2023",
+            },
             "2022": {
                 "abbrv": "2021-22",
                 "start": "October 19, 2021",
@@ -231,8 +241,8 @@ class FeatureCreation:
 
 if __name__ == "__main__":
     username = "postgres"
-    password = ""
-    endpoint = ""
+    password = RDS_PASSWORD
+    endpoint = RDS_ENDPOINT
     database = "nba_betting"
     port = "5432"
 

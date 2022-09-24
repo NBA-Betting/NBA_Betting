@@ -1,6 +1,5 @@
 # NBA Betting Outline and Action Plan
 
-# NEXT STEPS TODO
 ## Inbound Data
 
 ## ETL
@@ -8,16 +7,14 @@
 ## Feature Creation
 
 ## Modeling
-* DL Exploration
+
 ## Bet Management
 
 ## Deployment
-* Rework Daily Updating
-* Deploy Web App on AWS
-* Web App Dashboard with Plotly Dash
-* Convert Readme to Web App About Page
-## Readme and Cleanup
-* Quality over Quantity
+* Daily Updating
+    * Test bash script for 4/10/2022
+    * When successful switch hard coded dates to proper dates for daily updating.
+## Readme and Misc
 
 # Adding Data, Features
 * Can I get or create historic data? If so incorporate into ML/DL models. Labeled "Historic" Below.
@@ -81,5 +78,3 @@ Who is playing, who is not? Quantify value of absences. Estimated Performance % 
 * 1 unit = 1% of current bankroll
 * Each bet can have 1 to 5 units
 * Aim for 2 to 10 units per day
-
-

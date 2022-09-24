@@ -1,13 +1,16 @@
 # Used for connection to Postgres Database on AWS RDS.
-
+import sys
 import psycopg2
+
+sys.path.append('../../../../')
+from passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 
 class SaveToPostgresPipeline(object):
     def open_spider(self, spider):
-        # hostname = ""
+        hostname = RDS_ENDPOINT
         username = "postgres"
-        # password = ""
+        password = RDS_PASSWORD
         database = "nba_betting"
         port = "5432"
         self.connection = psycopg2.connect(

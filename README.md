@@ -1,21 +1,13 @@
-<!-- ![Header Image](images/header-nba.jpg) -->
-
 <img src='images/header-nba.jpg' alt='NBA' width=1400 height=400/>
 
 # NBA Betting
 
->>>Project Demo<<<
-
 ## Table of Contents
 * [Introduction](#Introduction)
-    * [Motivation](#Motivation)
-    * [Goals](#Goals)
 * [Data Engineering](#Data-Engineering)
 * [Exploratory Data Analysis](#Exploratory-Data-Analysis)
-* [Feature Engineering](#Feature-Engineering)
-* [Data Modeling](#Data-Modeling)
-    * [Machine Learning + AutoML](#Machine-Learning-+-AutoML)
-    * [Deep Learning](#Deep-Learning)
+* [AutoML](#AutoML)
+* [Bet Decision](#Bet-Decision)
 * [Deployment](#Deployment)
 * [Next Steps](#Next-Steps)
 * [Contact](#Contact)
@@ -31,14 +23,13 @@ Sports Stats - MLB, Sports Game Simulations, Personal Sports League Record Keepi
 NBA - Steph Curry and 2015-2016 Warriors, Why I think NBA is the best league in sports
 Investing - Sports Betting as an investment??
 
-## Goals
+## Goal
 
 The main goal of this project is create an automated system that collects data about NBA games and predicts point spreads at a level that is consistently profitable.
 
-### Secondary Goals
+## Plan
 
-* Learn more about the NBA and uncover interesting stats and trends concerning the NBA and betting data surrounding it.
-* Acquire new data skills and improve upon my current knowledge.
+How I plan on achieving the goal. Action Plan Data Info
 
 <br/><br/>
 
@@ -49,13 +40,9 @@ The main goal of this project is create an automated system that collects data a
 
 ## Data Acquisition and Storage
 
-<!-- ![Date Acquisition and Storage](images/data_engineering_flowchart_1.png) -->
-
 <img src='images/data_engineering_flowchart_1.png' alt='Data Acquisition and Storage' width=1200 height=600/>
 
 ## ETL
-
-<!-- ![ETL](images/data_engineering_flowchart_2.png) -->
 
 <img src='images/data_engineering_flowchart_2.png' alt='ETL' width=1200 height=500/>
 
@@ -76,43 +63,40 @@ Interesting Questions:
 
 ## Average Point Spread Error Per Game Over Time
 
-<!-- ![Average Point Spread Error Per Game Over Time](images/average_point_spread_error_per_game_over_time.png) -->
-
 <img src='images/average_point_spread_error_per_game_over_time.png' alt='Average Point Spread Error Per Game Over Time' width=1200 height=700/>
 
 <br/><br/>
 
-# Feature Engineering
+# AutoML
+
+<img src='images/automl_logos.png' alt='AutoML Logos' width=1200/>
+
+<img src='images/classification_model_accuracy.png' alt='Classification Model Accuracy' width=1200/>
 
 <br/><br/>
 
-# Data Modeling
+# Bet Decision
 
-## Machine Learning + AutoML
+At the end of the day you win or loss money based on which bets you place. Below is an outline of the formula I use to determine whether to bet on a particular game or not.
 
-PyCaret Full Workthrough
-
-### Setup
-
-### Results
-
-## Deep Learning
-
-### Setup
-
-### Results
+<img src='images/bet_decisions.png' alt='Bet Decisions' width=1200 height=600/>
 
 <br/><br/>
 
 # Deployment
 
+## Web App
+
+<img src='images/web_app_home_page.png' alt='Home Page' width=560 height=400/>
+<img src='images/web_app_dashboard.png' alt='Dashboard' width=560 height=400/>
+
 <br/><br/>
 
 # Next Steps
 
-* Improve Models
-* Add more data sources.
-* Create more useful features.
+* Add premier NBA advanced stats like DARKO, RAPTOR, and EPM to feature set and prediction models.
+* Test more Deep Learning model constructs.
+* Live test project on 2022-2023 NBA Season starting October 18th.
 
 <br/><br/>
 
@@ -130,8 +114,6 @@ Jeff Johannsen - [LinkedIn](https://www.linkedin.com/in/jeffjohannsen/) - jeffjo
 * [NBA Stats](https://www.nba.com/stats) - Main source of NBA data.
 * [Basketball Reference](https://www.basketball-reference.com/)
 
-## Images
-
 ## Helpful Projects
 
 * [Databall](https://github.com/klane/databall)
@@ -147,21 +129,22 @@ Python
 * Keras
 * Tensorflow
 * Scikit-Learn
-* Flask  
+* Flask
+* Plotly Dash  
 
 SQL
 * Postgres
 
 AWS
-* S3
 * EC2
 * RDS
 
-Docker
-Cron/Cronitor
-HTML/CSS
-Bootstrap
-Chrome Dev Tools
+Other
+* Docker
+* Cron/Cronitor
+* HTML/CSS
+* Bootstrap
+* Chrome Dev Tools
 
 
 

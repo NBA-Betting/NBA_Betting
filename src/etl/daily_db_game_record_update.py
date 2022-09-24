@@ -1,7 +1,11 @@
+import sys
 import datetime
 import pytz
 import pandas as pd
 from sqlalchemy import create_engine
+
+sys.path.append('../../')
+from passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 
 def update_previous_days_records(date, engine, team_map):
@@ -54,8 +58,8 @@ def update_previous_days_records(date, engine, team_map):
 
 if __name__ == "__main__":
     username = "postgres"
-    password = ""
-    endpoint = ""
+    password = RDS_PASSWORD
+    endpoint = RDS_ENDPOINT
     database = "nba_betting"
 
     engine = create_engine(

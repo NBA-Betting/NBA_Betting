@@ -1,4 +1,4 @@
-from crypt import methods
+import sys
 import datetime
 import pytz
 import numpy as np
@@ -12,29 +12,27 @@ from matplotlib.figure import Figure
 import matplotlib.dates as mdates
 import matplotlib.style as style
 
+sys.path.append('../../../')
+from passkeys import RDS_ENDPOINT, RDS_PASSWORD
+
 app = flask.Flask(__name__)
 
 
 def nba_data_inbound():
     todays_datetime = datetime.datetime.now(
-        pytz.timezone("America/Denver")
-    ).strftime("%Y-%m-%d")
+        pytz.timezone("America/Denver")).strftime("%Y-%m-%d")
     yesterdays_datetime = (
-        datetime.datetime.now(pytz.timezone("America/Denver"))
-        - datetime.timedelta(days=1)
-    ).strftime("%Y-%m-%d")
+        datetime.datetime.now(pytz.timezone("America/Denver")) -
+        datetime.timedelta(days=1)).strftime("%Y-%m-%d")
     week_ago_datetime = (
-        datetime.datetime.now(pytz.timezone("America/Denver"))
-        - datetime.timedelta(days=7)
-    ).strftime("%Y-%m-%d %H:%M:%S")
+        datetime.datetime.now(pytz.timezone("America/Denver")) -
+        datetime.timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
     month_ago_datetime = (
-        datetime.datetime.now(pytz.timezone("America/Denver"))
-        - datetime.timedelta(days=30)
-    ).strftime("%Y-%m-%d %H:%M:%S")
+        datetime.datetime.now(pytz.timezone("America/Denver")) -
+        datetime.timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S")
     year_ago_datetime = (
-        datetime.datetime.now(pytz.timezone("America/Denver"))
-        - datetime.timedelta(days=365)
-    ).strftime("%Y-%m-%d %H:%M:%S")
+        datetime.datetime.now(pytz.timezone("America/Denver")) -
+        datetime.timedelta(days=365)).strftime("%Y-%m-%d %H:%M:%S")
 
     # SQL Queries
     records_query = """
@@ -61,11 +59,10 @@ def nba_data_inbound():
                         FULL OUTER JOIN bets
                         ON game_records.game_id = bets.game_id
                         ORDER BY game_records.game_id DESC
-                        LIMIT 50"""
+                        LIMIT 100"""
 
     current_balance_query = (
-        "SELECT balance FROM bank_account ORDER BY datetime DESC LIMIT 1;"
-    )
+        "SELECT balance FROM bank_account ORDER BY datetime DESC LIMIT 1;")
 
     year_ago_query = f"SELECT * FROM bank_account WHERE datetime < '{year_ago_datetime}' ORDER BY datetime DESC LIMIT 1;"
 
@@ -89,64 +86,53 @@ def nba_data_inbound():
     # Database Calls
     with engine.connect() as connection:
         records = connection.execute(records_query).fetchall()
-        current_balance = connection.execute(current_balance_query).fetchall()[
-            0
-        ][0]
+        current_balance = connection.execute(
+            current_balance_query).fetchall()[0][0]
         # year_ago_balance = connection.execute(year_ago_query).fetchall()[0][0]
         # month_ago_balance = connection.execute(month_ago_query).fetchall()[0][0]
         # week_ago_balance = connection.execute(week_ago_query).fetchall()[0][0]
-        yest_win_loss = connection.execute(yest_win_loss_query).fetchall()[0][
-            0
-        ]
+        yest_win_loss = connection.execute(
+            yest_win_loss_query).fetchall()[0][0]
         rec_bets_count = connection.execute(rec_bets_query).fetchall()[0][0]
-        active_bets_count = connection.execute(active_bets_query).fetchall()[
-            0
-        ][0]
-        money_in_play = connection.execute(money_in_play_query).fetchall()[0][
-            0
-        ]
+        active_bets_count = connection.execute(
+            active_bets_query).fetchall()[0][0]
+        money_in_play = connection.execute(
+            money_in_play_query).fetchall()[0][0]
 
     # Python/Data Formatting
     records_df = pd.DataFrame(records)
-    records_df[5] = records_df[5].apply(lambda x: round(x, 2))
+    records_df[5] = records_df[5].apply(lambda x: round(x))
     records_df[7] = records_df[7].apply(lambda x: f"${round(x)}")
     records_df[8] = records_df[8].apply(lambda x: f"{x:.0f}")
     records_df[9] = records_df[9].apply(lambda x: "-" if pd.isnull(x) else x)
     records_df[10] = records_df[10].apply(lambda x: "-" if pd.isnull(x) else x)
-    records_df[11] = records_df[11].apply(
-        lambda x: "-" if pd.isnull(x) else f"${x:.0f}"
-    )
+    records_df[11] = records_df[11].apply(lambda x: "-"
+                                          if pd.isnull(x) else f"${x:.0f}")
     records_df[12] = records_df[12].apply(lambda x: "-" if pd.isnull(x) else x)
     records_df[13] = records_df[13].apply(lambda x: "-" if pd.isnull(x) else x)
-    records_df[14] = records_df[14].apply(
-        lambda x: "-" if pd.isnull(x) else f"{x:.0f}"
-    )
+    records_df[14] = records_df[14].apply(lambda x: "-"
+                                          if pd.isnull(x) else f"{x:.0f}")
     records_df[15] = records_df[15].apply(lambda x: "-" if pd.isnull(x) else x)
-    records_df[16] = records_df[16].apply(
-        lambda x: "-" if pd.isnull(x) else f"${x:.0f}"
-    )
+    records_df[16] = records_df[16].apply(lambda x: "-"
+                                          if pd.isnull(x) else f"${x:.0f}")
     records_df[17] = records_df[17].apply(lambda x: "-" if pd.isnull(x) else x)
     current_balance = round(current_balance)
-    starting_balance = 1000
-    year_ago_balance = 1900
-    month_ago_balance = 1200
-    week_ago_balance = 1400
+    starting_balance = 500
+    year_ago_balance = 500
+    month_ago_balance = 575
+    week_ago_balance = 810
     alltime_diff = round(current_balance - starting_balance)
     year_diff = round(current_balance - year_ago_balance)
     month_diff = round(current_balance - month_ago_balance)
     week_diff = round(current_balance - week_ago_balance)
     alltime_pct_diff = round(
-        ((current_balance - starting_balance) / starting_balance) * 100, 1
-    )
+        ((current_balance - starting_balance) / starting_balance) * 100, 1)
     year_pct_diff = round(
-        ((current_balance - year_ago_balance) / year_ago_balance) * 100, 1
-    )
+        ((current_balance - year_ago_balance) / year_ago_balance) * 100, 1)
     month_pct_diff = round(
-        ((current_balance - month_ago_balance) / month_ago_balance) * 100, 1
-    )
+        ((current_balance - month_ago_balance) / month_ago_balance) * 100, 1)
     week_pct_diff = round(
-        ((current_balance - week_ago_balance) / week_ago_balance) * 100, 1
-    )
+        ((current_balance - week_ago_balance) / week_ago_balance) * 100, 1)
     yest_win_loss = round(yest_win_loss)
     money_in_play = round(money_in_play)
 
@@ -174,25 +160,12 @@ def nba_data_inbound():
     }
 
 
-def nba_dashboard_data_inbound():
-    # SQL Queries
-
-    # Database Calls
-
-    # Python/Data Formatting
-
-    # Return Data
-
-    pass
-
-
 @app.route("/", methods=["POST", "GET"])
 def home_table():
     data = nba_data_inbound()
     if request.method == "POST":
         bet_datetime = datetime.datetime.now(
-            pytz.timezone("America/Denver")
-        ).strftime("%Y-%m-%d %H:%M:%S")
+            pytz.timezone("America/Denver")).strftime("%Y-%m-%d %H:%M:%S")
 
         bet_game_id = request.form["bet_game_id"]
         bet_status = request.form["bet_status"]
@@ -203,11 +176,8 @@ def home_table():
         bet_price = int(request.form["bet_price"])
         bet_location = request.form["bet_location"]
         bet_profit_loss = float(request.form["bet_profitloss"])
-        old_profit_loss = (
-            0
-            if request.form["old_profit_loss"] == "-"
-            else float(request.form["old_profit_loss"].strip("$"))
-        )
+        old_profit_loss = (0 if request.form["old_profit_loss"] == "-" else
+                           float(request.form["old_profit_loss"].strip("$")))
         old_bank_balance = float(request.form["bankBalance"])
 
         diff_bet_profit_loss = bet_profit_loss - old_profit_loss
@@ -269,11 +239,6 @@ def dashboard():
     return flask.render_template("nba_dashboard.html")
 
 
-@app.route("/nba_about")
-def about():
-    return flask.render_template("nba_about.html")
-
-
 @app.route("/home_page_plot.png")
 def plot_png():
     fig = create_figure()
@@ -284,7 +249,7 @@ def plot_png():
 
 def create_figure():
     figure_data_query = (
-        "SELECT datetime, balance FROM bank_account ORDER BY datetime ASC;"
+        "SELECT datetime, balance from (SELECT *, row_number() OVER (PARTITION BY date_trunc('day', datetime) ORDER BY datetime DESC) r FROM bank_account) T WHERE T.r=1;"
     )
     with engine.connect() as connection:
         figure_records = connection.execute(figure_data_query).fetchall()
@@ -317,13 +282,12 @@ def add_header(r):
 
 if __name__ == "__main__":
     username = "postgres"
-    password = ""
-    endpoint = ""
+    password = RDS_PASSWORD
+    endpoint = RDS_ENDPOINT
     database = "nba_betting"
 
     engine = create_engine(
-        f"postgresql+psycopg2://{username}:{password}@{endpoint}/{database}"
-    )
+        f"postgresql+psycopg2://{username}:{password}@{endpoint}/{database}")
 
     app.debug = True
     app.run(host="0.0.0.0", port=8000)

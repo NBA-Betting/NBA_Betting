@@ -1,6 +1,10 @@
+import sys
 import pytz
 from datetime import datetime
 from sqlalchemy import create_engine
+
+sys.path.append('../../')
+from passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 
 class BankAccount:
@@ -36,8 +40,7 @@ class BankAccount:
 
     def save_balance(self):
         current_datetime = datetime.now(
-            pytz.timezone("America/Denver")
-        ).strftime("%Y-%m-%d %H:%M:%S")
+            pytz.timezone("America/Denver")).strftime("%Y-%m-%d %H:%M:%S")
         stmt = f"""INSERT INTO bank_account (datetime, balance)
                   VALUES ('{current_datetime}',{self.balance})
                 ;"""
@@ -47,19 +50,17 @@ class BankAccount:
 
 if __name__ == "__main__":
     username = "postgres"
-    password = ""
-    endpoint = ""
+    password = RDS_PASSWORD
+    endpoint = RDS_ENDPOINT
     database = "nba_betting"
     port = "5432"
 
     engine = create_engine(
-        f"postgresql+psycopg2://{username}:{password}@{endpoint}/{database}"
-    )
+        f"postgresql+psycopg2://{username}:{password}@{endpoint}/{database}")
 
     with engine.connect() as connection:
         bank = BankAccount(connection)
         bank.save_balance()
-
 
 # Script to create original table in psql command line.
 """CREATE TABLE bank_account (

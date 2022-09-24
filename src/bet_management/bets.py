@@ -1,3 +1,4 @@
+import sys
 import re
 import datetime
 import pytz
@@ -5,6 +6,9 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 from financials import BankAccount
+
+sys.path.append('../../')
+from passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 pd.options.display.max_rows = 50
 pd.options.display.max_columns = 100
@@ -618,8 +622,8 @@ class Bet:
 
 if __name__ == "__main__":
     username = "postgres"
-    password = ""
-    endpoint = ""
+    password = RDS_PASSWORD
+    endpoint = RDS_ENDPOINT
     database = "nba_betting"
     port = "5432"
 

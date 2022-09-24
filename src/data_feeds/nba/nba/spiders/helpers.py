@@ -16,6 +16,11 @@ def return_season_dates(year):
         "final_year": last_year}
     """
     seasons = {
+        "2023": {
+            "abbrv": "2022-23",
+            "start": "October 18, 2022",
+            "end": "April 10, 2023",
+        },
         "2022": {
             "abbrv": "2021-22",
             "start": "October 19, 2021",

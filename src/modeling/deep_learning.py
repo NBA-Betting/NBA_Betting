@@ -1,9 +1,13 @@
+import sys
 import datetime
 import pandas as pd
 from sqlalchemy import create_engine
 from sklearn.model_selection import train_test_split
 from tensorflow import keras
 from tensorflow.keras.layers import Normalization, Dense
+
+sys.path.append('../../')
+from passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 
 def nba_betting_rds_connection(endpoint, password):
@@ -76,8 +80,8 @@ if __name__ == "__main__":
     cls_target = 'CLS_TARGET_home_margin_GT_home_spread'
     reg_target = 'REG_TARGET_actual_home_margin'
 
-    nba_betting_password = ""
-    nba_betting_endpoint = ""
+    nba_betting_password = RDS_PASSWORD
+    nba_betting_endpoint = RDS_ENDPOINT
 
     # Load Data
     database_connection = nba_betting_rds_connection(nba_betting_endpoint,

@@ -1,5 +1,10 @@
+import sys
 import pandas as pd
 from sqlalchemy import create_engine
+
+sys.path.append('../../')
+from passkeys import RDS_ENDPOINT, RDS_PASSWORD
+
 pd.options.display.max_columns = 100
 pd.options.display.width = 0
 
@@ -25,8 +30,8 @@ def add_features(table):
 
 if __name__ == "__main__":
     username = "postgres"
-    password = ""
-    endpoint = ""
+    password = RDS_PASSWORD
+    endpoint = RDS_ENDPOINT
     database = "nba_betting"
     port = "5432"
 
@@ -43,10 +48,18 @@ if __name__ == "__main__":
 
             output_df = add_features(df)
 
-            print(output_df.head())
-            print(output_df.info(verbose=True))
+            for column in list(output_df):
+                if output_df[column].dtype == 'float64':
+                    output_df[column] = pd.to_numeric(output_df[column],
+                                                      downcast='float')
+                if output_df[column].dtype == 'int64':
+                    output_df[column] = pd.to_numeric(output_df[column],
+                                                      downcast='integer')
+
+            # print(output_df.head())
+            # print(output_df.info(verbose=True))
 
             output_df.to_sql(f"{table}",
                              connection,
                              index=False,
-                             if_exists="fail")
+                             if_exists="replace")
