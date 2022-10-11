@@ -79,6 +79,12 @@ def create_record_batch(date, engine, team_map):
             suffixes=(None, "_nba"),
             validate="1:m",
         )
+        full_dataset = full_dataset.merge(traditional,
+                                          how='left',
+                                          left_on=['opponent'],
+                                          right_on=['team'],
+                                          suffixes=(None, '_opp'),
+                                          validate='1:m')
         for stat_group in [
                 advanced, four_factors, misc, scoring, opponent,
                 speed_distance, shooting, opponent_shooting, hustle
@@ -106,21 +112,30 @@ def create_record_batch(date, engine, team_map):
                                         full_dataset["time"])
         full_dataset["datetime"] = full_dataset["datetime_str"].apply(
             lambda x: datetime.datetime.strptime(x, "%Y%m%d %I:%M %p"))
-        full_dataset['pred_date'] = full_dataset['date'] - pd.DateOffset(1)
+        full_dataset['pred_date'] = full_dataset['date'].apply(
+            lambda x: (datetime.datetime.strptime(x, '%Y%m%d') - datetime.
+                       timedelta(days=1)).strftime('%Y%m%d'))
 
         # Cleanup - Rename, Remove, and Reorder
         main_features = [
-            "game_id", "game_date", "league_year", "team", "opponent", "link",
-            "open_line_home", "open_line_away", "fanduel_line_home",
-            "fanduel_line_price_home", "fanduel_line_away",
-            "fanduel_line_price_away", "draftkings_line_home",
-            "draftkings_line_price_home", "draftkings_line_away",
-            "draftkings_line_price_away", "covers_home_consenses",
-            "covers_away_consenses", "pred_date"
+            "game_id", "datetime", "league_year", "team", "opponent", "link",
+            "open_line_home", "fanduel_line_home", "fanduel_line_price_home",
+            "fanduel_line_away", "fanduel_line_price_away",
+            "draftkings_line_home", "draftkings_line_price_home",
+            "draftkings_line_away", "draftkings_line_price_away",
+            "covers_home_consenses", "covers_away_consenses", "pred_date"
+        ]
+
+        drop_features = [
+            'id_num', 'date', 'time', 'home_team_full_name',
+            'home_team_short_name', 'away_team_full_name',
+            'away_team_short_name', 'open_line_away', 'date_nba', 'date_opp',
+            'team_opp', 'datetime_str'
         ]
 
         all_features = main_features + [
-            i for i in list(full_dataset) if i not in main_features
+            i for i in list(full_dataset)
+            if i not in (drop_features + main_features)
         ]
         full_dataset = full_dataset[all_features]
 
@@ -130,8 +145,7 @@ def create_record_batch(date, engine, team_map):
             "team": "home_team",
             "opponent": "away_team",
             "link": "covers_game_url",
-            "open_line_home": "open_line_home",
-            "open_line_away": "open_line_away",
+            "open_line_home": "home_spread",
             "fanduel_line_home": "fd_line_home",
             "fanduel_line_price_home": "fd_line_price_home",
             "fanduel_line_away": "fd_line_away",

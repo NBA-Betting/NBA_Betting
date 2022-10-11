@@ -36,11 +36,11 @@ class Game_Record:
         self.ml_reg_predictions = None
         self.dl_reg_predictions = None
 
-    def load_data(self, connection):
+    def load_data(self, connection, query_date):
         """
         Wrapper for SQL query to load data.
         """
-        query = """
+        query = f"""
         SELECT cnc.game_id,
         cnc.game_date,
         cnc.home_team,
@@ -67,6 +67,7 @@ class Game_Record:
         FROM combined_nba_covers AS cnc
         LEFT OUTER JOIN nba_model_ready AS mr
         ON cnc.game_id = mr.game_id
+        WHERE cnc.game_id LIKE '{query_date}%%'
         """
 
         self.inbound_data = pd.read_sql(sql=query, con=connection)
@@ -266,13 +267,14 @@ class Game_Record:
             name="game_records",
             con=connection,
             index=False,
-            if_exists="replace",
+            if_exists="append",
         )
 
 
 if __name__ == "__main__":
     todays_datetime = datetime.datetime.now(pytz.timezone("America/Denver"))
     todays_date_str = todays_datetime.strftime("%Y%m%d")
+    date_str = '20220410'
 
     username = "postgres"
     password = RDS_PASSWORD
@@ -290,7 +292,7 @@ if __name__ == "__main__":
     dl_reg_model_path = ("../../models/AutoKeras/Baseline_AK_REG")
 
     games = Game_Record()
-    games.load_data(connection)
+    games.load_data(connection, date_str)
     games.load_models(ml_cls_model_path, dl_cls_model_path, ml_reg_model_path,
                       dl_reg_model_path)
     games.create_predictions()
@@ -302,5 +304,5 @@ if __name__ == "__main__":
     games.bet_amount(connection)
     games.game_info_and_cleanup()
     print(games.game_records.info())
-    print(games.game_records.head(20))
+    print(games.game_records.head())
     # games.save_records(connection)

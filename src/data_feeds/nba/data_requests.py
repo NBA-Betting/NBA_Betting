@@ -36,14 +36,14 @@ def scrape_nba_stats(years, url_stat_type, inbound_params, header_row,
     """
     for year in years:
         season_dates = return_season_dates(year)
-        # dates = pd.date_range(start=season_dates["start_date"],
-        #                       end=season_dates["final_date"],
-        #                       freq='D')
         current_datetime = datetime.datetime.now(
             pytz.timezone("America/Denver"))
         yesterday_datetime = current_datetime - datetime.timedelta(days=1)
         # dates = [yesterday_datetime]
-        dates = [pd.to_datetime("2022-04-10", format="%Y-%m-%d")]
+        # dates = [pd.to_datetime("2022-04-10", format="%Y-%m-%d")]
+        dates = pd.date_range(start=season_dates["start_date"],
+                              end=season_dates["final_date"],
+                              freq='D')
 
         errors = []
         try:
@@ -76,28 +76,28 @@ def scrape_nba_stats(years, url_stat_type, inbound_params, header_row,
 
                 # Local - Easy
 
-                # response = requests.get(url, params=params, headers=headers)
-                # data = response.json()
+                response = requests.get(url, params=params, headers=headers)
+                data = response.json()
 
                 # EC2 AWS - Hard
 
-                ssl._create_default_https_context = ssl._create_unverified_context
+                # ssl._create_default_https_context = ssl._create_unverified_context
 
-                url_parts = list(urlparse.urlparse(url))
-                query = dict(urlparse.parse_qsl(url_parts[4]))
-                query.update(params)
-                url_parts[4] = urlencode(query)
-                full_url = urlparse.urlunparse(url_parts)
+                # url_parts = list(urlparse.urlparse(url))
+                # query = dict(urlparse.parse_qsl(url_parts[4]))
+                # query.update(params)
+                # url_parts[4] = urlencode(query)
+                # full_url = urlparse.urlunparse(url_parts)
 
-                nba_stats_request = urllib.request.Request(full_url,
-                                                           headers=headers)
+                # nba_stats_request = urllib.request.Request(full_url,
+                #                                            headers=headers)
 
-                opener = urllib.request.build_opener(
-                    urllib.request.ProxyHandler(WEB_UNLOCKER_PROXY_HANDLER))
-                response = opener.open(nba_stats_request).read().decode(
-                    "utf-8")
+                # opener = urllib.request.build_opener(
+                #     urllib.request.ProxyHandler(WEB_UNLOCKER_PROXY_HANDLER))
+                # response = opener.open(nba_stats_request).read().decode(
+                #     "utf-8")
 
-                data = json.loads(response)
+                # data = json.loads(response)
 
                 if database_table_name in [
                         'nba_shooting', 'nba_opponent_shooting'
@@ -553,7 +553,7 @@ if __name__ == "__main__":
         'hustle': [1, 8, 9, 6, 10, 11, 12, 13, 14, 7, 4, 5, 3]
     }
 
-    years = [2022]
+    years = [2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015]
 
     # stat_datatype = 'scoring'
 

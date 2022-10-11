@@ -1,3 +1,5 @@
+import datetime
+import pytz
 import sys
 import pandas as pd
 from sqlalchemy import create_engine
@@ -246,18 +248,26 @@ if __name__ == "__main__":
     database = "nba_betting"
     port = "5432"
 
+    todays_datetime = datetime.datetime.now(pytz.timezone("America/Denver"))
+    yesterdays_datetime = todays_datetime - datetime.timedelta(days=1)
+    yesterdays_date_str = yesterdays_datetime.strftime("%Y%m%d")
+
     with create_engine(
             f"postgresql+psycopg2://{username}:{password}@{endpoint}/{database}"
     ).connect() as connection:
 
-        df = pd.read_sql_table("combined_nba_covers", connection)
+        # df = pd.read_sql_table("combined_nba_covers", connection) # Full Table. Takes Awhile
+
+        # query_date = yesterdays_date_str
+        query_date = '20220410'
+        query = f"SELECT * FROM combined_nba_covers WHERE game_id LIKE '{query_date}%%'"
+        df = pd.read_sql(query, connection)
 
         feature_pipeline = FeatureCreation(df)
         feature_pipeline.run_all_steps()
         model_ready_df = feature_pipeline.wdf
         print(model_ready_df.info(verbose=True, show_counts=True))
 
-        model_ready_df.to_sql("nba_model_ready",
-                              connection,
-                              index=False,
-                              if_exists="replace")
+        model_ready_df.to_sql(
+            "nba_model_ready", connection, index=False,
+            if_exists="append")  # Replace if full table. Otherwise Append

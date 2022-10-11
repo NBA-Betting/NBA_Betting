@@ -1,3 +1,5 @@
+import datetime
+import pytz
 import sys
 import pandas as pd
 from sqlalchemy import create_engine
@@ -35,6 +37,10 @@ if __name__ == "__main__":
     database = "nba_betting"
     port = "5432"
 
+    todays_datetime = datetime.datetime.now(pytz.timezone("America/Denver"))
+    yesterdays_datetime = todays_datetime - datetime.timedelta(days=1)
+    yesterdays_date_str = yesterdays_datetime.strftime("%Y%m%d")
+
     with create_engine(
             f"postgresql+psycopg2://{username}:{password}@{endpoint}/{database}"
     ).connect() as connection:
@@ -44,7 +50,12 @@ if __name__ == "__main__":
                 'opponent', 'speed_distance', 'shooting', 'opponent_shooting',
                 'hustle'
         ]:
-            df = pd.read_sql_table(f"nba_{table}", connection)
+            # df = pd.read_sql_table(f"nba_{table}", connection) # Full Table. Takes Awhile
+
+            # query_date = yesterdays_date_str
+            query_date = '20220410'
+            query = f"SELECT * FROM nba_{table} WHERE date = '{query_date}';"
+            df = pd.read_sql(query, connection)
 
             output_df = add_features(df)
 
@@ -56,10 +67,10 @@ if __name__ == "__main__":
                     output_df[column] = pd.to_numeric(output_df[column],
                                                       downcast='integer')
 
-            # print(output_df.head())
-            # print(output_df.info(verbose=True))
+            print(output_df.head())
+            print(output_df.info(verbose=True))
 
-            output_df.to_sql(f"{table}",
-                             connection,
-                             index=False,
-                             if_exists="replace")
+            # output_df.to_sql(f"{table}",
+            #                  connection,
+            #                  index=False,
+            #                  if_exists="append") # Replace if full table. Append if updating.
