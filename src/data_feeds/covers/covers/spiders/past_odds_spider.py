@@ -1,8 +1,8 @@
 import re
 from scrapy import Request, Spider
 
-from items import PastGameItem
-from loaders import PastGameItemLoader
+from ..items import PastGameItem
+from ..item_loaders import PastGameItemLoader
 
 base_url = "https://www.covers.com"
 
@@ -55,7 +55,7 @@ class CoversPastGameSpider(Spider):
 
     def parse(self, response):
         for row in response.xpath(
-            '//table[@class="table covers-CoversMatchups-Table covers-CoversResults-Table"]/tbody/tr'
+                '//table[@class="table covers-CoversMatchups-Table covers-CoversResults-Table"]/tbody/tr'
         ):
             loader = PastGameItemLoader(item=PastGameItem(), selector=row)
             loader.add_xpath("game_id", "td[3]/a/@href")
@@ -69,8 +69,8 @@ class CoversPastGameSpider(Spider):
             loader.add_xpath("spread_result", "td[4]/span/text()")
             loader.add_xpath("spread", "td[4]/text()")
             loader.add_value(
-                "team", re.search(r"main/(.*)/\d", str(response)).group(1)
-            )
+                "team",
+                re.search(r"main/(.*)/\d", str(response)).group(1))
             loader.add_value(
                 "league_year",
                 re.search(r"(\d\d\d\d-\d\d\d\d)", str(response)).group(),
@@ -79,8 +79,7 @@ class CoversPastGameSpider(Spider):
             # add missing fields
             item = loader.load_item()
             fields = [
-                f
-                for f in [
+                f for f in [
                     "game_id",
                     "game_url",
                     "date",
@@ -93,8 +92,7 @@ class CoversPastGameSpider(Spider):
                     "spread",
                     "team",
                     "league_year",
-                ]
-                if f not in item
+                ] if f not in item
             ]
 
             for f in fields:
@@ -112,12 +110,8 @@ class CoversPastGameSpider(Spider):
 
         # scrape previous season if one exists
         if int(current_season) > 2007:
-            url = (
-                base_url
-                + [
-                    season
-                    for season in other_season_urls
-                    if season.endswith(previous_season)
-                ][0]
-            )
+            url = (base_url + [
+                season for season in other_season_urls
+                if season.endswith(previous_season)
+            ][0])
             yield Request(url, callback=self.parse)

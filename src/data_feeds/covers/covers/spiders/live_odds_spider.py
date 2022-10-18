@@ -2,8 +2,8 @@ import pytz
 import datetime
 from scrapy import Spider
 
-from items import LiveGameItem
-from item_loaders import LiveGameItemLoader
+from ..items import LiveGameItem
+from ..item_loaders import LiveGameItemLoader
 
 
 class CoversLiveGameSpider(Spider):
@@ -17,21 +17,15 @@ class CoversLiveGameSpider(Spider):
         # todays_date = 'Nov 12'
 
         todays_date = datetime.datetime.now(
-            pytz.timezone("America/Denver")
-        ).strftime("%b %d")
+            pytz.timezone("America/Denver")).strftime("%b %d")
         todays_year = datetime.datetime.now(
-            pytz.timezone("America/Denver")
-        ).strftime("%Y")
+            pytz.timezone("America/Denver")).strftime("%Y")
         game_table = response.xpath(
             '//table[contains(@id, "spread-total-game-nba")]/tbody/tr//div[@class="__date"]/text()'
         ).getall()
-        todays_game_count = len(
-            [
-                row
-                for row in game_table
-                if row.strip() in ["Today", todays_date]
-            ]
-        )
+        todays_game_count = len([
+            row for row in game_table if row.strip() in ["Today", todays_date]
+        ])
 
         for game_num in range(1, todays_game_count + 1):
             loader = LiveGameItemLoader(item=LiveGameItem(), response=response)
@@ -116,8 +110,7 @@ class CoversLiveGameSpider(Spider):
 
             item = loader.load_item()
             fields = [
-                f
-                for f in [
+                f for f in [
                     "id_num",
                     "date",
                     "time",
@@ -138,8 +131,7 @@ class CoversLiveGameSpider(Spider):
                     "covers_away_consenses",
                     "covers_home_consenses",
                     "link",
-                ]
-                if f not in item
+                ] if f not in item
             ]
 
             for f in fields:

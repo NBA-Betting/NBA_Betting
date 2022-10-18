@@ -11,9 +11,8 @@
 ## Bet Management
 
 ## Deployment
-* Daily Updating
-    * Test bash script for 4/10/2022
-    * When successful switch hard coded dates to proper dates for daily updating.
+* Confirm Daily Updating is Working
+
 ## Readme and Misc
 
 # Adding Data, Features

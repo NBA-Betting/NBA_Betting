@@ -2,8 +2,8 @@ import datetime
 import pytz
 from scrapy import Spider
 
-from items import LiveGameResultsItem
-from item_loaders import LiveGameResultsItemLoader
+from ..items import LiveGameResultsItem
+from ..item_loaders import LiveGameResultsItemLoader
 
 
 class CoversLiveGameResultsSpider(Spider):
@@ -27,15 +27,12 @@ class CoversLiveGameResultsSpider(Spider):
 
     def parse(self, response):
         date = response.xpath(
-            '//a[@class="cmg_active_navigation_item"]/text()'
-        ).get()
+            '//a[@class="cmg_active_navigation_item"]/text()').get()
 
         for row in response.xpath(
-            '//div[@class="cmg_matchup_game_box cmg_game_data"]'
-        ):
-            loader = LiveGameResultsItemLoader(
-                item=LiveGameResultsItem(), selector=row
-            )
+                '//div[@class="cmg_matchup_game_box cmg_game_data"]'):
+            loader = LiveGameResultsItemLoader(item=LiveGameResultsItem(),
+                                               selector=row)
             loader.add_value("date", date)
             loader.add_xpath("home_team", "@data-home-team-nickname-search")
             loader.add_xpath("away_team", "@data-away-team-nickname-search")
@@ -45,15 +42,13 @@ class CoversLiveGameResultsSpider(Spider):
             # add missing fields
             item = loader.load_item()
             fields = [
-                f
-                for f in [
+                f for f in [
                     "date",
                     "home_team",
                     "away_team",
                     "home_score",
                     "away_score",
-                ]
-                if f not in item
+                ] if f not in item
             ]
 
             for f in fields:
