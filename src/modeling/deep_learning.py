@@ -7,7 +7,7 @@ from tensorflow import keras
 from tensorflow.keras.layers import Normalization, Dense
 
 sys.path.append('../../')
-from passkeys import RDS_ENDPOINT, RDS_PASSWORD
+from ...passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 
 def nba_betting_rds_connection(endpoint, password):

@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 from financials import BankAccount
 
 sys.path.append('../../')
-from passkeys import RDS_ENDPOINT, RDS_PASSWORD
+from ...passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 pd.options.display.max_rows = 50
 pd.options.display.max_columns = 100

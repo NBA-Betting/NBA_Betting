@@ -12,7 +12,7 @@ from pycaret import classification as pyc_cls
 import autokeras as ak
 
 sys.path.append('../../')
-from passkeys import RDS_ENDPOINT, RDS_PASSWORD
+from ...passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 pd.set_option("display.width", 200)
 

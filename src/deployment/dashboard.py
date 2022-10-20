@@ -9,7 +9,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 sys.path.append('../../')
-from passkeys import RDS_ENDPOINT, RDS_PASSWORD
+from ...passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 app = Dash(__name__,
            external_stylesheets=[dbc.themes.BOOTSTRAP],

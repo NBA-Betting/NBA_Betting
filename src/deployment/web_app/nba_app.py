@@ -13,7 +13,7 @@ import matplotlib.dates as mdates
 import matplotlib.style as style
 
 sys.path.append('../../../')
-from passkeys import RDS_ENDPOINT, RDS_PASSWORD
+from ....passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 app = flask.Flask(__name__)
 

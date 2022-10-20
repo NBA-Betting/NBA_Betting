@@ -13,7 +13,7 @@ from sqlalchemy import create_engine
 from nba.spiders.helpers import return_season_dates
 
 sys.path.append('../../../')
-from passkeys import RDS_ENDPOINT, RDS_PASSWORD, WEB_UNLOCKER_PROXY_HANDLER
+from ....passkeys import RDS_ENDPOINT, RDS_PASSWORD, WEB_UNLOCKER_PROXY_HANDLER
 
 pd.set_option('display.max_columns', 100)
 pd.options.display.width = 0

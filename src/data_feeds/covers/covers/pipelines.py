@@ -5,7 +5,7 @@ from datetime import datetime
 from scrapy.exceptions import DropItem
 
 sys.path.append('../../../../')
-from passkeys import RDS_ENDPOINT, RDS_PASSWORD
+from .....passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 
 class CoversPostgresPipeline(object):
