@@ -5,7 +5,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 sys.path.append('../../')
-from ...passkeys import RDS_ENDPOINT, RDS_PASSWORD
+from passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 pd.options.display.max_columns = 100
 pd.options.display.width = 0

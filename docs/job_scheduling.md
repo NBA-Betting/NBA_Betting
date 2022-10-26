@@ -23,8 +23,8 @@ set -e
 
 # Data Inbound
 cd ~/data_feeds/covers
-~/.local/bin/scrapy crawl Covers_live_game_results_spider
-~/.local/bin/scrapy crawl Covers_live_game_spider
+~/.local/bin/scrapy crawl covers_past_game_spider
+~/.local/bin/scrapy crawl covers_live_game_spider
 echo "----- Covers Scrapy Complete -----"
 cd ~/data_feeds/nba
 python3 data_requests.py

@@ -7,7 +7,7 @@ from ..item_loaders import LiveGameItemLoader
 
 
 class CoversLiveGameSpider(Spider):
-    name = "Covers_live_game_spider"
+    name = "covers_live_game_spider"
     allowed_domains = ["www.covers.com"]
     start_urls = ["https://www.covers.com/sport/basketball/nba/odds"]
 
@@ -36,27 +36,15 @@ class CoversLiveGameSpider(Spider):
                 f"//table[contains(@id, 'spread-game-nba')]/tbody/tr[{game_num}]/td[1]//div[@class='__time']/text()",
             )
             loader.add_xpath(
-                "home_team_full_name",
-                f"//table[contains(@id, 'spread-game-nba')]/tbody/tr[{game_num}]/td[2]//div[@class='__home']//a//img/@title",
-            )
-            loader.add_xpath(
-                "home_team_short_name",
+                "home_team",
                 f"//table[contains(@id, 'spread-game-nba')]/tbody/tr[{game_num}]/td[2]//div[@class='__home']//a/text()[2]",
             )
             loader.add_xpath(
-                "away_team_full_name",
-                f"//table[contains(@id, 'spread-game-nba')]/tbody/tr[{game_num}]/td[2]//div[@class='__away']//a//img/@title",
-            )
-            loader.add_xpath(
-                "away_team_short_name",
+                "away_team",
                 f"//table[contains(@id, 'spread-game-nba')]/tbody/tr[{game_num}]/td[2]//div[@class='__away']//a/text()[2]",
             )
             loader.add_xpath(
-                "open_line_away",
-                f"//table[contains(@id, 'spread-game-nba')]/tbody/tr[{game_num}]/td[4]//div[@class='__awayOdds']/div[@class='American __american']/text()",
-            )
-            loader.add_xpath(
-                "open_line_home",
+                "spread",
                 f"//table[contains(@id, 'spread-game-nba')]/tbody/tr[{game_num}]/td[4]//div[@class='__homeOdds']/div[@class='American __american']/text()",
             )
             loader.add_xpath(
@@ -96,15 +84,15 @@ class CoversLiveGameSpider(Spider):
                 f"//table[contains(@id, 'spread-consensus-nba')]/tbody/tr[{game_num}]//a/@href",
             )
             loader.add_xpath(
-                "covers_away_consenses",
+                "covers_away_consensus",
                 f"//table[contains(@id, 'spread-consensus-nba')]/tbody/tr[{game_num}]//div[@class='__awayConsensus']/div/text()",
             )
             loader.add_xpath(
-                "covers_home_consenses",
+                "covers_home_consensus",
                 f"//table[contains(@id, 'spread-consensus-nba')]/tbody/tr[{game_num}]//div[@class='__homeConsensus']/div/text()",
             )
             loader.add_xpath(
-                "link",
+                "game_url",
                 f"//table[contains(@id, 'spread-consensus-nba')]/tbody/tr[{game_num}]//a/@href",
             )
 
@@ -114,12 +102,9 @@ class CoversLiveGameSpider(Spider):
                     "id_num",
                     "date",
                     "time",
-                    "home_team_full_name",
-                    "home_team_short_name",
-                    "away_team_full_name",
-                    "away_team_short_name",
-                    "open_line_away",
-                    "open_line_home",
+                    "home_team",
+                    "away_team",
+                    "spread",
                     "fanduel_line_away",
                     "fanduel_line_price_away",
                     "fanduel_line_home",
@@ -128,9 +113,9 @@ class CoversLiveGameSpider(Spider):
                     "draftkings_line_price_away",
                     "draftkings_line_home",
                     "draftkings_line_price_home",
-                    "covers_away_consenses",
-                    "covers_home_consenses",
-                    "link",
+                    "covers_away_consensus",
+                    "covers_home_consensus",
+                    "game_url",
                 ] if f not in item
             ]
 

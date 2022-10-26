@@ -5,7 +5,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 sys.path.append('../../')
-from ...passkeys import RDS_ENDPOINT, RDS_PASSWORD
+from passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 
 def create_record_batch(date, engine, team_map):
@@ -25,9 +25,37 @@ def create_record_batch(date, engine, team_map):
         prev_date = (datetime.datetime.strptime(date, "%Y%m%d") -
                      datetime.timedelta(days=1)).strftime("%Y%m%d")
 
-        # Loading relevent data from RDS.
+        todays_date_538 = datetime.datetime.strptime(
+            date, "%Y%m%d").strftime("%Y-%m-%d")
+
+        # ----- Loading relevant data from RDS -----
+
+        # Covers
         cd_covers_odds = pd.read_sql(
             f"SELECT * FROM dfc_covers_odds WHERE date = '{date}'", connection)
+
+        # FiveThirtyEight
+        elo_538 = pd.read_sql(
+            f"""
+            SELECT date,
+                   team1,
+                   team2,
+                   elo1_pre,
+                   elo2_pre,
+                   elo_prob1,
+                   elo_prob2,
+                   raptor1_pre,
+                   raptor2_pre,
+                   raptor_prob1,
+                   raptor_prob2,
+                   quality,
+                   importance,
+                   total_rating
+            FROM five_thirty_eight
+            WHERE date = '{todays_date_538}'
+            """, connection)
+
+        # NBA Stats
         traditional = pd.read_sql(
             f"SELECT * FROM traditional WHERE date = '{prev_date}'",
             connection)
@@ -53,12 +81,19 @@ def create_record_batch(date, engine, team_map):
         hustle = pd.read_sql(
             f"SELECT * FROM hustle WHERE date = '{prev_date}'", connection)
 
-        # Standardize team names using team map argument.
+        # ----- STANDARDIZE TEAM NAMES -----
+
+        # Covers
         cd_covers_odds["team"] = cd_covers_odds["home_team_short_name"].map(
             team_map)
         cd_covers_odds["opponent"] = cd_covers_odds[
             "away_team_short_name"].map(team_map)
 
+        # FiveThirtyEight
+        elo_538['team'] = elo_538['team1'].map(team_map)
+        elo_538['opponent'] = elo_538['team2'].map(team_map)
+
+        # NBA Stats
         traditional['team'] = traditional['team'].map(team_map)
         advanced['team'] = advanced['team'].map(team_map)
         four_factors['team'] = four_factors['team'].map(team_map)
@@ -70,7 +105,16 @@ def create_record_batch(date, engine, team_map):
         opponent_shooting['team'] = opponent_shooting['team'].map(team_map)
         hustle['team'] = hustle['team'].map(team_map)
 
-        # Combining data into one dataframe.
+        # ----- STANDARDIZE DATES -----
+
+        # FiveThirtyEight
+        elo_538['date'] = elo_538['date'].apply(lambda x: x.replace('-', ''))
+
+        print(elo_538.info())
+
+        # ----- COMBINE DATA -----
+
+        # Covers and NBA Stats
         full_dataset = cd_covers_odds.merge(
             traditional,
             how="left",
@@ -102,16 +146,29 @@ def create_record_batch(date, engine, team_map):
                                               suffixes=(None, '_opp'),
                                               validate='1:m')
 
+        # FiveThirtyEight
+        full_dataset = full_dataset.merge(
+            elo_538,
+            how='left',
+            left_on=['date', 'team', 'opponent'],
+            right_on=['date', 'team', 'opponent'],
+            suffixes=(None, '_538'),
+            validate='1:1')
+
+        # ----- FULL DATASET -----
+
         # Unique Record ID
         full_dataset["game_id"] = (full_dataset["date"] +
                                    full_dataset["team"] +
                                    full_dataset["opponent"])
 
         # Datetime Fields
-        full_dataset["datetime_str"] = (full_dataset["date"] + " " +
-                                        full_dataset["time"])
+        full_dataset["datetime_str"] = full_dataset.apply(
+            lambda x: x["date"] + " " + x["time"]
+            if pd.notnull(x['time']) else x['date'],
+            axis=1)
         full_dataset["datetime"] = full_dataset["datetime_str"].apply(
-            lambda x: datetime.datetime.strptime(x, "%Y%m%d %I:%M %p"))
+            lambda x: pd.to_datetime(x))
         full_dataset['pred_date'] = full_dataset['date'].apply(
             lambda x: (datetime.datetime.strptime(x, '%Y%m%d') - datetime.
                        timedelta(days=1)).strftime('%Y%m%d'))
@@ -130,7 +187,7 @@ def create_record_batch(date, engine, team_map):
             'id_num', 'date', 'time', 'home_team_full_name',
             'home_team_short_name', 'away_team_full_name',
             'away_team_short_name', 'open_line_away', 'date_nba', 'date_opp',
-            'team_opp', 'datetime_str'
+            'team_opp', 'datetime_str', 'team1', 'team2'
         ]
 
         all_features = main_features + [
@@ -159,13 +216,16 @@ def create_record_batch(date, engine, team_map):
         }
         full_dataset = full_dataset.rename(columns=column_rename_dict)
 
-        # Save to RDS
-        full_dataset.to_sql(
-            name="combined_nba_covers",
-            con=connection,
-            index=False,
-            if_exists="append",
-        )
+        print(full_dataset.info(verbose=True))
+        print(full_dataset.head())
+
+        # # Save to RDS
+        # full_dataset.to_sql(
+        #     name="combined_nba_covers",
+        #     con=connection,
+        #     index=False,
+        #     if_exists="append",
+        # )
 
 
 if __name__ == "__main__":
@@ -222,6 +282,7 @@ if __name__ == "__main__":
         "MIL": "MIL",
         "ATL": "ATL",
         "CHA": "CHA",
+        "CHO": "CHA",
         "CHI": "CHI",
         "CLE": "CLE",
         "DAL": "DAL",
@@ -296,4 +357,4 @@ if __name__ == "__main__":
     todays_date_str = todays_datetime.strftime("%Y%m%d")
     yesterdays_date_str = yesterdays_datetime.strftime("%Y%m%d")
 
-    create_record_batch(todays_date_str, engine, team_map)
+    create_record_batch("20220322", engine, team_map)

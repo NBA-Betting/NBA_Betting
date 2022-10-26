@@ -41,15 +41,15 @@ teams = [
 
 
 class CoversPastGameSpider(Spider):
-    name = "Covers_past_game_spider"
+    name = "covers_past_game_spider"
     allowed_domains = ["covers.com"]
 
     # start_urls = [
-    #     base_url + "/sport/basketball/nba/teams/main/miami-heat/2021-2022"
+    #     base_url + "/sport/basketball/nba/teams/main/miami-heat/2022-2023"
     # ]
 
     start_urls = [
-        base_url + f"/sport/basketball/nba/teams/main/{team}/2021-2022"
+        base_url + f"/sport/basketball/nba/teams/main/{team}/2022-2023"
         for team in teams
     ]
 
@@ -58,10 +58,10 @@ class CoversPastGameSpider(Spider):
                 '//table[@class="table covers-CoversMatchups-Table covers-CoversResults-Table"]/tbody/tr'
         ):
             loader = PastGameItemLoader(item=PastGameItem(), selector=row)
-            loader.add_xpath("game_id", "td[3]/a/@href")
+            loader.add_xpath("id_num", "td[3]/a/@href")
             loader.add_xpath("game_url", "td[3]/a/@href")
             loader.add_xpath("date", "td[1]/text()")
-            loader.add_xpath("home", "td[2]/a/text()")
+            loader.add_xpath("is_home", "td[2]/a/text()")
             loader.add_xpath("opponent", "td[2]/a/text()")
             loader.add_xpath("result", "td[3]/a/text()")
             loader.add_xpath("score", "td[3]/a/text()")
@@ -80,10 +80,10 @@ class CoversPastGameSpider(Spider):
             item = loader.load_item()
             fields = [
                 f for f in [
-                    "game_id",
+                    "id_num",
                     "game_url",
                     "date",
-                    "home",
+                    "is_home",
                     "opponent",
                     "result",
                     "score",
@@ -100,18 +100,18 @@ class CoversPastGameSpider(Spider):
 
             yield item
 
-        current_season = response.xpath(
-            '//div[@id="TP_pastResults"]//span[@id="TP-Season-Select"]/text()'
-        ).get()[-4:]
-        previous_season = str(int(current_season) - 1)
-        other_season_urls = response.xpath(
-            '//div[@id="TP_pastResults"]//div[@id="TP-Season-Drop"]/li/a/@href'
-        ).getall()
+        # current_season = response.xpath(
+        #     '//div[@id="TP_pastResults"]//span[@id="TP-Season-Select"]/text()'
+        # ).get()[-4:]
+        # previous_season = str(int(current_season) - 1)
+        # other_season_urls = response.xpath(
+        #     '//div[@id="TP_pastResults"]//div[@id="TP-Season-Drop"]/li/a/@href'
+        # ).getall()
 
         # scrape previous season if one exists
-        if int(current_season) > 2007:
-            url = (base_url + [
-                season for season in other_season_urls
-                if season.endswith(previous_season)
-            ][0])
-            yield Request(url, callback=self.parse)
+        # if int(current_season) > 2007:
+        #     url = (base_url + [
+        #         season for season in other_season_urls
+        #         if season.endswith(previous_season)
+        #     ][0])
+        #     yield Request(url, callback=self.parse)
