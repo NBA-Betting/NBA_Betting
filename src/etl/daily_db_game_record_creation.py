@@ -7,11 +7,13 @@ from sqlalchemy import create_engine
 sys.path.append('../../')
 from passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
+pd.set_option('display.max_columns', None)
+
 
 def create_record_batch(date, engine, team_map):
     """Collects current days pregame odds data from Covers.
        Cleans and combines with feature data from previous day (End of Day).
-       Saves as a new record to RDS database combined_data_inbound table.
+       Saves as a new record to RDS database combined_inbound_data table.
        Typically run as part of a daily cron job.
 
     Args:
@@ -31,8 +33,8 @@ def create_record_batch(date, engine, team_map):
         # ----- Loading relevant data from RDS -----
 
         # Covers
-        cd_covers_odds = pd.read_sql(
-            f"SELECT * FROM dfc_covers_odds WHERE date = '{date}'", connection)
+        covers = pd.read_sql(f"SELECT * FROM covers WHERE date = '{date}'",
+                             connection)
 
         # FiveThirtyEight
         elo_538 = pd.read_sql(
@@ -50,7 +52,7 @@ def create_record_batch(date, engine, team_map):
                    raptor_prob2,
                    quality,
                    importance,
-                   total_rating
+                   total_rating AS total_rating_538
             FROM five_thirty_eight
             WHERE date = '{todays_date_538}'
             """, connection)
@@ -84,10 +86,8 @@ def create_record_batch(date, engine, team_map):
         # ----- STANDARDIZE TEAM NAMES -----
 
         # Covers
-        cd_covers_odds["team"] = cd_covers_odds["home_team_short_name"].map(
-            team_map)
-        cd_covers_odds["opponent"] = cd_covers_odds[
-            "away_team_short_name"].map(team_map)
+        covers["team"] = covers["team"].map(team_map)
+        covers["opponent"] = covers["opponent"].map(team_map)
 
         # FiveThirtyEight
         elo_538['team'] = elo_538['team1'].map(team_map)
@@ -110,25 +110,23 @@ def create_record_batch(date, engine, team_map):
         # FiveThirtyEight
         elo_538['date'] = elo_538['date'].apply(lambda x: x.replace('-', ''))
 
-        print(elo_538.info())
-
         # ----- COMBINE DATA -----
 
         # Covers and NBA Stats
-        full_dataset = cd_covers_odds.merge(
+        full_dataset = covers.merge(
             traditional,
             how="left",
             left_on=["team"],
             right_on=["team"],
             suffixes=(None, "_nba"),
-            validate="1:m",
+            validate="1:1",
         )
         full_dataset = full_dataset.merge(traditional,
                                           how='left',
                                           left_on=['opponent'],
                                           right_on=['team'],
                                           suffixes=(None, '_opp'),
-                                          validate='1:m')
+                                          validate='1:1')
         for stat_group in [
                 advanced, four_factors, misc, scoring, opponent,
                 speed_distance, shooting, opponent_shooting, hustle
@@ -138,13 +136,13 @@ def create_record_batch(date, engine, team_map):
                                               left_on=['team'],
                                               right_on=['team'],
                                               suffixes=(None, '_nba'),
-                                              validate='1:m')
+                                              validate='1:1')
             full_dataset = full_dataset.merge(stat_group,
                                               how='left',
                                               left_on=['opponent'],
                                               right_on=['team'],
                                               suffixes=(None, '_opp'),
-                                              validate='1:m')
+                                              validate='1:1')
 
         # FiveThirtyEight
         full_dataset = full_dataset.merge(
@@ -175,19 +173,19 @@ def create_record_batch(date, engine, team_map):
 
         # Cleanup - Rename, Remove, and Reorder
         main_features = [
-            "game_id", "datetime", "league_year", "team", "opponent", "link",
-            "open_line_home", "fanduel_line_home", "fanduel_line_price_home",
-            "fanduel_line_away", "fanduel_line_price_away",
-            "draftkings_line_home", "draftkings_line_price_home",
-            "draftkings_line_away", "draftkings_line_price_away",
-            "covers_home_consenses", "covers_away_consenses", "pred_date"
+            "game_id", "datetime", "league_year", "team", "opponent",
+            "game_url", "spread", "fanduel_line_home",
+            "fanduel_line_price_home", "fanduel_line_away",
+            "fanduel_line_price_away", "draftkings_line_home",
+            "draftkings_line_price_home", "draftkings_line_away",
+            "draftkings_line_price_away", "covers_home_consensus",
+            "covers_away_consensus", "pred_date"
         ]
 
         drop_features = [
-            'id_num', 'date', 'time', 'home_team_full_name',
-            'home_team_short_name', 'away_team_full_name',
-            'away_team_short_name', 'open_line_away', 'date_nba', 'date_opp',
-            'team_opp', 'datetime_str', 'team1', 'team2'
+            'id_num', 'date', 'time', 'home_team_short_name',
+            'away_team_short_name', 'date_nba', 'date_opp', 'team_opp',
+            'datetime_str', 'team1', 'team2'
         ]
 
         all_features = main_features + [
@@ -198,11 +196,14 @@ def create_record_batch(date, engine, team_map):
 
         column_rename_dict = {
             "datetime": "game_date",
-            "league_year": "league_year",
             "team": "home_team",
             "opponent": "away_team",
-            "link": "covers_game_url",
-            "open_line_home": "home_spread",
+            "game_url": "covers_game_url",
+            "spread": "home_spread",
+            "score": "home_score",
+            "opponent_score": "away_score",
+            "result": "home_result",
+            "spread_result": "home_spread_result",
             "fanduel_line_home": "fd_line_home",
             "fanduel_line_price_home": "fd_line_price_home",
             "fanduel_line_away": "fd_line_away",
@@ -211,17 +212,17 @@ def create_record_batch(date, engine, team_map):
             "draftkings_line_price_home": "dk_line_price_home",
             "draftkings_line_away": "dk_line_away",
             "draftkings_line_price_away": "dk_line_price_away",
-            "covers_home_consenses": "covers_consenses_home",
-            "covers_away_consenses": "covers_consenses_away",
+            "covers_home_consensus": "covers_consensus_home",
+            "covers_away_consensus": "covers_consensus_away",
         }
         full_dataset = full_dataset.rename(columns=column_rename_dict)
 
-        print(full_dataset.info(verbose=True))
-        print(full_dataset.head())
+        print(full_dataset.info(verbose=True, show_counts=True))
+        print(full_dataset.head(10))
 
-        # # Save to RDS
+        # Save to RDS
         # full_dataset.to_sql(
-        #     name="combined_nba_covers",
+        #     name="combined_inbound_data",
         #     con=connection,
         #     index=False,
         #     if_exists="append",
@@ -258,6 +259,7 @@ if __name__ == "__main__":
         "Dallas Mavericks": "DAL",
         "Denver Nuggets": "DEN",
         "Los Angeles Clippers": "LAC",
+        "LA Clippers": "LAC",
         "Utah Jazz": "UTA",
         "Los Angeles Lakers": "LAL",
         "Memphis Grizzlies": "MEM",
@@ -277,6 +279,7 @@ if __name__ == "__main__":
 
     team_abrv_map = {
         "BK": "BKN",
+        "BRK": "BKN",
         "BKN": "BKN",
         "BOS": "BOS",
         "MIL": "MIL",
@@ -357,4 +360,12 @@ if __name__ == "__main__":
     todays_date_str = todays_datetime.strftime("%Y%m%d")
     yesterdays_date_str = yesterdays_datetime.strftime("%Y%m%d")
 
-    create_record_batch("20220322", engine, team_map)
+    create_record_batch(todays_date_str, engine, team_map)
+
+    # dates = [
+    #     '20221029', '20221028', '20221027', '20221026', '20221025', '20221024',
+    #     '20221023', '20221022', '20221021', '20221020', '20221019', '20221018'
+    # ]
+
+    # for date in dates:
+    #     create_record_batch(date, engine, team_map)

@@ -50,27 +50,32 @@ if __name__ == "__main__":
                 'opponent', 'speed_distance', 'shooting', 'opponent_shooting',
                 'hustle'
         ]:
+            # Remove query_date for loop when updating full table.
             # df = pd.read_sql_table(f"nba_{table}", connection) # Full Table. Takes Awhile
 
-            # query_date = yesterdays_date_str
-            query_date = '20220410'
-            query = f"SELECT * FROM nba_{table} WHERE date = '{query_date}';"
-            df = pd.read_sql(query, connection)
+            # dates = [
+            #     '20221018', '20221019', '20221020', '20221021', '20221022',
+            #     '20221023', '20221024', '20221025', '20221026', '20221027'
+            # ]
+            dates = [yesterdays_date_str]
+            for date in dates:
+                query = f"SELECT * FROM nba_{table} WHERE date = '{date}';"
+                df = pd.read_sql(query, connection)
 
-            output_df = add_features(df)
+                output_df = add_features(df)
 
-            for column in list(output_df):
-                if output_df[column].dtype == 'float64':
-                    output_df[column] = pd.to_numeric(output_df[column],
-                                                      downcast='float')
-                if output_df[column].dtype == 'int64':
-                    output_df[column] = pd.to_numeric(output_df[column],
-                                                      downcast='integer')
+                for column in list(output_df):
+                    if output_df[column].dtype == 'float64':
+                        output_df[column] = pd.to_numeric(output_df[column],
+                                                          downcast='float')
+                    if output_df[column].dtype == 'int64':
+                        output_df[column] = pd.to_numeric(output_df[column],
+                                                          downcast='integer')
 
-            print(output_df.head())
-            print(output_df.info(verbose=True))
+                print(output_df.head())
+                print(output_df.info(verbose=True))
 
-            # output_df.to_sql(f"{table}",
-            #                  connection,
-            #                  index=False,
-            #                  if_exists="append") # Replace if full table. Append if updating.
+                # output_df.to_sql(f"{table}",
+                #                  connection,
+                #                  index=False,
+                #                  if_exists="append") # Replace if full table. Append if updating.

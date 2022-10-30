@@ -5,7 +5,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 sys.path.append('../../')
-from ...passkeys import RDS_ENDPOINT, RDS_PASSWORD
+from passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 
 def update_previous_days_records(date, engine, team_map):
@@ -20,40 +20,42 @@ def update_previous_days_records(date, engine, team_map):
         team_map (dict): For standardizing team name and abbreviation fields.
     """
     with engine.connect() as connection:
-        # Loading relevent data from RDS.
-        pd_covers_game_results = pd.read_sql(
-            f"SELECT * FROM dfc_covers_game_results WHERE date = '{date}'",
+        covers = pd.read_sql(
+            f"SELECT * FROM covers WHERE date = '{date}'",
             connection,
         )
 
-        # Standardize team names using team map argument.
-        pd_covers_game_results["home_teamname"] = pd_covers_game_results[
-            "home_team"].map(team_map)
-        pd_covers_game_results["away_teamname"] = pd_covers_game_results[
-            "away_team"].map(team_map)
+        # Standardize Team Names
+        covers["team"] = covers["team"].map(team_map)
+        covers["opponent"] = covers["opponent"].map(team_map)
 
         # Unique Record ID
-        pd_covers_game_results["game_id"] = (
-            pd_covers_game_results["date"] +
-            pd_covers_game_results["home_teamname"] +
-            pd_covers_game_results["away_teamname"])
+        covers["game_id"] = (covers["date"] + covers["team"] +
+                             covers["opponent"])
 
         # Save to RDS
-        record_list_of_dicts = pd_covers_game_results.to_dict(orient="records")
-        for game_result in record_list_of_dicts:
-            game_id = game_result["game_id"]
-            home_score = game_result["home_score"]
-            away_score = game_result["away_score"]
+        record_list_of_dicts = covers.to_dict(orient="records")
 
-            stmt = f"""
-                UPDATE combined_nba_covers
-                SET home_score = {home_score},
-                    away_score = {away_score}
-                WHERE game_id = '{game_id}'
-                ;
-                """
+        print(record_list_of_dicts)
 
-            connection.execute(stmt)
+        # for game_result in record_list_of_dicts:
+        #     game_id = game_result["game_id"]
+        #     home_score = game_result["score"]
+        #     away_score = game_result["opponent_score"]
+        #     home_result = game_result["result"]
+        #     home_spread_result = game_result["spread_result"]
+
+        #     stmt = f"""
+        #         UPDATE combined_inbound_data
+        #         SET home_score = {home_score},
+        #             away_score = {away_score},
+        #             home_result = '{home_result}',
+        #             home_spread_result = '{home_spread_result}'
+        #         WHERE game_id = '{game_id}'
+        #         ;
+        #         """
+
+        #     connection.execute(stmt)
 
 
 if __name__ == "__main__":
@@ -86,6 +88,7 @@ if __name__ == "__main__":
         "Dallas Mavericks": "DAL",
         "Denver Nuggets": "DEN",
         "Los Angeles Clippers": "LAC",
+        "LA Clippers": "LAC",
         "Utah Jazz": "UTA",
         "Los Angeles Lakers": "LAL",
         "Memphis Grizzlies": "MEM",
@@ -105,11 +108,13 @@ if __name__ == "__main__":
 
     team_abrv_map = {
         "BK": "BKN",
+        "BRK": "BKN",
         "BKN": "BKN",
         "BOS": "BOS",
         "MIL": "MIL",
         "ATL": "ATL",
         "CHA": "CHA",
+        "CHO": "CHA",
         "CHI": "CHI",
         "CLE": "CLE",
         "DAL": "DAL",

@@ -58,7 +58,7 @@ if __name__ == "__main__":
     today = datetime.datetime.now(pytz.timezone("America/Denver"))
     yesterday = today - datetime.timedelta(days=1)
     dates = [today.strftime("%Y-%m-%d")]
-    # dates = ['2022-10-18', '2022-10-19', '2022-10-20']
+    # dates = ['2022-10-26', '2022-10-27', '2022-10-28']
     # dates = pd.date_range(start=season_dates["start_date"],
     #                       end=season_dates["final_date"],
     #                       freq='D')

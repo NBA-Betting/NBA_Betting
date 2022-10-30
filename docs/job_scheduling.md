@@ -28,6 +28,8 @@ cd ~/data_feeds/covers
 echo "----- Covers Scrapy Complete -----"
 cd ~/data_feeds/nba
 python3 data_requests.py
+cd ~/data_feeds/fivethirtyeight
+python3 data_requests_538.py
 echo "----- Data Requests Complete -----"
 
 # Feature Creation and ETL

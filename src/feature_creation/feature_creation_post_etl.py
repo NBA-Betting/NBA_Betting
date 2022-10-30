@@ -49,7 +49,7 @@ class FeatureCreation:
         - Historic team and odds data from Covers
         - Live team and odds data from Covers
         - Point in time standings and team/opponent stats
-          from Basketball Reference
+          from NBA Stats
         """
 
         team_abbrv_dict = {
@@ -111,8 +111,8 @@ class FeatureCreation:
 
         self.wdf.insert(6, "fd_line_home", self.wdf.pop("fd_line_home"))
         self.wdf.insert(7, "dk_line_home", self.wdf.pop("dk_line_home"))
-        self.wdf.insert(8, "covers_consenses_home",
-                        self.wdf.pop("covers_consenses_home"))
+        self.wdf.insert(8, "covers_consensus_home",
+                        self.wdf.pop("covers_consensus_home"))
 
     def seasonal_effects(self):
         seasons = {
@@ -202,19 +202,12 @@ class FeatureCreation:
         - Reordering Features
         """
         always_drop_features = [
-            "game_date",
-            "home_score",
-            "away_score",
-            "home_result",
-            "covers_game_url",
-            "home_spread_result",
-            "pred_date",
-            "fd_line_price_home",
-            "fd_line_price_away",
-            "dk_line_price_home",
-            "dk_line_price_away",
-            "fd_line_away",
-            "dk_line_away",
+            "game_date", "home_score", "away_score", "home_result",
+            "covers_game_url", "home_spread_result", "pred_date",
+            "fd_line_price_home", "fd_line_price_away", "dk_line_price_home",
+            "dk_line_price_away", "fd_line_away", "dk_line_away",
+            "raptor1_pre", "raptor2_pre", "raptor_prob1", "raptor_prob2",
+            "quality", "importance", "total_rating_538"
         ]
         self.wdf = self.wdf.drop(columns=always_drop_features)
 
@@ -222,7 +215,7 @@ class FeatureCreation:
             "home_team",
             "away_team",
             "league_year",
-            "covers_consenses_away",
+            "covers_consensus_away",
         ])
 
         for column in list(self.wdf):
@@ -256,11 +249,11 @@ if __name__ == "__main__":
             f"postgresql+psycopg2://{username}:{password}@{endpoint}/{database}"
     ).connect() as connection:
 
-        # df = pd.read_sql_table("combined_nba_covers", connection) # Full Table. Takes Awhile
+        # df = pd.read_sql_table("combined_inbound_data", connection) # Full Table. Takes Awhile
 
-        # query_date = yesterdays_date_str
-        query_date = '20220410'
-        query = f"SELECT * FROM combined_nba_covers WHERE game_id LIKE '{query_date}%%'"
+        query_date = yesterdays_date_str
+        # query_date = '20220410'
+        query = f"SELECT * FROM combined_inbound_data WHERE game_id LIKE '{query_date}%%'"
         df = pd.read_sql(query, connection)
 
         feature_pipeline = FeatureCreation(df)
@@ -268,6 +261,6 @@ if __name__ == "__main__":
         model_ready_df = feature_pipeline.wdf
         print(model_ready_df.info(verbose=True, show_counts=True))
 
-        model_ready_df.to_sql(
-            "nba_model_ready", connection, index=False,
-            if_exists="append")  # Replace if full table. Otherwise Append
+        # model_ready_df.to_sql(
+        #     "model_training_data", connection, index=False,
+        #     if_exists="append")  # Replace if full table. Otherwise Append
