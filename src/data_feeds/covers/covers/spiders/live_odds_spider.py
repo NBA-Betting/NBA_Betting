@@ -17,7 +17,7 @@ class CoversLiveGameSpider(Spider):
         # todays_date = 'Nov 12'
 
         todays_date = datetime.datetime.now(
-            pytz.timezone("America/Denver")).strftime("%b %d")
+            pytz.timezone("America/Denver")).strftime("%b %-d")
         todays_year = datetime.datetime.now(
             pytz.timezone("America/Denver")).strftime("%Y")
         game_table = response.xpath(

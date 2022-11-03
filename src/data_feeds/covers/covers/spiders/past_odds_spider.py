@@ -98,6 +98,8 @@ class CoversPastGameSpider(Spider):
             for f in fields:
                 item[f] = None
 
+            print('dog')
+
             yield item
 
         # current_season = response.xpath(

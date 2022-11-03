@@ -251,16 +251,25 @@ if __name__ == "__main__":
 
         # df = pd.read_sql_table("combined_inbound_data", connection) # Full Table. Takes Awhile
 
-        query_date = yesterdays_date_str
-        # query_date = '20220410'
-        query = f"SELECT * FROM combined_inbound_data WHERE game_id LIKE '{query_date}%%'"
-        df = pd.read_sql(query, connection)
+        dates = [yesterdays_date_str]
 
-        feature_pipeline = FeatureCreation(df)
-        feature_pipeline.run_all_steps()
-        model_ready_df = feature_pipeline.wdf
-        print(model_ready_df.info(verbose=True, show_counts=True))
+        # dates = [
+        #     '20221018', '20221019', '20221020', '20221021', '20221022',
+        #     '20221023', '20221024', '20221025', '20221026', '20221027',
+        #     '20221028'
+        # ]
 
-        # model_ready_df.to_sql(
-        #     "model_training_data", connection, index=False,
-        #     if_exists="append")  # Replace if full table. Otherwise Append
+        for date in dates:
+            query = f"SELECT * FROM combined_inbound_data WHERE game_id LIKE '{date}%%'"
+            df = pd.read_sql(query, connection)
+
+            feature_pipeline = FeatureCreation(df)
+            feature_pipeline.run_all_steps()
+            model_ready_df = feature_pipeline.wdf
+            print(model_ready_df.info(verbose=True, show_counts=True))
+
+            # model_ready_df.to_sql(
+            #     "model_training_data",
+            #     connection,
+            #     index=False,
+            #     if_exists="append")  # Replace if full table. Otherwise Append

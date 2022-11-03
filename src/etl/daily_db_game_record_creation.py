@@ -127,6 +127,7 @@ def create_record_batch(date, engine, team_map):
                                           right_on=['team'],
                                           suffixes=(None, '_opp'),
                                           validate='1:1')
+
         for stat_group in [
                 advanced, four_factors, misc, scoring, opponent,
                 speed_distance, shooting, opponent_shooting, hustle
@@ -221,12 +222,12 @@ def create_record_batch(date, engine, team_map):
         print(full_dataset.head(10))
 
         # Save to RDS
-        # full_dataset.to_sql(
-        #     name="combined_inbound_data",
-        #     con=connection,
-        #     index=False,
-        #     if_exists="append",
-        # )
+        full_dataset.to_sql(
+            name="combined_inbound_data",
+            con=connection,
+            index=False,
+            if_exists="append",
+        )
 
 
 if __name__ == "__main__":
@@ -362,10 +363,7 @@ if __name__ == "__main__":
 
     create_record_batch(todays_date_str, engine, team_map)
 
-    # dates = [
-    #     '20221029', '20221028', '20221027', '20221026', '20221025', '20221024',
-    #     '20221023', '20221022', '20221021', '20221020', '20221019', '20221018'
-    # ]
+    # dates = ['20221101', '20221102']
 
     # for date in dates:
     #     create_record_batch(date, engine, team_map)
