@@ -244,6 +244,7 @@ if __name__ == "__main__":
     todays_datetime = datetime.datetime.now(pytz.timezone("America/Denver"))
     yesterdays_datetime = todays_datetime - datetime.timedelta(days=1)
     yesterdays_date_str = yesterdays_datetime.strftime("%Y%m%d")
+    todays_date_str = todays_datetime.strftime("%Y%m%d")
 
     with create_engine(
             f"postgresql+psycopg2://{username}:{password}@{endpoint}/{database}"
@@ -251,7 +252,9 @@ if __name__ == "__main__":
 
         # df = pd.read_sql_table("combined_inbound_data", connection) # Full Table. Takes Awhile
 
-        dates = [yesterdays_date_str]
+        # ----- CREATE TODAYS RECORDS -----
+
+        dates = [todays_date_str]
 
         # dates = [
         #     '20221018', '20221019', '20221020', '20221021', '20221022',
@@ -260,16 +263,59 @@ if __name__ == "__main__":
         # ]
 
         for date in dates:
-            query = f"SELECT * FROM combined_inbound_data WHERE game_id LIKE '{date}%%'"
-            df = pd.read_sql(query, connection)
+            record_count = pd.read_sql(
+                f"SELECT COUNT(*) FROM combined_inbound_data WHERE game_id LIKE '{date}%%'",
+                connection).iloc[0][0]
+            if record_count > 0:
+                query = f"SELECT * FROM combined_inbound_data WHERE game_id LIKE '{date}%%'"
+                df = pd.read_sql(query, connection)
 
-            feature_pipeline = FeatureCreation(df)
-            feature_pipeline.run_all_steps()
-            model_ready_df = feature_pipeline.wdf
-            print(model_ready_df.info(verbose=True, show_counts=True))
+                feature_pipeline = FeatureCreation(df)
+                feature_pipeline.run_all_steps()
+                model_ready_df = feature_pipeline.wdf
+                print(model_ready_df.info(verbose=True, show_counts=True))
 
-            # model_ready_df.to_sql(
-            #     "model_training_data",
-            #     connection,
-            #     index=False,
-            #     if_exists="append")  # Replace if full table. Otherwise Append
+                # model_ready_df.to_sql(
+                #     "model_training_data",
+                #     connection,
+                #     index=False,
+                #     if_exists="append")  # Replace if full table. Otherwise Append
+            else:
+                print(f"No Records for {date}")
+
+        # ----- UPDATE YESTERDAYS SCORES -----
+
+        dates = [yesterdays_date_str]
+
+        for date in dates:
+            record_count = pd.read_sql(
+                f"SELECT COUNT(*) FROM combined_inbound_data WHERE game_id LIKE '{date}%%'",
+                connection).iloc[0][0]
+            if record_count > 0:
+                query = f"SELECT * FROM combined_inbound_data WHERE game_id LIKE '{date}%%'"
+                df = pd.read_sql(query, connection)
+
+                feature_pipeline = FeatureCreation(df)
+                feature_pipeline.run_all_steps()
+                model_ready_df = feature_pipeline.wdf
+                print(model_ready_df.info(verbose=True, show_counts=True))
+
+                record_list_of_dicts = model_ready_df.to_dict(orient="records")
+
+                for game_result in record_list_of_dicts:
+                    game_id = game_result["game_id"]
+
+                #     stmt = f"""
+                #             DELETE FROM model_training_data
+                #             WHERE game_id = '{game_id}'
+                #             ;
+                #             """
+
+                #     connection.execute(stmt)
+
+                # model_ready_df.to_sql("model_training_data",
+                #                         connection,
+                #                         index=False,
+                #                         if_exists="append")
+            else:
+                print(f"No Records for {date}")

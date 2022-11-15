@@ -30,6 +30,13 @@ def create_record_batch(date, engine, team_map):
         todays_date_538 = datetime.datetime.strptime(
             date, "%Y%m%d").strftime("%Y-%m-%d")
 
+        # Checking if any games available for the day.
+        game_count = pd.read_sql(
+            f"SELECT COUNT(*) FROM covers WHERE date = '{date}'", connection)
+        if game_count['count'][0] == 0:
+            print(f"No games available for {date}.")
+            return
+
         # ----- Loading relevant data from RDS -----
 
         # Covers
@@ -221,13 +228,13 @@ def create_record_batch(date, engine, team_map):
         print(full_dataset.info(verbose=True, show_counts=True))
         print(full_dataset.head(10))
 
-        # Save to RDS
-        full_dataset.to_sql(
-            name="combined_inbound_data",
-            con=connection,
-            index=False,
-            if_exists="append",
-        )
+        # # Save to RDS
+        # full_dataset.to_sql(
+        #     name="combined_inbound_data",
+        #     con=connection,
+        #     index=False,
+        #     if_exists="append",
+        # )
 
 
 if __name__ == "__main__":

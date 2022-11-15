@@ -9,7 +9,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 sys.path.append('../../')
-from ...passkeys import RDS_ENDPOINT, RDS_PASSWORD
+from passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 app = Dash(__name__,
            external_stylesheets=[dbc.themes.BOOTSTRAP],
@@ -37,7 +37,7 @@ query = """
                         away,
                         home_line,
                         game_score,
-                        rec_bet_direction,
+                        bet_direction_vote,
                         rec_bet_amount,
                         game_result,
                         bet_status,

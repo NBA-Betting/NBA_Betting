@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 from financials import BankAccount
 
 sys.path.append('../../')
-from ...passkeys import RDS_ENDPOINT, RDS_PASSWORD
+from passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 pd.options.display.max_rows = 50
 pd.options.display.max_columns = 100
@@ -82,7 +82,7 @@ Date Range: """
         "away",
         "home_line",
         "game_score",
-        "rec_bet_direction",
+        "bet_direction_vote",
         "rec_bet_amount",
         "game_result",
         "bet_outcome",
