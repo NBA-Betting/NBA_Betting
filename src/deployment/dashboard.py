@@ -37,7 +37,7 @@ query = """
                         away,
                         home_line,
                         game_score,
-                        bet_direction_vote,
+                        game_score_direction,
                         rec_bet_amount,
                         game_result,
                         bet_status,
@@ -70,9 +70,9 @@ year_ago = today - datetime.timedelta(days=365)
 
 
 def calc_rec_bet_pl(x):
-    if x['rec_bet_direction'] == 'Home':
+    if x['game_score_direction'] == 'Home':
         pl = 91 if x['game_result'] > -x['home_line'] else -100
-    elif x['rec_bet_direction'] == 'Away':
+    elif x['game_score_direction'] == 'Away':
         pl = 91 if x['game_result'] < -x['home_line'] else -100
     else:
         pl = 0

@@ -70,7 +70,7 @@ class Game_Record:
         LEFT OUTER JOIN model_training_data AS mtd
         ON cid.game_id = mtd.game_id
         WHERE cid.game_id LIKE '{todays_date}%%'
-        OR cid.game_id LIKE '{yesterdays_date}%%' 
+        OR cid.game_id LIKE '{yesterdays_date}%%'
         """
 
         self.inbound_data = pd.read_sql(sql=query, con=connection)
@@ -220,8 +220,15 @@ class Game_Record:
         return raptor_home_score
 
     def _game_score_calc(self, x):
-        home_score = (x['ml_home_score'] + x['dl_home_score'] +
-                      x['raptor_home_score'] + x['covers_home_score']) / 4
+        if pd.isnull(x['covers_home_score']) and pd.isnull(
+                x['raptor_home_score']):
+            home_score = (x['ml_home_score'] + x['dl_home_score']) / 2
+        elif pd.isnull(x['covers_home_score']):
+            home_score = (x['ml_home_score'] + x['dl_home_score'] +
+                          x['raptor_home_score']) / 3
+        else:
+            home_score = (x['ml_home_score'] + x['dl_home_score'] +
+                          x['raptor_home_score'] + x['covers_home_score']) / 4
         away_score = 100 - home_score
         if home_score >= 50:
             return home_score, 'Home'
@@ -355,14 +362,14 @@ if __name__ == "__main__":
         games.bet_amount(connection)
         games.game_details_and_cleanup()
         print(games.game_records.info())
-        print(games.game_records)
+        print(games.game_records.head(15))
 
-        stmt = f"""
-                DELETE FROM game_records
-                WHERE game_id LIKE '{yesterdays_date_str}%%'
-                ;
-                """
+        # stmt = f"""
+        #         DELETE FROM game_records
+        #         WHERE game_id LIKE '{yesterdays_date_str}%%'
+        #         ;
+        #         """
 
-        connection.execute(stmt)
+        # connection.execute(stmt)
 
-        games.save_records(connection)
+        # games.save_records(connection)

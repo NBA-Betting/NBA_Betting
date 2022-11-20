@@ -13,7 +13,7 @@ import matplotlib.dates as mdates
 import matplotlib.style as style
 
 sys.path.append('../../../')
-from ....passkeys import RDS_ENDPOINT, RDS_PASSWORD
+from passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 app = flask.Flask(__name__)
 
@@ -42,7 +42,7 @@ def nba_data_inbound():
                         away,
                         home_line,
                         game_score,
-                        rec_bet_direction,
+                        game_score_direction,
                         rec_bet_amount,
                         game_result,
                         bet_status,
@@ -54,7 +54,8 @@ def nba_data_inbound():
                         bet_location,
                         bet_profit_loss,
                         bet_datetime,
-                        game_info
+                        game_info,
+                        bet_direction_vote
                         FROM game_records
                         FULL OUTER JOIN bets
                         ON game_records.game_id = bets.game_id
@@ -89,8 +90,9 @@ def nba_data_inbound():
         current_balance = connection.execute(
             current_balance_query).fetchall()[0][0]
         # year_ago_balance = connection.execute(year_ago_query).fetchall()[0][0]
-        # month_ago_balance = connection.execute(month_ago_query).fetchall()[0][0]
-        # week_ago_balance = connection.execute(week_ago_query).fetchall()[0][0]
+        month_ago_balance = connection.execute(
+            month_ago_query).fetchall()[0][1]
+        week_ago_balance = connection.execute(week_ago_query).fetchall()[0][1]
         yest_win_loss = connection.execute(
             yest_win_loss_query).fetchall()[0][0]
         rec_bets_count = connection.execute(rec_bets_query).fetchall()[0][0]
@@ -103,7 +105,8 @@ def nba_data_inbound():
     records_df = pd.DataFrame(records)
     records_df[5] = records_df[5].apply(lambda x: round(x))
     records_df[7] = records_df[7].apply(lambda x: f"${round(x)}")
-    records_df[8] = records_df[8].apply(lambda x: f"{x:.0f}")
+    records_df[8] = records_df[8].apply(lambda x: "-"
+                                        if pd.isnull(x) else f"{x:.0f}")
     records_df[9] = records_df[9].apply(lambda x: "-" if pd.isnull(x) else x)
     records_df[10] = records_df[10].apply(lambda x: "-" if pd.isnull(x) else x)
     records_df[11] = records_df[11].apply(lambda x: "-"
@@ -117,10 +120,10 @@ def nba_data_inbound():
                                           if pd.isnull(x) else f"${x:.0f}")
     records_df[17] = records_df[17].apply(lambda x: "-" if pd.isnull(x) else x)
     current_balance = round(current_balance)
-    starting_balance = 500
-    year_ago_balance = 500
-    month_ago_balance = 575
-    week_ago_balance = 810
+    starting_balance = 1000
+    year_ago_balance = 1000
+    # month_ago_balance = 575
+    # week_ago_balance = 810
     alltime_diff = round(current_balance - starting_balance)
     year_diff = round(current_balance - year_ago_balance)
     month_diff = round(current_balance - month_ago_balance)

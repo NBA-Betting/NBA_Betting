@@ -67,35 +67,33 @@ Date Range: """
     else:
         print("Error in date range selection.")
 
-    query = f"""SELECT * FROM game_records
+    query = f"""SELECT gr.game_id,
+                       gr.date,
+                       gr.home,
+                       gr.away,
+                       gr.home_line,
+                       gr.bet_direction_vote,
+                       gr.game_score,
+                       gr.game_score_direction,
+                       gr.rec_bet_amount,
+                       gr.game_result,
+                       bets.bet_outcome,
+                       bets.bet_amount,
+                       bets.bet_line,
+                       bets.bet_direction,
+                       bets.bet_price,
+                       bets.bet_location,
+                       bets.bet_profit_loss
+                FROM game_records AS gr
                 FULL OUTER JOIN bets
-                ON game_records.game_id = bets.game_id
-                WHERE game_records.date >= '{query_date_range}'
-                ORDER BY game_records.game_id DESC
+                ON gr.game_id = bets.game_id
+                WHERE gr.date >= '{query_date_range}'
+                ORDER BY gr.game_id DESC
                 LIMIT {records_to_show}"""
     game_records = pd.read_sql_query(query, database_connection)
 
-    columns_to_show = [
-        "game_id",
-        "date",
-        "home",
-        "away",
-        "home_line",
-        "game_score",
-        "bet_direction_vote",
-        "rec_bet_amount",
-        "game_result",
-        "bet_outcome",
-        "bet_amount",
-        "bet_line",
-        "bet_direction",
-        "bet_price",
-        "bet_location",
-        "bet_profit_loss",
-    ]
-
     print("\n")
-    print(game_records[columns_to_show])
+    print(game_records)
 
 
 class Bet:
@@ -563,7 +561,7 @@ class Bet:
             self.bet_status = new_bet_status
             self.bet_profit_loss = new_bet_profit_loss
             self.update_bet_record_save()
-            self.bank.deposit(diff_bet_profit_loss[0])
+            self.bank.deposit(diff_bet_profit_loss)
             print("Bet record updated successfully.")
         else:
             return

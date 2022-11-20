@@ -90,9 +90,9 @@ Baseline Machine Learning and Deep Learning Model Accuracy is greater than chanc
 
 # Next Steps
 
-* Add premier NBA advanced stats like DARKO, RAPTOR, and EPM to feature set and prediction models.
+* Add premier NBA advanced stats like DARKO and EPM to feature set and prediction models.
 * Test more Deep Learning model constructs.
-* Live test project on 2022-2023 NBA Season starting October 18th.
+* Continue testing project on 2022-2023 NBA Season.
 
 <br/><br/>
 
@@ -109,6 +109,7 @@ Jeff Johannsen - [LinkedIn](https://www.linkedin.com/in/jeffjohannsen/) - jeffjo
 * [Covers](https://www.covers.com/) - Main source of odds data both live and historic.
 * [NBA Stats](https://www.nba.com/stats) - Main source of NBA data.
 * [Basketball Reference](https://www.basketball-reference.com/)
+* [FiveThirtyEight](https://fivethirtyeight.com/)
 
 ## Helpful Projects
 
