@@ -93,6 +93,7 @@ Baseline Machine Learning and Deep Learning Model Accuracy is greater than chanc
 * Add premier NBA advanced stats like DARKO and EPM to feature set and prediction models.
 * Test more Deep Learning model constructs.
 * Continue testing project on 2022-2023 NBA Season.
+* Expand Web App functionality and make available to public.
 
 <br/><br/>
 

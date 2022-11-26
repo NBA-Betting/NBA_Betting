@@ -11,7 +11,10 @@
 ## Bet Management
 
 ## Deployment
-* Confirm Daily Updating is Working
+* Re-organize Flask app to run on secure production server
+    * Redo database connection with Flask-SQLAlchemy
+    * Run app on Gunicorn Nginx server on EC2
+    * Improve password protection and user authentication
 
 ## Readme and Misc
 
@@ -20,7 +23,7 @@
 * If I can't get historic data I need to recreate/create metrics with a way to transfer them to a predicted line between two teams on a given date. These will be aggregated with ML/DL model results.
 
 ## All in One Team and/or Player Advanced Stats
-* RAPTOR - FiveThirtyEight
+* RAPTOR - FiveThirtyEight - Done
     * https://fivethirtyeight.com/features/introducing-raptor-our-new-metric-for-the-modern-nba/
 * DARKO - The Athletic
     * https://theathletic.com/2613015/2021/05/26/introducing-darko-an-nba-playoffs-game-projection-and-betting-guide/
@@ -36,7 +39,7 @@
     * Plus or Minus League Average
     * Standard Deviations from League Average
 * League Rankings - Done
-* Elo Ratings
+* Elo Ratings - Done
     * Historic --> ML/DL
     * FiveThirtyEight
         * https://fivethirtyeight.com/features/how-we-calculate-nba-elo-ratings/

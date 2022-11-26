@@ -11,11 +11,23 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.dates as mdates
 import matplotlib.style as style
+from flask_httpauth import HTTPBasicAuth
+from werkzeug.security import generate_password_hash, check_password_hash
 
 sys.path.append('../../../')
 from passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 app = flask.Flask(__name__)
+auth = HTTPBasicAuth()
+
+users = {"jeff": generate_password_hash(RDS_PASSWORD)}
+
+
+@auth.verify_password
+def verify_password(username, password):
+    if username in users and check_password_hash(users.get(username),
+                                                 password):
+        return username
 
 
 def nba_data_inbound():
@@ -164,6 +176,7 @@ def nba_data_inbound():
 
 
 @app.route("/", methods=["POST", "GET"])
+@auth.login_required
 def home_table():
     data = nba_data_inbound()
     if request.method == "POST":
@@ -237,6 +250,7 @@ def home_table():
 
 
 @app.route("/nba_dashboard")
+@auth.login_required
 def dashboard():
     # data = nba_dashboard_data_inbound()
     return flask.render_template("nba_dashboard.html")

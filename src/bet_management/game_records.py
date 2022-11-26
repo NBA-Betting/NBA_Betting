@@ -303,7 +303,7 @@ class Game_Record:
         self.game_records["away"] = self.inbound_data["away_team"]
         self.game_records["game_result"] = self.game_records.apply(
             lambda x: x["home_score"] - x["away_score"]
-            if x["home_score"] else "Pending",
+            if x["home_score"] else 0,
             axis=1,
         )
 
