@@ -543,7 +543,8 @@ class Bet:
             "bet_outcome": new_bet_outcome,
         })
 
-        diff_bet_profit_loss = new_bet_profit_loss - self.bet_profit_loss
+        diff_bet_profit_loss = new_bet_record[
+            'bet_profit_loss'] - self.bet_profit_loss
 
         print("\n")
         print(new_bet_record)

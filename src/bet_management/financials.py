@@ -42,7 +42,7 @@ class BankAccount:
         current_datetime = datetime.now(
             pytz.timezone("America/Denver")).strftime("%Y-%m-%d %H:%M:%S")
         stmt = f"""INSERT INTO bank_account (datetime, balance)
-                  VALUES ('{current_datetime}',{self.balance})
+                  VALUES ('{current_datetime}',{float(self.balance)})
                 ;"""
 
         self.connection.execute(stmt)
