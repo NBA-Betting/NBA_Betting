@@ -7,6 +7,7 @@
 ## Feature Creation
 
 ## Modeling
+* Add XGBoost as premier model
 
 ## Bet Management
 
@@ -57,6 +58,7 @@
 Who is playing, who is not? Quantify value of absences. Estimated Performance % for Players - Injury % and Fatigue %
 * Schedule Effects - Back2Backs, 3in4
     * Decision Rules --> Post ML/DL
+* NBAstuffer Rest Stats - https://www.nbastuffer.com/2022-2023-nba-rest-days-stats/
 
 ## Game Location
 * Home vs. Road Adjustment - Baked Into ML/DL
