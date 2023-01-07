@@ -3,7 +3,7 @@ import pandas as pd
 import xgboost as xgb
 import matplotlib.pyplot as plt
 from sqlalchemy import create_engine
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     df = load_data()
 
     # IMPORTANT: Change this to "CLS" or "REG" to run the model for classification or regression
-    cls_or_reg = "REG"  # "CLS" or "REG"
+    cls_or_reg = "CLS"  # "CLS" or "REG"
 
     # =============================================================================
 
@@ -113,17 +113,32 @@ if __name__ == "__main__":
         # MODEL TRAINING
         cls = xgb.XGBClassifier(eval_metric="error")
 
-        cls.fit(
-            X_train,
-            y_train,
-            eval_set=[(X_train, y_train), (X_test, y_test)],
-            verbose=True,
-        )
+        # cls.fit(
+        #     X_train,
+        #     y_train,
+        #     eval_set=[(X_train, y_train), (X_test, y_test)],
+        #     verbose=True,
+        # )
+
+        # PARAMETER TUNING CV
+
+        param_grid = {
+            "max_depth": [3, 5, 7],
+            "learning_rate": [0.1, 0.3, 0.5],
+            "n_estimators": [5, 10, 50, 100, 300],
+        }
+
+        # Use GridSearchCV to tune the hyperparameters
+        grid_search_cls = GridSearchCV(cls, param_grid, cv=5, verbose=3)
+        grid_search_cls.fit(X_train, y_train)
+
+        print(grid_search_cls.best_params_)
 
         # MODEL EVALUATION
 
         # Predict on the test set
-        y_pred = cls.predict(X_test)
+        # y_pred = cls.predict(X_test)
+        y_pred = grid_search_cls.predict(X_test)
 
         accuracy = accuracy_score(y_test, y_pred)
         precision = precision_score(y_test, y_pred)
@@ -136,7 +151,11 @@ if __name__ == "__main__":
         # print("Best Score: %.2f" % best_score)
 
         # Get the feature importances
-        importances = cls.get_booster().get_score(importance_type="weight")
+        # importances = cls.get_booster().get_score(importance_type="weight")
+        importances = grid_search_cls.best_estimator_.get_booster().get_score(
+            importance_type="weight"
+        )
+
         importances = {
             k: v
             for k, v in sorted(
@@ -156,7 +175,7 @@ if __name__ == "__main__":
         # plt.show()
 
         # SAVE MODEL
-        cls.save_model("../../models/XGB_CLS_main_features_baseline.model")
+        # cls.save_model("../../models/XGB_CLS_main_features_baseline.model")
 
     # =============================================================================
 
@@ -205,6 +224,8 @@ if __name__ == "__main__":
         # MODEL TRAINING
         reg = xgb.XGBRegressor(eval_metric="mae")
 
+        reg.set_params(n_estimators=50, max_depth=3, learning_rate=0.1)
+
         reg.fit(
             X_train,
             y_train,
@@ -212,10 +233,25 @@ if __name__ == "__main__":
             verbose=True,
         )
 
+        # PARAMETER TUNING CV
+
+        # param_grid = {
+        #     "max_depth": [3, 5, 7],
+        #     "learning_rate": [0.1, 0.3, 0.5],
+        #     "n_estimators": [5, 10, 50, 100, 300],
+        # }
+
+        # Use GridSearchCV to tune the hyperparameters
+        # grid_search_reg = GridSearchCV(reg, param_grid, cv=5, verbose=3)
+        # grid_search_reg.fit(X_train, y_train)
+
+        # print(grid_search_reg.best_params_)
+
         # MODEL EVALUATION
 
         # Predict on the test set
         y_pred = reg.predict(X_test)
+        # y_pred = grid_search_reg.predict(X_test)
 
         mae = mean_absolute_error(y_test, y_pred)
         r2_score_ = r2_score(y_test, y_pred)
@@ -229,6 +265,10 @@ if __name__ == "__main__":
 
         # Get the feature importances
         importances = reg.get_booster().get_score(importance_type="weight")
+        # importances = grid_search_reg.best_estimator_.get_booster().get_score(
+        #     importance_type="weight"
+        # )
+
         importances = {
             k: v
             for k, v in sorted(
@@ -248,4 +288,4 @@ if __name__ == "__main__":
         # plt.show()
 
         # SAVE MODEL
-        reg.save_model("../../models/XGB_REG_main_features_baseline.model")
+        # reg.save_model("../../models/XGB_REG_main_features_hptuned.model")
