@@ -25,9 +25,8 @@ set -e
 cd ~/data_feeds/covers
 python3 data_request_covers.py
 ~/.local/bin/scrapy crawl covers_live_game_spider
-echo "----- Covers Scrapy Complete -----"
-cd ~/data_feeds/nba
-python3 data_requests.py
+cd ~/data_feeds/nbaStats
+python3 data_requests_NBAStats.py
 cd ~/data_feeds/fivethirtyeight
 python3 data_requests_538.py
 echo "----- Data Requests Complete -----"
