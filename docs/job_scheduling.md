@@ -32,9 +32,6 @@ python3 data_requests_538.py
 echo "----- Data Requests Complete -----"
 
 # Feature Creation and ETL
-cd ~/feature_creation
-python3 feature_creation_pre_etl.py
-echo "----- Feature Creation Pre-ETL Complete -----"
 cd ~/etl
 python3 daily_db_game_record_update.py
 echo "----- Record Update Complete -----"

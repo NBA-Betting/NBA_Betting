@@ -82,9 +82,12 @@ def nba_stats_data_request_local(
                         for row in data["resultSets"][0]["rowSet"]
                     ]
                 df = pd.DataFrame(data_rows, columns=header_row)
-                # df.to_sql(
+                standardized_df = standardize_nbastats_features(df)
+                # standardized_df.to_sql(
                 #     database_table_name, connection, if_exists="append", index=False
                 # )
+                print(standardized_df.head())
+                print(standardized_df.info())
         except Exception as e:
             errors.append(f"{date} - {e}")
             print(errors)
@@ -164,7 +167,8 @@ def nba_stats_data_request_ec2(
                         for row in data["resultSets"][0]["rowSet"]
                     ]
                 df = pd.DataFrame(data_rows, columns=header_row)
-                df.to_sql(
+                standardized_df = standardize_nbastats_features(df)
+                standardized_df.to_sql(
                     database_table_name, connection, if_exists="append", index=False
                 )
         except Exception as e:
@@ -172,6 +176,33 @@ def nba_stats_data_request_ec2(
             print(errors)
             print(f"Error Count: {len(errors)}")
             continue
+
+
+def standardize_nbastats_features(df):
+    """Standardize NBA stats features.
+
+    Args:
+    df (pd.DataFrame): The input dataframe.
+
+    Returns:
+    pd.DataFrame: The input dataframe with additional features added.
+
+    """
+    non_features = ["date", "team"]
+    features = [i for i in list(df) if i not in non_features]
+    standardized_df = df.copy()
+    for feature in features:
+        # League Rank
+        standardized_df[f"{feature}_rank"] = standardized_df.groupby(["date"])[
+            feature
+        ].rank(method="min", ascending=False)
+        # Z-Score
+        means = standardized_df.groupby("date")[feature].transform("mean")
+        stdevs = standardized_df.groupby("date")[feature].transform("std")
+        standardized_df[f"{feature}_zscore"] = (standardized_df[feature] - means) / (
+            stdevs + 1e-10
+        )
+    return standardized_df
 
 
 if __name__ == "__main__":
@@ -209,7 +240,7 @@ if __name__ == "__main__":
                     PARAMS[stat_datatype],
                     HEADER_ROWS[stat_datatype],
                     DATA_ROWS[stat_datatype],
-                    f"nba_{stat_datatype}",
+                    f"nbastats_{stat_datatype}",
                 )
 
                 # nba_stats_data_request_ec2(
@@ -219,7 +250,7 @@ if __name__ == "__main__":
                 #     PARAMS[stat_datatype],
                 #     HEADER_ROWS[stat_datatype],
                 #     DATA_ROWS[stat_datatype],
-                #     f"nba_{stat_datatype}",
+                #     f"nbastats_{stat_datatype}",
                 # )
 
             print(f"NBAStats {stat_datatype} Updated.")
