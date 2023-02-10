@@ -1,4 +1,4 @@
-from scrapy import Item, Field
+from scrapy import Field, Item
 
 
 class LiveGameItem(Item):
@@ -20,18 +20,3 @@ class LiveGameItem(Item):
     covers_away_consensus = Field()
     covers_home_consensus = Field()
     game_url = Field()
-
-
-class PastGameItem(Item):
-    id_num = Field()
-    date = Field()
-    league_year = Field()
-    team = Field()
-    opponent = Field()
-    score = Field()
-    opponent_score = Field()
-    result = Field()
-    spread = Field()
-    spread_result = Field()
-    game_url = Field()
-    is_home = Field()

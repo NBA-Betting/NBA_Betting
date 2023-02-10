@@ -1,9 +1,9 @@
+import datetime
 import re
 
-import datetime
 import pytz
+from itemloaders.processors import Identity, MapCompose, TakeFirst
 from scrapy.loader import ItemLoader
-from itemloaders.processors import MapCompose, TakeFirst, Identity
 
 # Grabs the year based on the day before the script is run
 # which should be the same day as the game.
@@ -11,11 +11,9 @@ today = datetime.datetime.now(pytz.timezone("America/Denver"))
 yesterday = today - datetime.timedelta(5)
 yesterday_year = yesterday.strftime("%Y")
 
-game_year = datetime.datetime.now(
-    pytz.timezone("America/Denver")).strftime("%Y")
+game_year = datetime.datetime.now(pytz.timezone("America/Denver")).strftime("%Y")
 
-game_month = datetime.datetime.now(
-    pytz.timezone("America/Denver")).strftime("%m")
+game_month = datetime.datetime.now(pytz.timezone("America/Denver")).strftime("%m")
 
 team_abrv_map = {
     "BK": "BKN",
@@ -109,8 +107,7 @@ class LiveGameItemLoader(ItemLoader):
         lambda x: x + " " + game_year,
         lambda x: datetime.datetime.strptime(x, "%b %d %Y").strftime("%Y%m%d"),
     )
-    league_year_in = MapCompose(
-        lambda x: get_league_year(x, game_month=game_month))
+    league_year_in = MapCompose(lambda x: get_league_year(x, game_month=game_month))
     home_team_in = MapCompose(str.strip, lambda x: team_abrv_map[x])
     away_team_in = MapCompose(str.strip, lambda x: team_abrv_map[x])
     time_in = MapCompose(str.strip)
@@ -119,30 +116,13 @@ class LiveGameItemLoader(ItemLoader):
     fanduel_line_price_away_in = MapCompose(int)
     fanduel_line_price_home_in = MapCompose(int)
     spread_in = MapCompose(lambda x: 0 if x in ("PK", "pk") else x, float)
-    fanduel_line_away_in = MapCompose(lambda x: 0
-                                      if x in ("PK", "pk") else x, float)
-    fanduel_line_home_in = MapCompose(lambda x: 0
-                                      if x in ("PK", "pk") else x, float)
-    draftkings_line_away_in = MapCompose(
-        lambda x: 0 if x in ("PK", "pk") else x, float)
-    draftkings_line_home_in = MapCompose(
-        lambda x: 0 if x in ("PK", "pk") else x, float)
-    covers_away_consensus_in = MapCompose(lambda x: x.replace("%", ""),
-                                          str.strip, int, lambda x: x / 100)
-    covers_home_consensus_in = MapCompose(lambda x: x.replace("%", ""),
-                                          str.strip, int, lambda x: x / 100)
-
-
-class PastGameItemLoader(ItemLoader):
-    default_input_processor = MapCompose(str.strip)
-    default_output_processor = TakeFirst()
-
-    team_in = MapCompose(lambda x: team_abrv_map[x])
-    id_num_in = MapCompose(lambda x: re.sub("[^0-9]", "", x), int)
-    is_home_in = MapCompose(lambda x: "@" not in x)
-    opponent_in = MapCompose(lambda x: x.replace("@", ""), str.strip,
-                             lambda x: team_abrv_map[x])
-    result_in = MapCompose(str.strip, str.split)
-    score_in = MapCompose(lambda x: get_score(x, 1), int)
-    opponent_score_in = MapCompose(lambda x: get_score(x, 2), int)
-    spread_in = MapCompose(str.strip, lambda x: 0 if x == "PK" else x, float)
+    fanduel_line_away_in = MapCompose(lambda x: 0 if x in ("PK", "pk") else x, float)
+    fanduel_line_home_in = MapCompose(lambda x: 0 if x in ("PK", "pk") else x, float)
+    draftkings_line_away_in = MapCompose(lambda x: 0 if x in ("PK", "pk") else x, float)
+    draftkings_line_home_in = MapCompose(lambda x: 0 if x in ("PK", "pk") else x, float)
+    covers_away_consensus_in = MapCompose(
+        lambda x: x.replace("%", ""), str.strip, int, lambda x: x / 100
+    )
+    covers_home_consensus_in = MapCompose(
+        lambda x: x.replace("%", ""), str.strip, int, lambda x: x / 100
+    )
