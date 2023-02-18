@@ -33,13 +33,11 @@ echo "----- Data Requests Complete -----"
 
 # Feature Creation and ETL
 cd ~/etl
-python3 daily_db_game_record_update.py
-echo "----- Record Update Complete -----"
-python3 daily_db_game_record_creation.py
-echo "----- Record Creation Complete -----"
+python3 daily_etl_update.py
+python3 daily_etl_creation.py
 cd ~/feature_creation
-python3 feature_creation_post_etl.py
-echo "----- Feature Creation Post-ETL Complete -----"
+python3 feature_creation.py
+echo "----- ETL and Feature Creation Complete -----"
 
 # Game Records
 cd ~/bet_management

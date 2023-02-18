@@ -54,7 +54,16 @@ def nba_stats_data_request_local(
         current_datetime = datetime.datetime.now(pytz.timezone("America/Denver"))
         yesterday_datetime = current_datetime - datetime.timedelta(days=1)
         dates = [yesterday_datetime]
-        # dates = [pd.to_datetime("2022-04-10", format="%Y-%m-%d")]
+        # date_list = [
+        #     "2023-02-09",
+        #     "2023-02-10",
+        #     "2023-02-11",
+        #     "2023-02-12",
+        #     "2023-02-13",
+        #     "2023-02-14",
+        #     "2023-01-18",
+        # ]
+        # dates = [pd.to_datetime(x, format="%Y-%m-%d") for x in date_list]
         # dates = pd.date_range(
         #     start=season_dates["start_date"], end=season_dates["final_date"], freq="D"
         # )
@@ -71,7 +80,10 @@ def nba_stats_data_request_local(
                 response = requests.get(url, params=params, headers=http_headers)
                 data = response.json()
 
-                if database_table_name in ["nba_shooting", "nba_opponent_shooting"]:
+                if database_table_name in [
+                    "nbastats_shooting",
+                    "nbastats_opponent_shooting",
+                ]:
                     data_rows = [
                         [date.strftime("%Y%m%d")] + [row[item] for item in data_row_nums]
                         for row in data["resultSets"]["rowSet"]
@@ -83,11 +95,11 @@ def nba_stats_data_request_local(
                     ]
                 df = pd.DataFrame(data_rows, columns=header_row)
                 standardized_df = standardize_nbastats_features(df)
-                # standardized_df.to_sql(
-                #     database_table_name, connection, if_exists="append", index=False
-                # )
-                print(standardized_df.head())
-                print(standardized_df.info())
+                standardized_df.to_sql(
+                    database_table_name, connection, if_exists="append", index=False
+                )
+                # print(standardized_df.head())
+                # print(standardized_df.info())
         except Exception as e:
             errors.append(f"{date} - {e}")
             print(errors)

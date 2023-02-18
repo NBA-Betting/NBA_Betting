@@ -151,7 +151,10 @@ def process_html_rows(rows, team, league_year):
         game_date = get_game_date(row, league_year)
         if game_date == "No date found in this row.":
             continue
-        if game_date >= datetime.datetime.now(pytz.timezone("America/Denver")):
+        if (
+            game_date.date()
+            >= datetime.datetime.now(pytz.timezone("America/Denver")).date()
+        ):
             continue
         game_date = game_date.strftime("%Y%m%d")
         # team, opponent
@@ -178,22 +181,23 @@ def process_html_rows(rows, team, league_year):
         spread = spread_text.split(" ")[1]
         spread_result = spread_text.split(" ")[0]
 
-        parsed_records = parsed_records.append(
+        new_record = pd.DataFrame(
             {
-                "team": team_abbrv,
-                "game_date": game_date,
-                "league_year": league_year,
-                "id_num": id_num,
-                "game_url": game_url,
-                "opponent": opponent,
-                "result": result,
-                "score": score,
-                "opponent_score": opponent_score,
-                "spread_result": spread_result,
-                "spread": spread,
-            },
-            ignore_index=True,
+                "team": [team_abbrv],
+                "game_date": [game_date],
+                "league_year": [league_year],
+                "id_num": [id_num],
+                "game_url": [game_url],
+                "opponent": [opponent],
+                "result": [result],
+                "score": [score],
+                "opponent_score": [opponent_score],
+                "spread_result": [spread_result],
+                "spread": [spread],
+            }
         )
+
+        parsed_records = pd.concat([parsed_records, new_record], ignore_index=True)
 
     return parsed_records
 
