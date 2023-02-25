@@ -102,11 +102,11 @@ def update_win_loss_chart(new_df, new_rec_bet_df, bet_category):
     new_bet_win_loss_chart = None
     if bet_category == "Actual Bets":
         # Calculate win and loss counts for actual bets
-        new_actual_win_count = new_df[new_df["bet_outcome"] == "Win"][
-            "bet_outcome"
+        new_actual_win_count = new_df[new_df["bet_status"] == "Win"][
+            "bet_status"
         ].count()
-        new_actual_loss_count = new_df[new_df["bet_outcome"] == "Loss"][
-            "bet_outcome"
+        new_actual_loss_count = new_df[new_df["bet_status"] == "Loss"][
+            "bet_status"
         ].count()
 
         # Create a bar chart of the win/loss information for actual bets
@@ -323,10 +323,8 @@ query = """
                         home_line,
                         game_score,
                         game_score_direction,
-                        rec_bet_amount,
                         game_result,
                         bet_status,
-                        bet_outcome,
                         bet_amount,
                         bet_line,
                         bet_direction,

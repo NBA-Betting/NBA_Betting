@@ -2,6 +2,9 @@ import datetime
 import io
 import sys
 
+# Import the isinstance function from the builtins module
+from builtins import isinstance
+
 import flask
 import matplotlib.dates as mdates
 import matplotlib.style as style
@@ -10,6 +13,7 @@ import pandas as pd
 import pytz
 from flask import Response, request
 from flask_httpauth import HTTPBasicAuth
+from jinja2 import Environment
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 from sqlalchemy import create_engine
@@ -19,6 +23,8 @@ sys.path.append("../../../")
 from passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 app = flask.Flask(__name__)
+app.jinja_env.globals.update(isinstance=isinstance)
+app.jinja_env.globals.update(str=str)
 auth = HTTPBasicAuth()
 
 users = {"jeff": generate_password_hash(RDS_PASSWORD)}
@@ -31,6 +37,7 @@ def verify_password(username, password):
 
 
 def nba_data_inbound():
+    # ----- LOAD DATA -----
     todays_datetime = datetime.datetime.now(pytz.timezone("America/Denver")).strftime(
         "%Y-%m-%d"
     )
@@ -51,8 +58,56 @@ def nba_data_inbound():
         - datetime.timedelta(days=365)
     ).strftime("%Y-%m-%d %H:%M:%S")
 
-    # SQL Queries
-    records_query = """
+    with engine.connect() as connection:
+        # Current Balance
+        current_balance_query = (
+            "SELECT balance FROM bank_account ORDER BY datetime DESC LIMIT 1;"
+        )
+        current_balance = connection.execute(current_balance_query).fetchall()[0][0]
+
+        # Year Ago Balance
+        year_ago_query = f"SELECT * FROM bank_account WHERE datetime < '{year_ago_datetime}' ORDER BY datetime DESC LIMIT 1;"
+        year_ago_result = connection.execute(year_ago_query).fetchall()
+        if year_ago_result:
+            year_ago_balance = year_ago_result[0][1]
+        else:
+            year_ago_balance = None
+
+        # Month Ago Balance
+        month_ago_query = f"SELECT * FROM bank_account WHERE datetime < '{month_ago_datetime}' ORDER BY datetime DESC LIMIT 1;"
+        month_ago_result = connection.execute(month_ago_query).fetchall()
+        if month_ago_result:
+            month_ago_balance = month_ago_result[0][1]
+        else:
+            month_ago_balance = None
+
+        # Week Ago Balance
+        week_ago_query = f"SELECT * FROM bank_account WHERE datetime < '{week_ago_datetime}' ORDER BY datetime DESC LIMIT 1;"
+        week_ago_result = connection.execute(week_ago_query).fetchall()
+        if week_ago_result:
+            week_ago_balance = week_ago_result[0][1]
+        else:
+            week_ago_balance = None
+
+        # Yesterday's Win/Loss
+        yest_win_loss_query = f"""SELECT COALESCE(SUM(bets.bet_profit_loss), 0)
+                            FROM game_records
+                            FULL OUTER JOIN bets
+                            ON game_records.game_id = bets.game_id
+                            WHERE game_records.date = '{yesterdays_datetime}'
+                            ;"""
+        yest_win_loss = connection.execute(yest_win_loss_query).fetchall()[0][0]
+
+        # Active Bets
+        active_bets_query = "SELECT COUNT(*) FROM bets WHERE bet_status IN ('Active', 'active', 'ACTIVE');"
+        active_bets_count = connection.execute(active_bets_query).fetchall()[0][0]
+
+        # Money in Play
+        money_in_play_query = "SELECT COALESCE(SUM(bet_amount), 0) FROM bets WHERE bet_status IN ('Active', 'active', 'ACTIVE');"
+        money_in_play = connection.execute(money_in_play_query).fetchall()[0][0]
+
+        # Game Table
+        games_query = """
                     SELECT game_records.game_id,
                         date,
                         home,
@@ -60,10 +115,8 @@ def nba_data_inbound():
                         home_line,
                         game_score,
                         game_score_direction,
-                        rec_bet_amount,
                         game_result,
                         bet_status,
-                        bet_outcome,
                         bet_amount,
                         bet_line,
                         bet_direction,
@@ -78,84 +131,80 @@ def nba_data_inbound():
                         ON game_records.game_id = bets.game_id
                         ORDER BY game_records.game_id DESC
                         LIMIT 100"""
+        games = connection.execute(games_query).fetchall()
 
-    current_balance_query = (
-        "SELECT balance FROM bank_account ORDER BY datetime DESC LIMIT 1;"
-    )
-
-    year_ago_query = f"SELECT * FROM bank_account WHERE datetime < '{year_ago_datetime}' ORDER BY datetime DESC LIMIT 1;"
-
-    month_ago_query = f"SELECT * FROM bank_account WHERE datetime < '{month_ago_datetime}' ORDER BY datetime DESC LIMIT 1;"
-
-    week_ago_query = f"SELECT * FROM bank_account WHERE datetime < '{week_ago_datetime}' ORDER BY datetime DESC LIMIT 1;"
-
-    yest_win_loss_query = f"""SELECT COALESCE(SUM(bets.bet_profit_loss), 0)
-                              FROM game_records
-                              FULL OUTER JOIN bets
-                              ON game_records.game_id = bets.game_id
-                              WHERE game_records.date = '{yesterdays_datetime}'
-                              ;"""
-
-    rec_bets_query = f"SELECT COUNT(*) FROM game_records WHERE date = '{todays_datetime}' AND rec_bet_amount > 0;"
-
-    active_bets_query = (
-        "SELECT COUNT(*) FROM bets WHERE bet_status IN ('Active', 'active', 'ACTIVE');"
-    )
-
-    money_in_play_query = "SELECT COALESCE(SUM(bet_amount), 0) FROM bets WHERE bet_status IN ('Active', 'active', 'ACTIVE');"
-
-    # Database Calls
-    with engine.connect() as connection:
-        records = connection.execute(records_query).fetchall()
-        current_balance = connection.execute(current_balance_query).fetchall()[0][0]
-        # year_ago_balance = connection.execute(year_ago_query).fetchall()[0][0]
-        month_ago_balance = connection.execute(month_ago_query).fetchall()[0][1]
-        week_ago_balance = connection.execute(week_ago_query).fetchall()[0][1]
-        yest_win_loss = connection.execute(yest_win_loss_query).fetchall()[0][0]
-        rec_bets_count = connection.execute(rec_bets_query).fetchall()[0][0]
-        active_bets_count = connection.execute(active_bets_query).fetchall()[0][0]
-        money_in_play = connection.execute(money_in_play_query).fetchall()[0][0]
-
-    # Python/Data Formatting
-    records_df = pd.DataFrame(records)
-    records_df[5] = records_df[5].apply(lambda x: round(x))
-    records_df[7] = records_df[7].apply(lambda x: f"${round(x)}")
-    records_df[8] = records_df[8].apply(lambda x: "-" if pd.isnull(x) else f"{x:.0f}")
-    records_df[9] = records_df[9].apply(lambda x: "-" if pd.isnull(x) else x)
-    records_df[10] = records_df[10].apply(lambda x: "-" if pd.isnull(x) else x)
-    records_df[11] = records_df[11].apply(lambda x: "-" if pd.isnull(x) else f"${x:.0f}")
-    records_df[12] = records_df[12].apply(lambda x: "-" if pd.isnull(x) else x)
-    records_df[13] = records_df[13].apply(lambda x: "-" if pd.isnull(x) else x)
-    records_df[14] = records_df[14].apply(lambda x: "-" if pd.isnull(x) else f"{x:.0f}")
-    records_df[15] = records_df[15].apply(lambda x: "-" if pd.isnull(x) else x)
-    records_df[16] = records_df[16].apply(lambda x: "-" if pd.isnull(x) else f"${x:.0f}")
-    records_df[17] = records_df[17].apply(lambda x: "-" if pd.isnull(x) else x)
+    # ----- FORMAT DATA -----
     current_balance = round(current_balance)
     starting_balance = 1000
-    year_ago_balance = 1000
-    # month_ago_balance = 575
-    # week_ago_balance = 810
     alltime_diff = round(current_balance - starting_balance)
-    year_diff = round(current_balance - year_ago_balance)
-    month_diff = round(current_balance - month_ago_balance)
-    week_diff = round(current_balance - week_ago_balance)
-    alltime_pct_diff = round(
-        ((current_balance - starting_balance) / starting_balance) * 100, 1
-    )
-    year_pct_diff = round(
-        ((current_balance - year_ago_balance) / year_ago_balance) * 100, 1
-    )
-    month_pct_diff = round(
-        ((current_balance - month_ago_balance) / month_ago_balance) * 100, 1
-    )
-    week_pct_diff = round(
-        ((current_balance - week_ago_balance) / week_ago_balance) * 100, 1
-    )
+    alltime_pct_diff = round((alltime_diff / starting_balance) * 100, 1)
+
+    if year_ago_balance:
+        year_diff = round(current_balance - year_ago_balance)
+        if year_ago_balance != 0:
+            year_pct_diff = round((year_diff / year_ago_balance) * 100, 1)
+        else:
+            year_pct_diff = float("inf")
+    else:
+        year_diff = "-"
+        year_pct_diff = "-"
+
+    if month_ago_balance:
+        month_diff = round(current_balance - month_ago_balance)
+        if month_ago_balance != 0:
+            month_pct_diff = round((month_diff / month_ago_balance) * 100, 1)
+        else:
+            month_pct_diff = float("inf")
+    else:
+        month_diff = "-"
+        month_pct_diff = "-"
+
+    if week_ago_balance:
+        week_diff = round(current_balance - week_ago_balance)
+        if week_ago_balance != 0:
+            week_pct_diff = round((week_diff / week_ago_balance) * 100, 1)
+        else:
+            week_pct_diff = float("inf")
+    else:
+        week_diff = "-"
+        week_pct_diff = "-"
+
     yest_win_loss = round(yest_win_loss)
     money_in_play = round(money_in_play)
 
-    # Return Data
+    records_df = pd.DataFrame(games)
+    records_df["game_score"] = records_df["game_score"].apply(lambda x: round(x))
+    records_df["game_result"] = records_df["game_result"].apply(
+        lambda x: "-" if pd.isnull(x) else f"{x:.0f}"
+    )
+    records_df["bet_status"] = records_df["bet_status"].apply(
+        lambda x: "-" if pd.isnull(x) else x
+    )
+    records_df["bet_amount"] = records_df["bet_amount"].apply(
+        lambda x: "-" if pd.isnull(x) else f"${x:.0f}"
+    )
+    records_df["bet_line"] = records_df["bet_line"].apply(
+        lambda x: "-" if pd.isnull(x) else x
+    )
+    records_df["bet_direction"] = records_df["bet_direction"].apply(
+        lambda x: "-" if pd.isnull(x) else x
+    )
+    records_df["bet_price"] = records_df["bet_price"].apply(
+        lambda x: "-" if pd.isnull(x) else f"{x:.0f}"
+    )
+    records_df["bet_location"] = records_df["bet_location"].apply(
+        lambda x: "-" if pd.isnull(x) else x
+    )
+    records_df["bet_profit_loss"] = records_df["bet_profit_loss"].apply(
+        lambda x: "-" if pd.isnull(x) else f"${x:.0f}"
+    )
+    records_df["bet_datetime"] = records_df["bet_datetime"].apply(
+        lambda x: "-" if pd.isnull(x) else x
+    )
+
     output_records = list(records_df.to_records(index=False))
+
+    # ----- RETURN DATA -----
     return {
         "records": output_records,
         "current_balance": current_balance,
@@ -172,7 +221,6 @@ def nba_data_inbound():
         "month_pct_diff": month_pct_diff,
         "week_pct_diff": week_pct_diff,
         "yest_win_loss": yest_win_loss,
-        "rec_bets_count": rec_bets_count,
         "active_bets_count": active_bets_count,
         "money_in_play": money_in_play,
     }
@@ -189,7 +237,6 @@ def home_table():
 
         bet_game_id = request.form["bet_game_id"]
         bet_status = request.form["bet_status"]
-        bet_outcome = request.form["bet_outcome"]
         bet_amount = float(request.form["bet_amount"])
         bet_line = float(request.form["bet_line"])
         bet_direction = request.form["bet_direction"]
@@ -210,7 +257,6 @@ def home_table():
             INSERT INTO bets (game_id,
                                 bet_datetime,
                                 bet_status,
-                                bet_outcome,
                                 bet_amount,
                                 bet_price,
                                 bet_location,
@@ -220,7 +266,6 @@ def home_table():
             VALUES ('{bet_game_id}',
                     '{bet_datetime}',
                     '{bet_status}',
-                    '{bet_outcome}',
                     {bet_amount},
                     {bet_price},
                     '{bet_location}',
@@ -232,7 +277,6 @@ def home_table():
                 UPDATE
                     SET bet_datetime = '{bet_datetime}',
                         bet_status = '{bet_status}',
-                        bet_outcome = '{bet_outcome}',
                         bet_amount = {bet_amount},
                         bet_price = {bet_price},
                         bet_location = '{bet_location}',
@@ -264,6 +308,7 @@ def dashboard():
 
 
 @app.route("/home_page_plot.png")
+@auth.login_required
 def plot_png():
     fig = create_figure()
     output = io.BytesIO()
@@ -276,12 +321,13 @@ def create_figure():
     with engine.connect() as connection:
         figure_records = connection.execute(figure_data_query).fetchall()
     figure_df = pd.DataFrame(figure_records)
-
+    print(figure_df.info())
     style.use("seaborn-whitegrid")
     fig = Figure(dpi=300, tight_layout=True)
+    fig.set_size_inches(16, 5)
     ax = fig.subplots()
-    x = figure_df[0]
-    y = figure_df[1]
+    x = figure_df["datetime"]
+    y = figure_df["balance"]
 
     # ax.set_title("Bank Account Balance", fontsize=36, pad=16)
     ax.tick_params(axis="y", labelsize=20, pad=6)

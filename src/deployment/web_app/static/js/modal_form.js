@@ -35,7 +35,6 @@ betModal.addEventListener('show.bs.modal', function (event) {
     var betAmount = button.getAttribute('data-bs-betAmount')
     var betDirection = button.getAttribute('data-bs-betDirection')
     var betPrice = button.getAttribute('data-bs-betPrice')
-    var betOutcome = button.getAttribute('data-bs-betOutcome')
     var betStatus = button.getAttribute('data-bs-betStatus')
     var betProfitLoss = button.getAttribute('data-bs-betProfitLoss')
     var bankBalance = button.getAttribute('data-bs-bankBalance')
@@ -53,7 +52,6 @@ betModal.addEventListener('show.bs.modal', function (event) {
     var modalAmount = betModal.querySelector('#bet-amount-js')
     var modalDirection = betModal.querySelector('#bet-direction-js')
     var modalPrice = betModal.querySelector('#bet-price-js')
-    var modalOutcome = betModal.querySelector('#bet-outcome-js')
     var modalStatus = betModal.querySelector('#bet-status-js')
     var modalProfitLoss = betModal.querySelector('#bet-profitloss-js')
     var modalBankBalance = betModal.querySelector('#form-bankBalance-js')
@@ -66,7 +64,6 @@ betModal.addEventListener('show.bs.modal', function (event) {
     modalAmount.textContent = betAmount
     modalDirection.textContent = betDirection
     modalPrice.textContent = betPrice
-    modalOutcome.textContent = betOutcome
     modalStatus.textContent = betStatus
     modalProfitLoss.textContent = betProfitLoss
     formGameID.value = gameId

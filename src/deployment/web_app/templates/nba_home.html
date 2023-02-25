@@ -30,68 +30,78 @@
 
     <!--BANKROLL and PERFORMANCE-->
 
-    <div class="container">
+    <div class="container" style="height: 35vh;">
         <div class="row">
-            <div class="col">
-                <h2 class="text-center">Available Funds</h2>
-                {% if current_balance > 0 %}
-                <h1 class="text-success text-center">${{current_balance}}</h1>
-                {% else %}
-                <h1 class="text-danger text-center">${{current_balance}}</h1>
-                {% endif %}
-
+            <div class="col-5">
+                <div class="row">
+                    <h2 class="col text-center">Current Balance:
+                        {% if current_balance > 0 %}
+                        <span class="text-success">${{current_balance}}</span>
+                        {% else %}
+                        <span class="text-danger">${{current_balance}}</span>
+                        {% endif %}
+                    </h2>
+                </div>
+                <div class="row">
+                    <h2 class="col text-center">Yesterday's Win/Loss:
+                        {% if yest_win_loss >= 0 %}
+                        <span class="text-success">${{yest_win_loss}}</span>
+                        {% else %}
+                        <span class="text-danger">${{yest_win_loss}}</span>
+                        {% endif %}
+                    </h2>
+                </div>
+                <div class="row">
+                    <h2 class="col text-center"><br>Performance:
+                    </h2>
+                </div>
                 <div class="row">
                     <div class="col">
-                        <h3 class="text-center">Alltime</h3>
-                        {% if alltime_diff >= 0 %}
-                        <h3 class="text-success text-center">${{alltime_diff}}<br>({{alltime_pct_diff}}%)</h3>
+                        <h4 class="text-center">Alltime</h4>
+                        {% if isinstance(alltime_diff, str) %}
+                        <h4 class="text-center">{{alltime_diff}}<br>{{alltime_pct_diff}}</h4>
+                        {% elif alltime_diff >= 0 %}
+                        <h4 class="text-success text-center">${{alltime_diff}}<br>({{alltime_pct_diff}}%)</h4>
                         {% else %}
-                        <h3 class="text-danger text-center">${{alltime_diff}}<br>({{alltime_pct_diff}}%)</h3>
+                        <h4 class="text-danger text-center">${{alltime_diff}}<br>({{alltime_pct_diff}}%)</h4>
                         {% endif %}
-                        <h3 class="text-center">Month</h3>
-                        {% if month_diff >= 0 %}
-                        <h3 class="text-success text-center">${{month_diff}}<br>({{month_pct_diff}}%)</h3>
-                        {% else %}
-                        <h3 class="text-danger text-center">${{month_diff}}<br>({{month_pct_diff}}%)</h3>
-                        {% endif %}
-
                     </div>
                     <div class="col">
-                        <h3 class="text-center">Year</h3>
-                        {% if year_diff >= 0 %}
-                        <h3 class="text-success text-center">${{year_diff}}<br>({{year_pct_diff}}%)</h3>
+                        <h4 class="text-center">Year</h4>
+                        {% if isinstance(year_diff, str) %}
+                        <h4 class="text-center">{{year_diff}}<br>{{year_pct_diff}}</h4>
+                        {% elif year_diff >= 0 %}
+                        <h4 class="text-success text-center">${{year_diff}}<br>({{year_pct_diff}}%)</h4>
                         {% else %}
-                        <h3 class="text-danger text-center">${{year_diff}}<br>({{year_pct_diff}}%)</h3>
+                        <h4 class="text-danger text-center">${{year_diff}}<br>({{year_pct_diff}}%)</h4>
                         {% endif %}
-                        <h3 class="text-center">Week</h3>
-                        {% if week_diff >= 0 %}
-                        <h3 class="text-success text-center">${{week_diff}}<br>({{week_pct_diff}}%)</h3>
+                    </div>
+                    <div class="col">
+                        <h4 class="text-center">Month</h4>
+                        {% if isinstance(month_diff, str) %}
+                        <h4 class="text-center">{{month_diff}}<br>{{month_pct_diff}}</h4>
+                        {% elif month_diff >= 0 %}
+                        <h4 class="text-success text-center">${{month_diff}}<br>({{month_pct_diff}}%)</h4>
                         {% else %}
-                        <h3 class="text-danger text-center">${{week_diff}}<br>({{week_pct_diff}}%)</h3>
+                        <h4 class="text-danger text-center">${{month_diff}}<br>({{month_pct_diff}}%)</h4>
+                        {% endif %}
+                    </div>
+                    <div class="col">
+                        <h4 class="text-center">Week</h4>
+                        {% if isinstance(week_diff, str) %}
+                        <h4 class="text-center">{{week_diff}}<br>{{week_pct_diff}}</h4>
+                        {% elif week_diff >= 0 %}
+                        <h4 class="text-success text-center">${{week_diff}}<br>({{week_pct_diff}}%)</h4>
+                        {% else %}
+                        <h4 class="text-danger text-center">${{week_diff}}<br>({{week_pct_diff}}%)</h4>
                         {% endif %}
                     </div>
                 </div>
             </div>
 
-            <!--YESTERDAYS RESULTS and TODAYS ACTION-->
-
-            <div class="col">
-                <h2 class="text-center">Yesterday's Win/Loss</h2>
-                {% if yest_win_loss >= 0 %}
-                <h1 class="text-center text-success">${{yest_win_loss}}</h1>
-                {% else %}
-                <h1 class="text-center text-danger">${{yest_win_loss}}</h1>
-                {% endif %}
-                <br>
-                <h2 class="text-center">Today's Action</h2>
-                <h3 class="text-center">{{rec_bets_count}} Recommended Bets</h3>
-                <h3 class="text-center">{{active_bets_count}} Active Bets</h3>
-                <h3 class="text-center">${{money_in_play}} In Play</h3>
-            </div>
-
             <!--GRAPH-->
 
-            <div class="col-4">
+            <div class="col-7">
                 <h2 class="text-center">Bank Account Balance</h2>
                 <img src='home_page_plot.png' alt="Bank Account Profit Loss" class='img-fluid' />
             </div>
@@ -112,11 +122,9 @@
                     <th scope="col" class="cell-center">Away</th>
                     <th scope="col" class="cell-center">Home Line</th>
                     <th scope="col" class="cell-center">Game Score</th>
-                    <th scope="col" class="cell-center">Recommended Bet Direction</th>
-                    <th scope="col" class="cell-center">Recommended Bet Amount</th>
+                    <th scope="col" class="cell-center">Game Score Direction</th>
                     <th scope="col" class="cell-center">Game Result</th>
                     <th scope="col" class="cell-center">Bet Status</th>
-                    <th scope="col" class="cell-center">Bet Outcome</th>
                     <th scope="col" class="cell-center">Bet Amount</th>
                     <th scope="col" class="cell-center">Bet Line</th>
                     <th scope="col" class="cell-center">Bet Direction</th>
@@ -145,26 +153,24 @@
                     <td class="cell-center">{{rec[12]}}</td>
                     <td class="cell-center">{{rec[13]}}</td>
                     <td class="cell-center">{{rec[14]}}</td>
-                    <td class="cell-center">{{rec[15]}}</td>
-                    <td class="cell-center">{{rec[16]}}</td>
-                    {% if rec[9] == '-' %}
+                    {% if rec[8] == '-' %}
                     <td class="cell-center"><button type="button" class="btn btn-primary" data-bs-toggle="modal"
                             data-bs-target="#place_bet_modal" data-bs-gameId="{{rec[0]}}"
-                            data-bs-betDatetime="{{rec[17]}}" data-bs-betLocation="{{rec[15]}}"
-                            data-bs-betLine="{{rec[12]}}" data-bs-betAmount="{{rec[11]}}"
-                            data-bs-betDirection="{{rec[13]}}" data-bs-betPrice="{{rec[14]}}"
-                            data-bs-betOutcome="{{rec[10]}}" data-bs-betStatus="{{rec[9]}}"
-                            data-bs-betProfitLoss="{{rec[16]}}" data-bs-bankBalance="{{current_balance}}">
+                            data-bs-betDatetime="{{rec[16]}}" data-bs-betLocation="{{rec[14]}}"
+                            data-bs-betLine="{{rec[11]}}" data-bs-betAmount="{{rec[10]}}"
+                            data-bs-betDirection="{{rec[12]}}" data-bs-betPrice="{{rec[13]}}"
+                            data-bs-betStatus="{{rec[9]}}" data-bs-betProfitLoss="{{rec[15]}}"
+                            data-bs-bankBalance="{{current_balance}}">
                             Place Bet
                         </button></td>
                     {% else %}
                     <td class="cell-center"><button type="button" class="btn btn-primary" data-bs-toggle="modal"
                             data-bs-target="#place_bet_modal" data-bs-gameId="{{rec[0]}}"
-                            data-bs-betDatetime="{{rec[17]}}" data-bs-betLocation="{{rec[15]}}"
-                            data-bs-betLine="{{rec[12]}}" data-bs-betAmount="{{rec[11]}}"
-                            data-bs-betDirection="{{rec[13]}}" data-bs-betPrice="{{rec[14]}}"
-                            data-bs-betOutcome="{{rec[10]}}" data-bs-betStatus="{{rec[9]}}"
-                            data-bs-betProfitLoss="{{rec[16]}}" data-bs-bankBalance="{{current_balance}}">
+                            data-bs-betDatetime="{{rec[16]}}" data-bs-betLocation="{{rec[14]}}"
+                            data-bs-betLine="{{rec[11]}}" data-bs-betAmount="{{rec[10]}}"
+                            data-bs-betDirection="{{rec[12]}}" data-bs-betPrice="{{rec[13]}}"
+                            data-bs-betStatus="{{rec[9]}}" data-bs-betProfitLoss="{{rec[15]}}"
+                            data-bs-bankBalance="{{current_balance}}">
                             Update Bet
                         </button></td>
                     {% endif %}
@@ -192,7 +198,6 @@
                                 <tr>
                                     <th scope="col">Datetime</th>
                                     <th scope="col">Status</th>
-                                    <th scope="col">Outcome</th>
                                     <th scope="col">Amount</th>
 
                                 </tr>
@@ -201,7 +206,6 @@
                                 <tr>
                                     <td id="bet-datetime-js">Datetime</td>
                                     <td id="bet-status-js">Status</td>
-                                    <td id="bet-outcome-js">Outcome</td>
                                     <td id="bet-amount-js">Amount</td>
 
                                 </tr>
@@ -245,14 +249,8 @@
                             <div class="mb-3">
                                 <label for="bet_status" class="form-label">Bet Status</label>
                                 <input type="text" class="form-control" id="bet_status" name="bet_status"
-                                    placeholder="Active or Inactive"
-                                    pattern="^(active|Active|ACTIVE|inactive|Inactive|INACTIVE)$" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="bet_outcome" class="form-label">Bet Outcome</label>
-                                <input type="text" class="form-control" id="bet_outcome" name="bet_outcome"
-                                    placeholder="Win, Loss, Unknown, or No Bet"
-                                    pattern="^(win|Win|WIN|loss|Loss|LOSS|unknown|Unknown|UNKNOWN|no bet|No Bet|NO BET)$"
+                                    placeholder="Active, Win, Loss, or Other"
+                                    pattern="^(active|Active|ACTIVE|win|Win|WIN|loss|Loss|LOSS|other|Other|OTHER)$"
                                     required>
                             </div>
                             <div class="mb-3">
