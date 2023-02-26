@@ -1,167 +1,12 @@
-import sys
-
-import matplotlib.pyplot as plt
-import pandas as pd
 import xgboost as xgb
+from modeling_config import load_data, prepare_data
 from sklearn.metrics import (
     accuracy_score,
     mean_absolute_error,
     precision_score,
     r2_score,
 )
-from sklearn.model_selection import GridSearchCV, train_test_split
-from sqlalchemy import create_engine
-
-sys.path.append("../../")
-from passkeys import RDS_ENDPOINT, RDS_PASSWORD
-
-
-def load_data(print_data_summary=False):
-    """Load data from the database and return a Pandas dataframe.
-
-    Args:
-    - print_data_summary: bool, whether to print summary of the loaded data. Default is False.
-
-    Returns:
-    - df: Pandas dataframe, containing the loaded data from the database.
-    """
-    username = "postgres"
-    password = RDS_PASSWORD
-    endpoint = RDS_ENDPOINT
-    database = "nba_betting"
-
-    connection = create_engine(
-        f"postgresql+psycopg2://{username}:{password}@{endpoint}/{database}"
-    ).connect()
-
-    df = pd.read_sql_table("model_training_data", connection)
-    df = df[df["league_year_end"] != 23]
-
-    if print_data_summary:
-        print("Data Information:")
-        print(df.info(verbose=True, show_counts=True))
-        print("\nData Description:")
-        print(df.describe())
-        print("\nHead of the Data:")
-        print(df.sort_values("game_id", ascending=False).head())
-
-    return df
-
-
-def split_data(df, target, test_size=0.3, random_state=0, print_shape=False):
-    """Split the data into training and testing sets.
-
-    Args:
-    - df: Pandas DataFrame, the data to be split.
-    - target: str, the name of the target column.
-    - test_size: float, optional, the proportion of the data to be used for testing. Default is 0.3.
-    - random_state: int, optional, the random seed for reproducibility. Default is 0.
-    - print_shape: bool, optional, whether to print the shape of the output data. Default is False.
-
-    Returns:
-    - X_train: Pandas DataFrame, the training set features.
-    - X_test: Pandas DataFrame, the testing set features.
-    - y_train: Pandas Series, the training set targets.
-    - y_test: Pandas Series, the testing set targets.
-    """
-    y = df[target]
-    X = df.drop(columns=target)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, random_state=random_state
-    )
-    if print_shape:
-        print(f"X_train Shape: {X_train.shape}")
-        print(f"X_test Shape: {X_test.shape}")
-        print(f"y_train Shape: {y_train.shape}")
-        print(f"y_test Shape: {y_test.shape}")
-    return X_train, X_test, y_train, y_test
-
-
-def prepare_data(df, model_type, feature_types=["main"]):
-    """
-    This function prepares the data for the desired model type
-    by selecting the specified features and returning the resulting dataframe.
-
-    Parameters:
-    df (DataFrame): The input dataframe.
-    model_type (str): The type of model to prepare the data for, either "CLS" or "REG".
-    feature_types (list, optional): The types of features to include in the data preparation.
-                                    Defaults to ["main"].
-
-    Returns:
-    DataFrame: The prepared dataframe with only the selected features.
-
-    Raises:
-    ValueError: If the model_type argument is not "CLS" or "REG".
-    ValueError: If the feature_types argument contains "other" and either "rank" or "vla_std".
-    ValueError: If the feature_types argument is not one of "all", "main", "rank", "vla_std", "other".
-    """
-    if model_type == "CLS":
-        target_column = "CLS_TARGET_home_margin_GT_home_spread"
-    elif model_type == "REG":
-        target_column = "REG_TARGET_actual_home_margin"
-    else:
-        raise ValueError("model_type must be either 'CLS' or 'REG'")
-
-    drop_columns = [
-        "fd_line_home",
-        "dk_line_home",
-        "cover_consensus_home",
-        "game_id",
-        "REG_TARGET_actual_home_margin",
-        "CLS_TARGET_home_margin_GT_home_spread",
-    ]
-
-    # FEATURE OPTIONS (main, rank, vla_std, other, all)
-    main_features = [
-        "home_team_num",
-        "away_team_num",
-        "home_spread",
-        "league_year_end",
-        "day_of_season",
-        "elo1_pre",
-        "elo2_pre",
-        "elo_prob1",
-        "elo_prob2",
-    ]
-
-    rank_features = [feature for feature in list(df) if "rank" in feature]
-
-    vla_std_features = [feature for feature in list(df) if "vla_std" in feature]
-
-    other_features = [
-        feature
-        for feature in list(df)
-        if feature not in [target_column] + main_features + drop_columns
-    ]
-
-    all_features = main_features + other_features
-
-    features_to_use = []
-
-    if "all" in feature_types:
-        features_to_use = all_features
-    elif "main" in feature_types:
-        features_to_use = main_features
-        if "other" in feature_types and (
-            "rank" in feature_types or "vla_std" in feature_types
-        ):
-            raise ValueError("other_features can only be added to main features.")
-        elif "other" in feature_types:
-            features_to_use += other_features
-        elif "other" not in feature_types:
-            if "rank" in feature_types:
-                features_to_use += rank_features
-            if "vla_std" in feature_types:
-                features_to_use += vla_std_features
-    else:
-        raise ValueError(
-            "Feature_types must be one of 'all', 'main', 'rank', 'vla_std', 'other'."
-        )
-
-    model_ready_df = df[[target_column] + features_to_use].dropna()
-
-    return model_ready_df, target_column
+from sklearn.model_selection import GridSearchCV
 
 
 def nba_xgboost_cls(
@@ -328,14 +173,49 @@ def nba_xgboost_reg(
 
 if __name__ == "__main__":
     df = load_data()
-    df, target = prepare_data(df, "REG", feature_types=["main"])
-    X_train, X_test, y_train, y_test = split_data(df, target)
+
+    # Classification
+    (X_train, X_test, y_train, y_test), scalar = prepare_data(
+        df,
+        "CLS",
+        feature_types=["main", "rank", "zscore"],
+        random_state=17,
+        test_size=0.2,
+        scale_data=False,
+        time_based_split=False,
+        print_shape=True,
+    )
+
+    nba_xgboost_cls(
+        X_train,
+        y_train,
+        X_test,
+        y_test,
+        save_model=False,
+        filename_end=None,
+        show_importances=True,
+        use_gridsearch=False,
+    )
+
+    # Regression
+    (X_train, X_test, y_train, y_test), scalar = prepare_data(
+        df,
+        "REG",
+        feature_types=["main", "rank", "zscore"],
+        random_state=17,
+        test_size=0.2,
+        scale_data=False,
+        time_based_split=False,
+        print_shape=True,
+    )
+
     nba_xgboost_reg(
         X_train,
         y_train,
         X_test,
         y_test,
         save_model=False,
+        filename_end=None,
         show_importances=True,
         use_gridsearch=False,
     )
