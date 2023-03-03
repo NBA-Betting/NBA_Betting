@@ -178,7 +178,7 @@ if __name__ == "__main__":
     (X_train, X_test, y_train, y_test), scalar = prepare_data(
         df,
         "CLS",
-        feature_types=["main", "rank", "zscore"],
+        feature_types=["main"],
         random_state=17,
         test_size=0.2,
         scale_data=False,
@@ -201,7 +201,7 @@ if __name__ == "__main__":
     (X_train, X_test, y_train, y_test), scalar = prepare_data(
         df,
         "REG",
-        feature_types=["main", "rank", "zscore"],
+        feature_types=["main"],
         random_state=17,
         test_size=0.2,
         scale_data=False,

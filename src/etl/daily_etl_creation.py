@@ -461,7 +461,7 @@ if __name__ == "__main__":
         print("----- DAILY ETL CREATION STEP SUCCESSFUL -----")
 
     # Specific Dates
-    # dates = ["20230211"]
+    # dates = ["20230301"]
     # failed_dates = []
     # for date in dates:
     #     try:
