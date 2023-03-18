@@ -12,6 +12,7 @@
 </head>
 
 <body>
+    <!--HEADER and NAVBAR-->
     <div class="container">
         <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom">
             <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
@@ -24,12 +25,17 @@
                 <li class="nav-item"><a href="/" class="nav-link">Home</a></li>
                 <li class="nav-item"><a href="/nba_dashboard" class="nav-link active" aria-current="page">Dashboard</a>
                 </li>
+                {% if current_user.is_authenticated %}
+                <li class="nav-item"><a href="{{ url_for('logout') }}" class="nav-link">Logout</a></li>
+                {% else %}
+                <li class="nav-item"><a href="{{ url_for('login') }}" class="nav-link">Login</a></li>
+                {% endif %}
             </ul>
         </header>
     </div>
 
     <div class="container embed-responsive embed-responsive-16by9" style='height:78vh'>
-        <iframe class="embed-responsive-item" src="http://localhost:8050" width=100% height="100%"></iframe>
+        <iframe class="embed-responsive-item" src="{{ dashboard_url }}" width=100% height="100%"></iframe>
     </div>
 
 
@@ -45,9 +51,9 @@
             </a>
 
             <ul class="nav col-md-4 justify-content-end list-unstyled d-flex">
-                <li class="ms-3"><a href="mailto:jeffjohannsen7@gmail.com" target="_blank"><img class="bi"
+                <!-- <li class="ms-3"><a href="mailto:jeffjohannsen7@gmail.com" target="_blank"><img class="bi"
                             src="static/img/email_icon.svg" alt="Email" width="30" height="30"></a>
-                </li>
+                </li> -->
                 <li class="ms-3"><a href="https://www.linkedin.com/in/jeffjohannsen/" target="_blank"><img class="bi"
                             src="static/img/linkedin.svg" alt="LinkedIn" width="30" height="30"></a>
                 </li>

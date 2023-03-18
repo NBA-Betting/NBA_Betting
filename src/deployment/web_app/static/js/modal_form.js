@@ -1,4 +1,4 @@
-// Example starter JavaScript for disabling form submissions if there are invalid fields
+// JavaScript for disabling form submissions if there are invalid fields
 (function () {
     'use strict'
 
@@ -18,10 +18,6 @@
             }, false)
         })
 })()
-
-// $('#place_bet_modal').on('hidden.bs.modal', function () {
-//     location.reload();
-// })
 
 var betModal = document.getElementById('place_bet_modal')
 betModal.addEventListener('show.bs.modal', function (event) {

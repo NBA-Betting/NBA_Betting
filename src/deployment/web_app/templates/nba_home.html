@@ -12,7 +12,6 @@
 <body>
 
     <!--HEADER and NAVBAR-->
-
     <div class="container">
         <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom">
             <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
@@ -24,12 +23,18 @@
             <ul class="nav nav-pills d-lg-flex align-items-center">
                 <li class="nav-item"><a href="/" class="nav-link active" aria-current="page">Home</a></li>
                 <li class="nav-item"><a href="/nba_dashboard" class="nav-link">Dashboard</a></li>
+                {% if current_user.is_authenticated %}
+                <li class="nav-item"><a href="{{ url_for('logout') }}" class="nav-link">Logout</a></li>
+                {% else %}
+                <li class="nav-item"><a href="{{ url_for('login') }}" class="nav-link">Login</a></li>
+                {% endif %}
             </ul>
         </header>
     </div>
 
     <!--BANKROLL and PERFORMANCE-->
 
+    {% if current_user.is_authenticated %}
     <div class="container" style="height: 35vh;">
         <div class="row">
             <div class="col-5">
@@ -107,10 +112,9 @@
             </div>
         </div>
     </div>
-
+    {% endif %}
 
     <!--TABLE of GAMES-->
-    <!--TODO: Ability to change dates of table for games. Pagination by Day.-->
 
     <div class="container">
         <table class="table table-striped">
@@ -125,19 +129,13 @@
                     <th scope="col" class="cell-center">Game Score Direction</th>
                     <th scope="col" class="cell-center">Game Result</th>
                     <th scope="col" class="cell-center">Bet Status</th>
-                    <th scope="col" class="cell-center">Bet Amount</th>
-                    <th scope="col" class="cell-center">Bet Line</th>
-                    <th scope="col" class="cell-center">Bet Direction</th>
-                    <th scope="col" class="cell-center">Bet Price</th>
-                    <th scope="col" class="cell-center">Bet Location</th>
-                    <th scope="col" class="cell-center">Bet Profit/Loss</th>
                     <th scope="col" class="cell-center"></th>
                 </tr>
             </thead>
             <tbody>
                 {% for rec in records %}
                 <tr>
-                    <td class="cell-center"><a href="https://www.covers.com{{rec[18]}}" target="_blank">{{rec[0]}}</a>
+                    <td class="cell-center"><a href="https://www.covers.com{{rec[16]}}" target="_blank">{{rec[0]}}</a>
                     </td>
                     <td class="cell-center">{{rec[1]}}</td>
                     <td class="cell-center">{{rec[2]}}</td>
@@ -147,31 +145,15 @@
                     <td class="cell-center">{{rec[6]}}</td>
                     <td class="cell-center">{{rec[7]}}</td>
                     <td class="cell-center">{{rec[8]}}</td>
-                    <td class="cell-center">{{rec[9]}}</td>
-                    <td class="cell-center">{{rec[10]}}</td>
-                    <td class="cell-center">{{rec[11]}}</td>
-                    <td class="cell-center">{{rec[12]}}</td>
-                    <td class="cell-center">{{rec[13]}}</td>
-                    <td class="cell-center">{{rec[14]}}</td>
-                    {% if rec[8] == '-' %}
+                    {% if current_user.is_authenticated %}
                     <td class="cell-center"><button type="button" class="btn btn-primary" data-bs-toggle="modal"
                             data-bs-target="#place_bet_modal" data-bs-gameId="{{rec[0]}}"
-                            data-bs-betDatetime="{{rec[16]}}" data-bs-betLocation="{{rec[14]}}"
-                            data-bs-betLine="{{rec[11]}}" data-bs-betAmount="{{rec[10]}}"
-                            data-bs-betDirection="{{rec[12]}}" data-bs-betPrice="{{rec[13]}}"
-                            data-bs-betStatus="{{rec[9]}}" data-bs-betProfitLoss="{{rec[15]}}"
+                            data-bs-betDatetime="{{rec[15]}}" data-bs-betLocation="{{rec[13]}}"
+                            data-bs-betLine="{{rec[10]}}" data-bs-betAmount="{{rec[9]}}"
+                            data-bs-betDirection="{{rec[11]}}" data-bs-betPrice="{{rec[12]}}"
+                            data-bs-betStatus="{{rec[8]}}" data-bs-betProfitLoss="{{rec[14]}}"
                             data-bs-bankBalance="{{current_balance}}">
-                            Place Bet
-                        </button></td>
-                    {% else %}
-                    <td class="cell-center"><button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                            data-bs-target="#place_bet_modal" data-bs-gameId="{{rec[0]}}"
-                            data-bs-betDatetime="{{rec[16]}}" data-bs-betLocation="{{rec[14]}}"
-                            data-bs-betLine="{{rec[11]}}" data-bs-betAmount="{{rec[10]}}"
-                            data-bs-betDirection="{{rec[12]}}" data-bs-betPrice="{{rec[13]}}"
-                            data-bs-betStatus="{{rec[9]}}" data-bs-betProfitLoss="{{rec[15]}}"
-                            data-bs-bankBalance="{{current_balance}}">
-                            Update Bet
+                            Bet Details
                         </button></td>
                     {% endif %}
                 </tr>
@@ -314,9 +296,9 @@
             </a>
 
             <ul class="nav col-md-4 justify-content-end list-unstyled d-flex">
-                <li class="ms-3"><a href="mailto:jeffjohannsen7@gmail.com" target="_blank"><img class="bi"
+                <!-- <li class="ms-3"><a href="mailto:jeffjohannsen7@gmail.com" target="_blank"><img class="bi"
                             src="static/img/email_icon.svg" alt="Email" width="30" height="30"></a>
-                </li>
+                </li> -->
                 <li class="ms-3"><a href="https://www.linkedin.com/in/jeffjohannsen/" target="_blank"><img class="bi"
                             src="static/img/linkedin.svg" alt="LinkedIn" width="30" height="30"></a>
                 </li>
