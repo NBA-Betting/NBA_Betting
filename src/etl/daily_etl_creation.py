@@ -451,17 +451,17 @@ if __name__ == "__main__":
     yesterdays_date_str = yesterdays_datetime.strftime("%Y%m%d")
 
     # Daily Updating
-    try:
-        create_record_batch(yesterdays_date_str, engine, TEAM_MAP)
-    except Exception as e:
-        print(f"Error creating record for {yesterdays_date_str}.")
-        print("----- DAILY ETL CREATION STEP FAILED -----")
-        raise e
-    else:
-        print("----- DAILY ETL CREATION STEP SUCCESSFUL -----")
+    # try:
+    #     create_record_batch(todays_date_str, engine, TEAM_MAP)
+    # except Exception as e:
+    #     print(f"Error creating record for {todays_date_str}.")
+    #     print("----- DAILY ETL CREATION STEP FAILED -----")
+    #     raise e
+    # else:
+    #     print("----- DAILY ETL CREATION STEP SUCCESSFUL -----")
 
     # Specific Dates
-    # dates = ["20230301"]
+    # dates = ["20230307"]
     # failed_dates = []
     # for date in dates:
     #     try:

@@ -389,7 +389,7 @@ if __name__ == "__main__":
 
         # ----- CREATE MODEL TRAINING DATA RECORDS-----
 
-        # game_dates = ["20221118", "20221119"]
+        # game_dates = ["20230307"]
 
         try:
             model_training_data_creation(connection, game_dates="daily")
