@@ -2,6 +2,21 @@
 
 # NBA Betting
 
+## Version 1: Team-Game Focused Predictions (Current)
+
+Predictions based on modeling of team performance as a whole using team level statistics.
+Main focus was on creating an end to end project architecture and determining a baseline performance.
+* Completed: March 2023
+* Performance: Approximately Even Money 
+
+## Version 2: Player-Game Focused Predictions (In Development)
+Predictions based on modeling of player performance combined with player interactions and whole team performance.
+This takes into account predictors that were ignored by version 1. Most importantly player availability.
+Main focus is on the prediction engine architecture and model performance.
+* Completion Date: TBD
+* Performance: TBD 
+
+
 ## Table of Contents
 * [Introduction](#Introduction)
 * [Data Engineering](#Data-Engineering)
@@ -83,23 +98,32 @@ Baseline Machine Learning and Deep Learning Model Accuracy is greater than chanc
 
 ## Web App
 
-<img src='images/web_app_home_page.png' alt='Home Page' width=560 height=400/>
-<img src='images/web_app_dashboard.png' alt='Dashboard' width=560 height=400/>
+### Link >>> [http://nba-betting.us/](http://nba-betting.us/)  
+** Publically available data is for example only. It does not reflect actual predictions or bet recommendations at this time.
+
+<img src='images/nba_betting_web_app.png' alt='Home Page' width=560 height=400/>
+<img src='images/nba_betting_dashboard.png' alt='Dashboard' width=560 height=400/>
 
 <br/><br/>
 
 # Next Steps
 
-* Add premier NBA advanced stats like DARKO and EPM to feature set and prediction models.
-* Test more Deep Learning model constructs.
-* Continue testing project on 2022-2023 NBA Season.
-* Expand Web App functionality and make available to public.
+Version 2: Player-Game Focused Predictions
+* Modeling and Prediction Architecture Planning
+    * Determine what I can get historical data for.
+    * Design how Player-Game(V2) outputs will be integrated into Team-Game(V1) outputs? 
+    * Choose Modeling Strategy (Model per Player, Model per Position, All Player Model, Combinations and Transfer Learning)
+    * Evaluate Possible Feature Categories (Direct Statistics, Index/Advanced Statistics, Subjective Quality Ratings, Categorizers/Modifiers, Other)
+
+Other
+* Add HTTPS to Web App
+
 
 <br/><br/>
 
 # Contact
 
-Jeff Johannsen - [LinkedIn](https://www.linkedin.com/in/jeffjohannsen/) - jeffjohannsen7<span>@gmail.</span>com
+Jeff Johannsen - [LinkedIn](https://www.linkedin.com/in/jeffjohannsen/)
 
 <br/><br/>
 
@@ -141,8 +165,7 @@ AWS
 * RDS
 
 Other
-* Docker
 * Cron/Crontab
-* HTML/CSS
+* HTML/CSS/JS
 * Bootstrap
 * Chrome Dev Tools
