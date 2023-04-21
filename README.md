@@ -13,7 +13,7 @@ Main focus was on creating an end to end project architecture and determining a 
 Predictions based on modeling of player performance combined with player interactions and whole team performance.
 This takes into account predictors that were ignored by version 1. Most importantly player availability.
 Main focus is on the prediction engine architecture and model performance.
-* Completion Date: TBD
+* Completion Goal: October 2023
 * Performance: TBD 
 
 
