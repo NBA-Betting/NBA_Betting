@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from datetime import date, timedelta
 
 # IMPORT SPIDERS HERE
 from data_sources.spiders.inpredictable_wpa_spider import InpredictableWPASpider
@@ -30,10 +31,11 @@ if __name__ == "__main__":
     process = CrawlerProcess(settings)
 
     # Run each spider and handle errors
+    yesterday = (date.today() - timedelta(days=1)).strftime("%Y-%m-%d")
     run_spider(
         InpredictableWPASpider,
         save_data=True,
-        view_data=True,
-        dates="2023-04-01",
+        view_data=False,
+        dates=yesterday,
     )
     # ADD MORE SPIDERS HERE
