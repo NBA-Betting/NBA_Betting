@@ -28,16 +28,19 @@ class InpredictableWPASpider(BaseSpider):
             reg_season_start_date = datetime.strptime(
                 dates["reg_season_start_date"], "%Y-%m-%d"
             )
-            reg_season_end_date = datetime.strptime(
-                dates["reg_season_end_date"], "%Y-%m-%d"
+            postseason_end_date = datetime.strptime(
+                dates["postseason_end_date"], "%Y-%m-%d"
             )
 
-            if reg_season_start_date <= date_obj <= reg_season_end_date:
+            if reg_season_start_date <= date_obj <= postseason_end_date:
                 return {
-                    "reg_season_start_date": dates["reg_season_start_date"],
-                    "start_year": int(season.split("-")[0]),
+                    "info": {
+                        "reg_season_start_date": dates["reg_season_start_date"],
+                        "start_year": int(season.split("-")[0]),
+                    },
+                    "error": None,
                 }
-        return None
+        return {"info": None, "error": "Unable to find season information"}
 
     def start_requests(self):
         base_url = "http://stats.inpredictable.com/nba/ssnPlayer.php"
@@ -52,14 +55,13 @@ class InpredictableWPASpider(BaseSpider):
         }
 
         for date_str in self.dates:
-            season_info = self.find_season_information(date_str)
-            if not season_info:
-                print(
-                    f"Error: Unable to find season information for the date {date_str}"
-                )
+            season_info_result = self.find_season_information(date_str)
+            if season_info_result["error"]:
+                print(f"Error: {season_info_result['error']} for the date {date_str}")
+                self.handle_failed_date(date_str, "find_season_information")
                 continue
 
-            frdt, season = season_info.values()
+            frdt, season = season_info_result["info"].values()
 
             params.update({"season": season, "frdt": frdt, "todt": date_str})
             url = base_url + "?" + urlencode(params)
@@ -72,6 +74,10 @@ class InpredictableWPASpider(BaseSpider):
         parsed_url = urlparse(response.url)
         query_params = parse_qs(parsed_url.query)
         to_date = query_params.get("todt", [None])[0]
+        if not table_rows:
+            self.handle_failed_date(to_date, "parse")
+            return
+
         for row in table_rows[3:]:  # Skip the header rows
             data = {
                 "rnk": row.css("td:nth-child(1)::text").get(),

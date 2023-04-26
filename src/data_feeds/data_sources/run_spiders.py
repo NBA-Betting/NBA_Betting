@@ -13,7 +13,14 @@ def run_spider(spider_class, **spider_args):
     try:
         process.crawl(spider_class, **spider_args)
         process.start()  # This will block and run the spiders
-        print(f"{spider_class.__name__} completed successfully.")
+        print(f"{spider_class.__name__} completed.")
+
+        # Print failed dates
+        print("Failed dates:")
+        for reason, dates in spider_class.failed_dates.items():
+            if dates:
+                print(f"{reason}: {', '.join(dates)}")
+
         # You can return the number of records added to the database here
         # if you can access it from the spider or pipeline
     except Exception as e:

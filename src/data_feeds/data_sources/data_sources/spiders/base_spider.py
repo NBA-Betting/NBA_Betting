@@ -20,6 +20,12 @@ class BaseSpider(Spider):
             "data_sources.pipelines.BasePipeline": 300
         }  # Update: DataSourceName + Pipeline
     }
+    failed_dates = {
+        "find_season_information": [],
+        "start_requests": [],
+        "parse": [],
+        "save": [],
+    }
 
     def __init__(
         self,
@@ -63,6 +69,9 @@ class BaseSpider(Spider):
                 all_dates.append(current_date.strftime("%Y-%m-%d"))
                 current_date += timedelta(days=1)
         return all_dates
+
+    def handle_failed_date(self, date_str, reason):
+        self.failed_dates[reason].append(date_str)
 
     def find_season_information(self, date_str):
         # Logic to use NBA_IMPORTANT_DATES to find necessary season information
