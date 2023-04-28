@@ -4,6 +4,9 @@ import sys
 from datetime import date, timedelta
 
 # IMPORT SPIDERS HERE
+from data_sources.spiders.fivethirtyeight_player_spider import (
+    FivethirtyeightPlayerSpider,
+)
 from data_sources.spiders.inpredictable_wpa_spider import InpredictableWPASpider
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
@@ -25,6 +28,9 @@ def run_spider(spider_class, **spider_args):
         # if you can access it from the spider or pipeline
     except Exception as e:
         print(f"{spider_class.__name__} failed. Reason: {e}")
+        return spider_class.__name__, e
+
+    return None
 
 
 if __name__ == "__main__":
@@ -39,10 +45,29 @@ if __name__ == "__main__":
 
     # Run each spider and handle errors
     yesterday = (date.today() - timedelta(days=1)).strftime("%Y-%m-%d")
-    run_spider(
-        InpredictableWPASpider,
-        save_data=True,
-        view_data=False,
-        dates=yesterday,
-    )
-    # ADD MORE SPIDERS HERE
+
+    spiders_to_run = [
+        (
+            InpredictableWPASpider,
+            {"save_data": True, "view_data": False, "dates": yesterday},
+        ),
+        (
+            FivethirtyeightPlayerSpider,
+            {"save_data": True, "view_data": False, "dates": "daily_update"},
+        ),
+        # ADD MORE SPIDERS HERE
+    ]
+
+    failed_spiders = []
+
+    for spider_class, spider_args in spiders_to_run:
+        spider_result = run_spider(spider_class, **spider_args)
+        if spider_result:
+            failed_spiders.append(spider_result)
+
+    if failed_spiders:
+        print("\nThe following spiders failed:")
+        for spider_name, exception in failed_spiders:
+            print(f"{spider_name}: {exception}")
+    else:
+        print("\nAll spiders completed successfully.")

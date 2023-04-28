@@ -1,11 +1,10 @@
-import sys
+import re
 from datetime import datetime
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import scrapy
-
-sys.path.append("../")
-from data_sources_config import NBA_IMPORTANT_DATES
+from data_sources.item_loaders import InpredictableWPAItemLoader
+from data_sources.items import InpredictableWPAItem
 
 from .base_spider import BaseSpider
 
@@ -18,13 +17,35 @@ class InpredictableWPASpider(BaseSpider):
         "ITEM_PIPELINES": {"data_sources.pipelines.InpredictableWPAPipeline": 300}
     }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(first_season=1996, *args, **kwargs)
+    first_season = 1996
+
+    def __init__(self, dates, save_data=False, view_data=True, *args, **kwargs):
+        super().__init__(
+            dates,
+            save_data=save_data,
+            view_data=view_data,
+            first_season=self.first_season,
+            *args,
+            **kwargs,
+        )
+
+        date_pattern = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+        if dates == "all":
+            self.dates = self.generate_all_dates(self.first_season)
+        else:
+            self.dates = []
+            for date_str in dates.split(","):
+                if not date_pattern.match(date_str) and date_str != "all":
+                    raise ValueError(
+                        f"Invalid date format: {date_str}. Date format should be 'YYYY-MM-DD' or 'all'"
+                    )
+                self.dates.append(date_str)
 
     def find_season_information(self, date_str):
         date_obj = datetime.strptime(date_str, "%Y-%m-%d")
 
-        for season, dates in NBA_IMPORTANT_DATES.items():
+        for season, dates in self.NBA_IMPORTANT_DATES.items():
             reg_season_start_date = datetime.strptime(
                 dates["reg_season_start_date"], "%Y-%m-%d"
             )
@@ -79,26 +100,27 @@ class InpredictableWPASpider(BaseSpider):
             return
 
         for row in table_rows[3:]:  # Skip the header rows
-            data = {
-                "rnk": row.css("td:nth-child(1)::text").get(),
-                "player": row.css("td:nth-child(2) a::text").get(),
-                "pos": row.css("td:nth-child(3)::text").get(),
-                "gms": row.css("td:nth-child(4)::text").get(),
-                "wpa": row.css("td:nth-child(5)::text").get(),
-                "ewpa": row.css("td:nth-child(6)::text").get(),
-                "clwpa": row.css("td:nth-child(7)::text").get(),
-                "gbwpa": row.css("td:nth-child(8)::text").get(),
-                "sh": row.css("td:nth-child(9)::text").get(),
-                "to": row.css("td:nth-child(10)::text").get(),
-                "ft": row.css("td:nth-child(11)::text").get(),
-                "reb": row.css("td:nth-child(12)::text").get(),
-                "ast": row.css("td:nth-child(13)::text").get(),
-                "stl": row.css("td:nth-child(14)::text").get(),
-                "blk": row.css("td:nth-child(15)::text").get(),
-                "kwpa": row.css("td:nth-child(16)::text").get(),
-                "to_date": to_date,
-            }
-            yield data
+            loader = InpredictableWPAItemLoader(
+                item=InpredictableWPAItem(), selector=row
+            )
+            loader.add_css("rnk", "td:nth-child(1)::text")
+            loader.add_css("player", "td:nth-child(2) a::text")
+            loader.add_css("pos", "td:nth-child(3)::text")
+            loader.add_css("gms", "td:nth-child(4)::text")
+            loader.add_css("wpa", "td:nth-child(5)::text")
+            loader.add_css("ewpa", "td:nth-child(6)::text")
+            loader.add_css("clwpa", "td:nth-child(7)::text")
+            loader.add_css("gbwpa", "td:nth-child(8)::text")
+            loader.add_css("sh", "td:nth-child(9)::text")
+            loader.add_css("to", "td:nth-child(10)::text")
+            loader.add_css("ft", "td:nth-child(11)::text")
+            loader.add_css("reb", "td:nth-child(12)::text")
+            loader.add_css("ast", "td:nth-child(13)::text")
+            loader.add_css("stl", "td:nth-child(14)::text")
+            loader.add_css("blk", "td:nth-child(15)::text")
+            loader.add_css("kwpa", "td:nth-child(16)::text")
+            loader.add_value("to_date", to_date)
+            yield loader.load_item()
 
         # Check if there are more pages to scrape
         next_page_links = response.css("div.slbl a::attr(href)").getall()

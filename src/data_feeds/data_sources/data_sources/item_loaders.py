@@ -1,11 +1,40 @@
 import scrapy
+from itemloaders.processors import Join, MapCompose, TakeFirst
 from scrapy.loader import ItemLoader
-from scrapy.loader.processors import Join, MapCompose, TakeFirst
 
 # IMPORT ITEMS HERE
-from .items import InpredictableWPAItem
+from .items import FivethirtyeightPlayerItem, InpredictableWPAItem
 
 # ADD NEW ITEM LOADERS HERE
+
+
+class FivethirtyeightPlayerItemLoader(ItemLoader):
+    default_item_class = FivethirtyeightPlayerItem
+    default_output_processor = TakeFirst()
+
+    priority_in = MapCompose(int)
+    to_date_in = MapCompose()
+    player_name_in = MapCompose(str.strip)
+    player_id_in = MapCompose(str.strip)
+    season_in = MapCompose(int)
+    poss_in = MapCompose(int)
+    mp_in = MapCompose(int)
+    raptor_box_offense_in = MapCompose(float)
+    raptor_box_defense_in = MapCompose(float)
+    raptor_box_total_in = MapCompose(float)
+    raptor_onoff_offense_in = MapCompose(float)
+    raptor_onoff_defense_in = MapCompose(float)
+    raptor_onoff_total_in = MapCompose(float)
+    raptor_offense_in = MapCompose(float)
+    raptor_defense_in = MapCompose(float)
+    raptor_total_in = MapCompose(float)
+    war_total_in = MapCompose(float)
+    war_reg_season_in = MapCompose(float)
+    war_playoffs_in = MapCompose(float)
+    predator_offense_in = MapCompose(float)
+    predator_defense_in = MapCompose(float)
+    predator_total_in = MapCompose(float)
+    pace_impact_in = MapCompose(float)
 
 
 class InpredictableWPAItemLoader(ItemLoader):

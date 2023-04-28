@@ -8,7 +8,7 @@ sys.path.append("../../../")
 from passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 # IMPORT TABLES HERE
-from src.database_orm import InpredictableWPATable
+from src.database_orm import FivethirtyeightPlayerTable, InpredictableWPATable
 
 pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", 200)
@@ -23,20 +23,26 @@ class BasePipeline:
 
     ITEM_CLASS = None
 
-    def __init__(self, save_data=False, view_data=True):
+    @classmethod
+    def from_crawler(cls, crawler):
+        # Get the spider instance from the crawler
+        spider = crawler.spider
+        # Pass the spider instance to the pipeline
+        return cls(spider)
+
+    def __init__(self, spider):
         self.engine = create_engine(
             f"postgresql://postgres:{RDS_PASSWORD}@{RDS_ENDPOINT}/nba_betting"
         )
         self.Session = sessionmaker(bind=self.engine)
         self.nba_data = []
-        self.save_data = save_data
-        self.view_data = view_data
-        self.clean_errors = 0
-        self.verify_errors = 0
+        self.save_data = spider.save_data
+        self.view_data = spider.view_data
+        self.processing_errors = 0
 
     def process_item(self, item, spider):
         """
-        This method is called for each item that is scraped. It cleans and verifies
+        This method is called for each item that is scraped. It cleans organizes, and verifies
         the item before appending it to the list of scraped data.
 
         Args:
@@ -46,48 +52,20 @@ class BasePipeline:
         Returns:
             dict: The processed item.
         """
-        self.clean_data(item)
-        self.verify_data(item)
-        self.nba_data.append(item)
-        return item
-
-    def clean_data(self, item):
-        """
-        This method is responsible for cleaning the data. It should be
-        overridden in the subclass to implement custom cleaning logic.
-
-        Args:
-            item (dict): The item to clean.
-
-        Returns:
-            bool: True if cleaning is successful, False otherwise.
-        """
         try:
-            # Common cleaning logic
-            pass
-            return True
+            # Processing logic here
+            self.nba_data.append(item)
+            return item
         except Exception as e:
-            self.clean_errors += 1
+            self.processing_errors += 1
             return False
 
-    def verify_data(self, item):
+    def process_dataset(self):
         """
-        This method is responsible for verifying the data. It should be
-        overridden in the subclass to implement custom verification logic.
-
-        Args:
-            item (dict): The item to verify.
-
-        Returns:
-            bool: True if verification is successful, False otherwise.
+        This method can be overridden by subclasses to process the full dataset
+        once all items have been processed individually.
         """
-        try:
-            # Common verification logic
-            pass
-            return True
-        except Exception as e:
-            self.verify_errors += 1
-            return False
+        pass
 
     def save_to_database(self):
         """
@@ -124,28 +102,48 @@ class BasePipeline:
 
     def close_spider(self, spider):
         """
-        This method is called when the spider finishes scraping. It displays
-        the data (if view_data is True), saves the data to the database (if save_to_database is True),
-        and reports any errors that occurred during cleaning and verification.
-            Args:
+        This method is called when the spider finishes scraping. It processes
+        the dataset, displays the data (if view_data is True), saves the data
+        to the database (if save_to_database is True), and reports any errors
+        that occurred during cleaning and verification.
+        Args:
         spider (scrapy.Spider): The spider that has finished scraping.
         """
+
+        # Process the dataset
+        self.process_dataset()
 
         if spider.view_data:
             self.display_data()
         if spider.save_data:
             self.save_to_database()
 
-        print(f"Number of cleaning errors: {self.clean_errors}")
-        print(f"Number of verification errors: {self.verify_errors}")
+        print(f"Number of processing errors: {self.processing_errors}")
 
         if len(self.nba_data) > 0:
-            print(
-                f"Percentage of successful items: {((len(self.nba_data) - (self.clean_errors + self.verify_errors)) / len(self.nba_data)) * 100}%"
+            success_rate = (
+                (len(self.nba_data) - self.processing_errors) / len(self.nba_data) * 100
             )
+            print(f"Percentage of successful items: {success_rate:.2f}%")
 
 
 # ADD NEW PIPELINES HERE
+class FivethirtyeightPlayerPipeline(BasePipeline):
+    ITEM_CLASS = FivethirtyeightPlayerTable
+
+    def process_dataset(self):
+        # Remove duplicates and update records
+        df = pd.DataFrame(self.nba_data)
+        df.sort_values(
+            by=["player_id", "season", "priority"], ascending=False, inplace=True
+        )
+        df.drop_duplicates(subset=["player_id", "season"], keep="first", inplace=True)
+
+        # Remove the "priority" column as it's not needed anymore
+        df.drop(columns=["priority"], inplace=True)
+
+        # Convert the DataFrame back to a list of dictionaries
+        self.nba_data = df.to_dict("records")
 
 
 class InpredictableWPAPipeline(BasePipeline):

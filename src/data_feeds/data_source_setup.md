@@ -7,9 +7,9 @@
 ```python
 class DataSourceNameTable(Base):  # CamelCase name of data source + Table
     __tablename__ = "ibd_data_source_name"  # ibd_ + Lowercase name of data source
-    __table_args__ = PrimaryKeyConstraint(
+    __table_args__ = (PrimaryKeyConstraint(
         "column2", "column1"
-    )  # Can be 1 or more columns
+    ),)  # Can be 1 or more columns
     column1 = Column(Integer)  # Lowercase name of column
     column2 = Column(String)  # Other datatype options: Integer, Float, Date, Boolean
     column3 = Column(String)
@@ -53,39 +53,48 @@ class DataSourceNameItemLoader(ItemLoader):  # CamelCase name of data source + I
 
 ### Filename should be lowercase data_source_name + _spider.py
 
-### Import BaseSpider from base_spider.py
+### Import BaseSpider from base_spider.py, Item from items.py, and ItemLoader from item_loaders.py
 ```python
-from .base_spider import BaseSpider
+from data_sources.spiders.base_spider import BaseSpider
+from data_sources.items import DataSourceNameItem
+from data_sources.item_loaders import DataSourceNameItemLoader
 ```
 
-### Update spider name, allowed_domains, and custom_settings
+### Update spider name, allowed_domains, custom_settings, and first season
 ```python
-class DataSourceNameSpider(BaseSpider):
-    name = "data_source_name_spider"  # Lowercase data_source_name + _spider
-    allowed_domains = []  # Update: Main website domain
-
+class BaseSpider(Spider):
+    name = "<data_source_name>_spider"  # Update: data_source_name
+    allowed_domains = []  # Update
     custom_settings = {
         "ITEM_PIPELINES": {
-            "data_sources.pipelines.DataSourceNamePipeline": 300
-        }  # Update: Camelcase DataSourceName + Pipeline
+            "data_sources.pipelines.BasePipeline": 300
+        }  # Update: DataSourceName + Pipeline
     }
+    # ...
+    first_season = 0  # Update: First season of data source
 ```
 
-### Update from_crawler method to use the correct pipeline
+### Update init method to with dates logic
 ```python
-@classmethod
-def from_crawler(cls, crawler, *args, **kwargs):
-    spider = super(DataSourceNameSpider, cls).from_crawler(
-        crawler, *args, **kwargs
-    )  # Update: Camelcase DataSourceName + Spider
-    pipeline_class = "data_sources.pipelines.DataSourceNamePipeline"  # Update: DataSourceName + Pipeline
-    if pipeline_class in crawler.settings.get("ITEM_PIPELINES"):
-        spider.save_data = spider.save_data
-        spider.view_data = spider.view_data
-    return spider
+    def __init__(self, dates, save_data=False, view_data=True, *args, **kwargs):
+        super().__init__(
+            dates,
+            save_data=save_data,
+            view_data=view_data,
+            first_season=self.first_season,
+            *args,
+            **kwargs,
+        )
+
+        if dates in ["all", "daily_update"]:
+            self.dates = dates
+        else:
+            raise ValueError(
+                f"Invalid date format: {dates}. Date format should be 'all' or 'daily_update'"
+            )
 ```
 
-### Update find_season_information method
+### Update find_season_information method (if necessary)
 ```python
 def find_season_information(self, date_str):
     # Logic to use NBA_IMPORTANT_DATES to find necessary season information
@@ -141,27 +150,50 @@ from src.database_orm import (
 class DataSourceNamePipeline(BasePipeline):  # CamelCase name of data source + Pipeline
     ITEM_CLASS = DataSourceNameTable  # CamelCase name of data source + Table
 
-    # Define clean_data and verify_data methods if necessary
+    # Define process_item, process_dataset, and save_to_database (if necessary)
 
-    def clean_data(self, item):
+    def process_item(self, item, spider):
         """
-        This method is responsible for cleaning the data.
+        This method is called for each item that is scraped. It cleans organizes, and verifies
+        the item before appending it to the list of scraped data.
+
+        Args:
+            item (dict): The scraped item.
+            spider (scrapy.Spider): The spider that scraped the item.
+
+        Returns:
+            dict: The processed item.
         """
         try:
-            # Data source specific cleaning logic
-            return True
+            # Item processing logic here
+            self.nba_data.append(item)
+            return item
         except Exception as e:
-            self.clean_errors += 1
+            self.processing_errors += 1
+            return False
 
-    def verify_data(self, item):
+    def process_dataset(self):
         """
-        This method is responsible for verifying the data.
+        This method can be overridden by subclasses to process the full dataset
+        once all items have been processed individually.
         """
-        try:
-            # Data source specific verification logic
-            return True
-        except Exception as e:
-            self.verify_errors += 1
+        # Dataset processing logic here
+        pass
+
+    def save_to_database(self):
+        # Remove duplicates and update records
+        df = pd.DataFrame(self.nba_data)
+        df.sort_values(by=["player_id", "season", "priority"], ascending=False, inplace=True)
+        df.drop_duplicates(subset=["player_id", "season"], keep="first", inplace=True)
+
+        # Remove the "priority" column as it's not needed anymore
+        df.drop(columns=["priority"], inplace=True)
+
+        # Convert the DataFrame back to a list of dictionaries
+        self.nba_data = df.to_dict("records")
+
+        # Call the save_to_database method from the BasePipeline
+        super().save_to_database()
 ```
 
 <br>

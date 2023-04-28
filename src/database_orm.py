@@ -16,7 +16,35 @@ from passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 Base = declarative_base()
 
+
 # ADD TABLES HERE
+
+
+class FivethirtyeightPlayerTable(Base):
+    __tablename__ = "ibd_fivethirtyeight_player"
+    __table_args__ = (PrimaryKeyConstraint("player_id", "season", "to_date"),)
+    to_date = Column(Date)
+    player_name = Column(String)
+    player_id = Column(String)
+    season = Column(Integer)
+    poss = Column(Integer)
+    mp = Column(Integer)
+    raptor_box_offense = Column(Float)
+    raptor_box_defense = Column(Float)
+    raptor_box_total = Column(Float)
+    raptor_onoff_offense = Column(Float)
+    raptor_onoff_defense = Column(Float)
+    raptor_onoff_total = Column(Float)
+    raptor_offense = Column(Float)
+    raptor_defense = Column(Float)
+    raptor_total = Column(Float)
+    war_total = Column(Float)
+    war_reg_season = Column(Float)
+    war_playoffs = Column(Float)
+    predator_offense = Column(Float)
+    predator_defense = Column(Float)
+    predator_total = Column(Float)
+    pace_impact = Column(Float)
 
 
 class InpredictableWPATable(Base):
