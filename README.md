@@ -14,7 +14,15 @@ Predictions based on modeling of player performance combined with player interac
 This takes into account predictors that were ignored by version 1. Most importantly player availability.
 Main focus is on the prediction engine architecture and model performance.
 * Completion Goal: October 2023
-* Performance: TBD 
+* Performance: TBD
+
+### Outline of Version 2
+**Player Prediction Framework** - Combination of ML/DL and Traditional Algorithms used to predict the performance of individual players.
+**Player Interaction and Synergy Framework** - Focused on understanding and predicting the performance of players in various combinations on and off the court.
+Example: How does Steph Curry perform when Draymond Green is on the court vs off the court?
+**Team Prediction Framework** - Combination of ML/DL and traditional algorithms used to predict the performance of teams as a whole.
+**Game Prediction Framework** - Betting market data and other misc predictors of game outcomes.
+**Prediction Framework Integration** - Combining the 4 prediction frameworks into a single bet management system. Final testing, organization, and cleanup. Full deployment to the web app.
 
 
 ## Table of Contents
