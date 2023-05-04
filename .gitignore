@@ -1,6 +1,7 @@
 passkeys.py
 .vscode/
 NBA_Betting.code-workspace
+.devcontainer/
 
 # Tensorboard and PyCaret Logs
 tensorboard_logs/
