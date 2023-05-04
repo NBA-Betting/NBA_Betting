@@ -8,7 +8,17 @@ sys.path.append("../../../")
 from passkeys import RDS_ENDPOINT, RDS_PASSWORD
 
 # IMPORT TABLES HERE
-from src.database_orm import FivethirtyeightPlayerTable, InpredictableWPATable
+from src.database_orm import (
+    FivethirtyeightPlayerTable,
+    InpredictableWPATable,
+    Nba2kPlayerTable,
+    NbaStatsBoxscoresAdvAdvancedTable,
+    NbaStatsBoxscoresAdvMiscTable,
+    NbaStatsBoxscoresAdvScoringTable,
+    NbaStatsBoxscoresAdvTraditionalTable,
+    NbaStatsBoxscoresAdvUsageTable,
+    NbaStatsBoxscoresTraditionalTable,
+)
 
 pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", 200)
@@ -148,3 +158,31 @@ class FivethirtyeightPlayerPipeline(BasePipeline):
 
 class InpredictableWPAPipeline(BasePipeline):
     ITEM_CLASS = InpredictableWPATable
+
+
+# class Nba2kPlayerPipeline(BasePipeline):
+#     ITEM_CLASS = Nba2kPlayerTable
+
+
+class NbaStatsBoxscoresTraditionalPipeline(BasePipeline):
+    ITEM_CLASS = NbaStatsBoxscoresTraditionalTable
+
+
+class NbaStatsBoxscoresAdvTraditionalPipeline(BasePipeline):
+    ITEM_CLASS = NbaStatsBoxscoresAdvTraditionalTable
+
+
+class NbaStatsBoxscoresAdvAdvancedPipeline(BasePipeline):
+    ITEM_CLASS = NbaStatsBoxscoresAdvAdvancedTable
+
+
+class NbaStatsBoxscoresAdvMiscPipeline(BasePipeline):
+    ITEM_CLASS = NbaStatsBoxscoresAdvMiscTable
+
+
+class NbaStatsBoxscoresAdvScoringPipeline(BasePipeline):
+    ITEM_CLASS = NbaStatsBoxscoresAdvScoringTable
+
+
+class NbaStatsBoxscoresAdvUsagePipeline(BasePipeline):
+    ITEM_CLASS = NbaStatsBoxscoresAdvUsageTable

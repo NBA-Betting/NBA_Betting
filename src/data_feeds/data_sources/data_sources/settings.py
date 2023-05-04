@@ -1,11 +1,7 @@
-# Scrapy settings for data_sources project
-#
-# For simplicity, this file contains only settings considered important or
-# commonly used. You can find more settings consulting the documentation:
-#
-#     https://docs.scrapy.org/en/latest/topics/settings.html
-#     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-#     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
+import sys
+
+sys.path.append("../../../")
+from passkeys import API_KEY_ZYTE
 
 BOT_NAME = "data_sources"
 
@@ -55,9 +51,6 @@ DOWNLOAD_DELAY = 3
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-# DOWNLOADER_MIDDLEWARES = {
-#    "data_sources.middlewares.DataSourcesDownloaderMiddleware": 543,
-# }
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
