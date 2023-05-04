@@ -17,12 +17,12 @@ Main focus is on the prediction engine architecture and model performance.
 * Performance: TBD
 
 ### Outline of Version 2
-**Player Prediction Framework** - Combination of ML/DL and Traditional Algorithms used to predict the performance of individual players.
-**Player Interaction and Synergy Framework** - Focused on understanding and predicting the performance of players in various combinations on and off the court.
+1. **Player Prediction Framework** - Combination of ML/DL and Traditional Algorithms used to predict the performance of individual players.
+2. **Player Interaction and Synergy Framework** - Focused on understanding and predicting the performance of players in various combinations on and off the court.
 Example: How does Steph Curry perform when Draymond Green is on the court vs off the court?
-**Team Prediction Framework** - Combination of ML/DL and traditional algorithms used to predict the performance of teams as a whole.
-**Game Prediction Framework** - Betting market data and other misc predictors of game outcomes.
-**Prediction Framework Integration** - Combining the 4 prediction frameworks into a single bet management system. Final testing, organization, and cleanup. Full deployment to the web app.
+3. **Team Prediction Framework** - Combination of ML/DL and traditional algorithms used to predict the performance of teams as a whole.
+4. **Game Prediction Framework** - Betting market data and other misc predictors of game outcomes.
+5. **Prediction Framework Integration** - Combining the 4 prediction frameworks into a single bet management system. Final testing, organization, and cleanup. Full deployment to the web app.
 
 
 ## Table of Contents
