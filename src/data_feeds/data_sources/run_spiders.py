@@ -47,10 +47,10 @@ if __name__ == "__main__":
     yesterday = (date.today() - timedelta(days=1)).strftime("%Y-%m-%d")
 
     spiders_to_run = [
-        (
-            InpredictableWPASpider,
-            {"save_data": True, "view_data": False, "dates": yesterday},
-        ),
+        # (
+        #     InpredictableWPASpider,
+        #     {"save_data": True, "view_data": False, "dates": yesterday},
+        # ),
         (
             FivethirtyeightPlayerSpider,
             {"save_data": True, "view_data": False, "dates": "daily_update"},
