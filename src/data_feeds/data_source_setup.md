@@ -211,21 +211,7 @@ scrapy crawl spider_name -a dates='YYYY-MM-DD,YYYY-MM-DD' -a view_data=True -a s
 
 <br>
 
-## Step 9: Add Scrapy Spider to run_spiders.py and test
-```python
-from data_sources.spiders.data_source_name_spider import DataSourceNameSpider
-
-run_spider(
-    DataSourceNameSpider,  # CamelCase name of data source + Spider
-    save_data=True,  # Test with False first
-    view_data=True,
-    dates="2023-04-01",  # Test one, multiple, and all dates
-)
-```
-
-<br>
-
-## Step 10: Update Airflow and Test
+## Step 9: Update Airflow and Test
 * Set up an Airflow DAG to run the spider on a schedule.
 * Use fivethirtyeight_player_spider_dag.py as a template.
 * Use BashOperator for now until I can debug PythonOperator with Scrapy logging issues.
@@ -234,29 +220,29 @@ run_spider(
 airflow tasks test <dag_name> <task_name>
 ```
 
-## Step 11: Upload to Github
+## Step 10: Upload to Github
 1. Commit your changes to the feature branch on your local machine.
 2. Push the feature branch to GitHub by running git push origin <feature_branch_name>.
 
 <br>
 
-## Step 12: Test on EC2 Instance
+## Step 11: Test on EC2 Instance
 1. SSH into your EC2 instance.
 2. Navigate to the project directory.
 3. Fetch the latest changes from GitHub by running git fetch.
 4. Switch to the feature branch by running git checkout <feature_branch_name>.
 5. Pull the latest changes for the feature branch by running git pull origin <feature_branch_name>.
-6. Test the spider by running the commands in Steps 8, 9, and 10.
+6. Test the spider by running the commands in Steps 8 and 9.
 7. If necessary, adjust the commands to accommodate the EC2 environment, such as using Zyte proxies.
 
 <br>
 
-## Step 13: Download historical data if available
+## Step 12: Download historical data if available
 * ### Preferably using local machine
 
 <br>
 
-## Step 14: Create a pull request, merge the branch into Version-2, and update EC2
+## Step 13: Create a pull request, merge the branch into Version-2, and update EC2
 1. On GitHub or Jira, create a new pull request.
 2. Select Version-2 as the base branch and your feature branch as the compare branch.
 3. Review the changes made in the feature branch, add comments, and discuss any improvements with your team.
