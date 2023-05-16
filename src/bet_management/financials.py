@@ -43,11 +43,11 @@ class BankAccount:
         current_datetime = datetime.now(pytz.timezone("America/Denver")).strftime(
             "%Y-%m-%d %H:%M:%S"
         )
-        stmt = "INSERT INTO bank_account (datetime, balance) VALUES (%, %);"
+        stmt = "INSERT INTO bank_account (datetime, balance) VALUES (%s, %s);"
         self.connection.execute(stmt, (current_datetime, float(self.balance)))
 
 
-if __name__ == "__main__":
+def update_bank_account_balance():
     username = "postgres"
     password = RDS_PASSWORD
     endpoint = RDS_ENDPOINT
@@ -62,8 +62,7 @@ if __name__ == "__main__":
         bank = BankAccount(connection)
         bank.save_balance()
 
-# Script to create original table in psql command line.
-"""CREATE TABLE bank_account (
-    datetime timestamp,
-    balance float4
-);"""
+
+if __name__ == "__main__":
+    pass
+    # update_bank_account_balance()

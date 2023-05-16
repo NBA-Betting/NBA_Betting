@@ -5,7 +5,7 @@ from itemloaders.processors import Join, MapCompose, TakeFirst
 from scrapy.loader import ItemLoader
 
 # IMPORT ITEMS HERE
-from .items import (
+from src.data_feeds.data_sources.data_sources.items import (
     FivethirtyeightPlayerItem,
     InpredictableWPAItem,
     Nba2kPlayerItem,

@@ -8,12 +8,15 @@ BOT_NAME = "data_sources"
 SPIDER_MODULES = ["data_sources.spiders"]
 NEWSPIDER_MODULE = "data_sources.spiders"
 
-
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 # USER_AGENT = "data_sources (+http://www.yourdomain.com)"
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
+
+LOG_FILE = "scrapy_output.log"
+LOG_LEVEL = "WARNING"
+
 
 # FEED_FORMAT = "csv"
 # FEED_URI = "output.csv"

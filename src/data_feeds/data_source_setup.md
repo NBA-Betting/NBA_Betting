@@ -1,6 +1,8 @@
 ## Step 1: Determine name for new data source
 
-## Step 2: Use Google Inspect to find the columns to be saved
+## Step 2: Determine fields(columns, features) to be collected
+* ### Use Google Dev Tools
+* ### Try to find the data source in the Network tab before relying on the HTML tab as it is more reliable, easier to use, and typically has more information.
 
 ## Step 3: Add Table to database_orm.py
 
@@ -15,8 +17,8 @@ class DataSourceNameTable(Base):  # CamelCase name of data source + Table
     column3 = Column(String)
 ```
 
-### Run database_orm.py to create the table in the database
-### Check the table in the database to make sure it looks right
+* ### Run database_orm.py to create the table in the database
+* ### Check the table in the database to make sure it looks right
 
 <br>
 
@@ -51,7 +53,7 @@ class DataSourceNameItemLoader(ItemLoader):  # CamelCase name of data source + I
 
 ## Step 6: Add Scrapy Spider to spiders folder
 
-### Filename should be lowercase data_source_name + _spider.py
+* ### Filename should be lowercase data_source_name + _spider.py
 
 ### Import BaseSpider from base_spider.py, Item from items.py, and ItemLoader from item_loaders.py
 ```python
@@ -69,6 +71,7 @@ class BaseSpider(Spider):
         "ITEM_PIPELINES": {
             "data_sources.pipelines.BasePipeline": 300
         }  # Update: DataSourceName + Pipeline
+        # Add Zyte Settings if necessary
     }
     # ...
     first_season = 0  # Update: First season of data source
@@ -102,9 +105,12 @@ def find_season_information(self, date_str):
 ```
 
 ### Update start_requests method
+#### If JavaScript rendering is necessary, consider using Splash or inspecting the Network tab in Google DevTools to find the underlying data source (API or other endpoints) and use it directly for scraping.
 ```python
 def start_requests(self):
     base_url = ""  # Update: Base URL for the data source
+    headers = {}  # Update: Headers for the data source, if necessary
+    # Headers can be found in the Network tab of Google Dev Tools
     params = {}  # Update: Parameters for the data source.
     # Example: {"season": "2020-21", "frdt": "2020-12-22", "todt": "2020-12-22"}
 
@@ -219,15 +225,45 @@ run_spider(
 
 <br>
 
-## Step 10: Upload to Github
+## Step 10: Update Airflow and Test
+* Set up an Airflow DAG to run the spider on a schedule.
+* Use fivethirtyeight_player_spider_dag.py as a template.
+* Use BashOperator for now until I can debug PythonOperator with Scrapy logging issues.
+* Test the DAG by running it manually.
+```bash
+airflow tasks test <dag_name> <task_name>
+```
+
+## Step 11: Upload to Github
+1. Commit your changes to the feature branch on your local machine.
+2. Push the feature branch to GitHub by running git push origin <feature_branch_name>.
 
 <br>
 
-## Step 11: Update EC2
-### Run deploy.sh to pull from Github and restart the server
-### Test the spider on the server
+## Step 12: Test on EC2 Instance
+1. SSH into your EC2 instance.
+2. Navigate to the project directory.
+3. Fetch the latest changes from GitHub by running git fetch.
+4. Switch to the feature branch by running git checkout <feature_branch_name>.
+5. Pull the latest changes for the feature branch by running git pull origin <feature_branch_name>.
+6. Test the spider by running the commands in Steps 8, 9, and 10.
+7. If necessary, adjust the commands to accommodate the EC2 environment, such as using Zyte proxies.
 
 <br>
 
 ## Step 13: Download historical data if available
-### Preferably using local machine
+* ### Preferably using local machine
+
+<br>
+
+## Step 14: Create a pull request, merge the branch into Version-2, and update EC2
+1. On GitHub or Jira, create a new pull request.
+2. Select Version-2 as the base branch and your feature branch as the compare branch.
+3. Review the changes made in the feature branch, add comments, and discuss any improvements with your team.
+4. If there are any conflicts, resolve them in the feature branch and push the changes to GitHub.
+5. Once the changes have been reviewed and approved, merge the pull request to incorporate the changes from the feature branch into Version-2.
+6. SSH into your EC2 instance.
+7. Navigate to the project directory.
+8. Fetch the latest changes from GitHub by running git fetch.
+9. Switch to the Version-2 branch by running git checkout Version-2.
+10. Pull the latest changes for the Version-2 branch by running git pull origin Version-2.
