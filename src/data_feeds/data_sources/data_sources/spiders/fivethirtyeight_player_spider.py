@@ -2,10 +2,12 @@ import datetime
 
 import pandas as pd
 import scrapy
-from data_sources.item_loaders import FivethirtyeightPlayerItemLoader
-from data_sources.items import FivethirtyeightPlayerItem
 
-from .base_spider import BaseSpider
+from src.data_feeds.data_sources.data_sources.item_loaders import (
+    FivethirtyeightPlayerItemLoader,
+)
+from src.data_feeds.data_sources.data_sources.items import FivethirtyeightPlayerItem
+from src.data_feeds.data_sources.data_sources.spiders.base_spider import BaseSpider
 
 
 class FivethirtyeightPlayerSpider(BaseSpider):
@@ -13,7 +15,9 @@ class FivethirtyeightPlayerSpider(BaseSpider):
     allowed_domains = ["github.com", "fivethirtyeight.com"]
 
     custom_settings = {
-        "ITEM_PIPELINES": {"data_sources.pipelines.FivethirtyeightPlayerPipeline": 300}
+        "ITEM_PIPELINES": {
+            "src.data_feeds.data_sources.data_sources.pipelines.FivethirtyeightPlayerPipeline": 300
+        }
     }
 
     modern_csv_url = "https://raw.githubusercontent.com/fivethirtyeight/data/master/nba-raptor/modern_RAPTOR_by_player.csv"

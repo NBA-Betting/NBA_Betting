@@ -7,8 +7,7 @@ import scrapy
 from scrapy.spiders import Spider
 from scrapy.utils.project import get_project_settings
 
-sys.path.append("../")
-from data_sources_config import NBA_IMPORTANT_DATES
+from src.data_feeds.data_sources_config import NBA_IMPORTANT_DATES
 
 
 class BaseSpider(Spider):
@@ -17,7 +16,7 @@ class BaseSpider(Spider):
 
     custom_settings = {
         "ITEM_PIPELINES": {
-            "data_sources.pipelines.BasePipeline": 300
+            "src.data_feeds.data_sources.data_sources.pipelines.BasePipeline": 300
         }  # Update: DataSourceName + Pipeline
     }
 
