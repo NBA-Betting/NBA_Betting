@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -34,6 +34,6 @@ else:
 # Define the task using the BashOperator
 run_fivethirtyeight_player_spider = BashOperator(
     task_id="run_fivethirtyeight_player_spider",
-    bash_command=command
+    bash_command=command,
     dag=dag,
 )
