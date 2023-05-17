@@ -39,7 +39,7 @@ spiders = [
 
 for spider in spiders:
     if os.environ.get("ENVIRONMENT") == "EC2":
-        command = f"cd /home/ubuntu/NBA_Betting/src/data_feeds/data_sources && scrapy crawl {spider} -a dates=daily_update -a save_data=True"
+        command = f"cd /home/ubuntu/nba_betting_player_game/src/data_feeds/data_sources && scrapy crawl {spider} -a dates=daily_update -a save_data=True"
     else:
         command = f"cd /workspaces/NBA_Betting/src/data_feeds/data_sources && scrapy crawl {spider} -a dates=daily_update -a save_data=True"
 
