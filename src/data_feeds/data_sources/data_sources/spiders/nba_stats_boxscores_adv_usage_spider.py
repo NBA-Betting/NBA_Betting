@@ -115,7 +115,7 @@ class NbaStatsBoxscoresAdvUsageSpider(BaseSpider):
             ]
             for season in seasons:
                 params.update({"Season": season})
-                for season_type in ["Regular+Season", "PlayIn", "Playoffs"]:
+                for season_type in ["Regular Season", "PlayIn", "Playoffs"]:
                     params.update({"SeasonType": season_type})
                     url = base_url + "?" + urlencode(params)
                     yield scrapy.Request(url, headers=headers, callback=self.parse)
