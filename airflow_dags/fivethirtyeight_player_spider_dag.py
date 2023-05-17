@@ -31,6 +31,7 @@ dag = DAG(
 # Define the task using the BashOperator
 run_fivethirtyeight_player_spider = BashOperator(
     task_id="run_fivethirtyeight_player_spider",
-    bash_command="cd /workspaces/NBA_Betting/src/data_feeds/data_sources && scrapy crawl fivethirtyeight_player_spider -a dates=daily_update -a save_data=True",
+    # bash_command="cd /home/ubuntu/nba_betting_player_game/src/data_feeds/data_sources && scrapy crawl fivethirtyeight_player_spider -a dates=daily_update -a save_data=True",  # EC2
+    bash_command="cd /workspaces/NBA_Betting/src/data_feeds/data_sources && scrapy crawl fivethirtyeight_player_spider -a dates=daily_update -a save_data=True",  # Local
     dag=dag,
 )
