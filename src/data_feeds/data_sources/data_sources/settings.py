@@ -12,10 +12,10 @@ NEWSPIDER_MODULE = "data_sources.spiders"
 # USER_AGENT = "data_sources (+http://www.yourdomain.com)"
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
 
-LOG_FILE = "scrapy_output.log"
-LOG_LEVEL = "WARNING"
+# LOG_FILE = "scrapy_output.log"
+# LOG_LEVEL = "WARNING"
 
 
 # FEED_FORMAT = "csv"

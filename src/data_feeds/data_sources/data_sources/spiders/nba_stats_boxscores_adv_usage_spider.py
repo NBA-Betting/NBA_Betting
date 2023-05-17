@@ -1,9 +1,10 @@
 import json
 import re
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import parse_qs, urlencode, urlparse
 
+import pytz
 import scrapy
 from data_sources.item_loaders import NbaStatsBoxscoresAdvUsageItemLoader
 from data_sources.items import NbaStatsBoxscoresAdvUsageItem
@@ -44,7 +45,7 @@ class NbaStatsBoxscoresAdvUsageSpider(BaseSpider):
             **kwargs,
         )
 
-        if dates == "all":
+        if dates == "all" or dates == "daily_update":
             pass
         else:
             self.dates = []
@@ -52,7 +53,7 @@ class NbaStatsBoxscoresAdvUsageSpider(BaseSpider):
             for date_str in dates.split(","):
                 if not date_pattern.match(date_str):
                     raise ValueError(
-                        f"Invalid date format: {date_str}. Date format should be 'YYYY-MM-DD' or 'all'"
+                        f"Invalid date format: {date_str}. Date format should be 'YYYY-MM-DD', 'daily_update', or 'all'"
                     )
                 self.dates.append(date_str)
 
@@ -76,7 +77,7 @@ class NbaStatsBoxscoresAdvUsageSpider(BaseSpider):
         return {"info": None, "error": "Unable to find season information"}
 
     def start_requests(self):
-        base_url = "https://stats.nba.com/stats/playergamelogs?"
+        base_url = "https://stats.nba.com/stats/playergamelogs"
         headers = {
             "Accept": "*/*",
             "Accept-Language": "en-US,en;q=0.9",
@@ -95,28 +96,8 @@ class NbaStatsBoxscoresAdvUsageSpider(BaseSpider):
             "sec-ch-ua-platform": '"Linux"',
         }
         params = {
-            "DateFrom": "",
-            "DateTo": "",
-            "GameSegment": "",
-            "LastNGames": "0",
-            "LeagueID": "00",
-            "Location": "",
             "MeasureType": "Usage",
-            "Month": "0",
-            "OpponentTeamID": "0",
-            "Outcome": "",
-            "PORound": "0",
-            "PaceAdjust": "N",
             "PerMode": "Totals",
-            "Period": "0",
-            "PlusMinus": "N",
-            "Rank": "N",
-            "Season": "",
-            "SeasonSegment": "",
-            "SeasonType": "",
-            "ShotClockRange": "",
-            "VsConference": "",
-            "VsDivision": "",
         }
 
         if self.dates == "all":
@@ -130,6 +111,34 @@ class NbaStatsBoxscoresAdvUsageSpider(BaseSpider):
                     params.update({"SeasonType": season_type})
                     url = base_url + "?" + urlencode(params)
                     yield scrapy.Request(url, headers=headers, callback=self.parse)
+
+        elif self.dates == "daily_update":
+            now_mountain = datetime.now(pytz.timezone("America/Denver"))
+            yesterday_mountain = now_mountain - timedelta(1)
+            yesterday_str = yesterday_mountain.strftime("%Y-%m-%d")
+            season_info_result = self.find_season_information(yesterday_str)
+            if season_info_result["error"]:
+                print(
+                    f"Error: {season_info_result['error']} for the date {yesterday_str}"
+                )
+                self.handle_failed_date(yesterday_str, "find_season_information")
+            else:
+                season = season_info_result["info"]
+                date_param = datetime.strptime(yesterday_str, "%Y-%m-%d").strftime(
+                    "%m/%d/%Y"
+                )
+                params.update(
+                    {
+                        "Season": season,
+                        "DateFrom": date_param,
+                        "DateTo": date_param,
+                    }
+                )
+                for season_type in ["Regular Season", "PlayIn", "Playoffs"]:
+                    params.update({"SeasonType": season_type})
+                    url = base_url + "?" + urlencode(params)
+                    yield scrapy.Request(url, headers=headers, callback=self.parse)
+
         else:
             for season_type in ["Regular Season", "PlayIn", "Playoffs"]:
                 params.update({"SeasonType": season_type})

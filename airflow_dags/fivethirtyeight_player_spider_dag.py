@@ -24,7 +24,7 @@ dag = DAG(
         "email_on_retry": False,
     },
     description="A DAG to run the Fivethirtyeight Player Spider daily",
-    schedule="0 14 * * *",  # Schedule the DAG to run daily at 14:00 UTC (which is 8 AM MDT)
+    schedule="0 8 * * *",  # Schedule the DAG to run daily at 14:00 UTC (which is 8 AM MDT)
     catchup=False,
 )
 

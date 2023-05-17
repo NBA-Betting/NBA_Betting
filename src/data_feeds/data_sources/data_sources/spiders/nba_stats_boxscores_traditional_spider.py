@@ -1,9 +1,10 @@
 import json
 import re
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import parse_qs, urlencode, urlparse
 
+import pytz
 import scrapy
 from data_sources.item_loaders import NbaStatsBoxscoresTraditionalItemLoader
 from data_sources.items import NbaStatsBoxscoresTraditionalItem
@@ -44,7 +45,7 @@ class NbaStatsBoxscoresTraditionalSpider(BaseSpider):
             **kwargs,
         )
 
-        if dates == "all":
+        if dates == "all" or dates == "daily_update":
             pass
         else:
             self.dates = []
@@ -52,7 +53,7 @@ class NbaStatsBoxscoresTraditionalSpider(BaseSpider):
             for date_str in dates.split(","):
                 if not date_pattern.match(date_str):
                     raise ValueError(
-                        f"Invalid date format: {date_str}. Date format should be 'YYYY-MM-DD' or 'all'"
+                        f"Invalid date format: {date_str}. Date format should be 'YYYY-MM-DD', 'daily_update', or 'all'"
                     )
                 self.dates.append(date_str)
 
@@ -113,6 +114,34 @@ class NbaStatsBoxscoresTraditionalSpider(BaseSpider):
                     params.update({"SeasonType": season_type})
                     url = base_url + "?" + urlencode(params)
                     yield scrapy.Request(url, headers=headers, callback=self.parse)
+
+        elif self.dates == "daily_update":
+            now_mountain = datetime.now(pytz.timezone("America/Denver"))
+            yesterday_mountain = now_mountain - timedelta(1)
+            yesterday_str = yesterday_mountain.strftime("%Y-%m-%d")
+            season_info_result = self.find_season_information(yesterday_str)
+            if season_info_result["error"]:
+                print(
+                    f"Error: {season_info_result['error']} for the date {yesterday_str}"
+                )
+                self.handle_failed_date(yesterday_str, "find_season_information")
+            else:
+                season = season_info_result["info"]
+                date_param = datetime.strptime(yesterday_str, "%Y-%m-%d").strftime(
+                    "%m/%d/%Y"
+                )
+                params.update(
+                    {
+                        "Season": season,
+                        "DateFrom": date_param,
+                        "DateTo": date_param,
+                    }
+                )
+                for season_type in ["Regular Season", "PlayIn", "Playoffs"]:
+                    params.update({"SeasonType": season_type})
+                    url = base_url + "?" + urlencode(params)
+                    yield scrapy.Request(url, headers=headers, callback=self.parse)
+
         else:
             for season_type in ["Regular Season", "PlayIn", "Playoffs"]:
                 params.update({"SeasonType": season_type})
