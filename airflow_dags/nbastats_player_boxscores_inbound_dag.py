@@ -1,3 +1,4 @@
+import os
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -37,11 +38,13 @@ spiders = [
 
 
 for spider in spiders:
-    local_command = f"cd /workspaces/NBA_Betting/src/data_feeds/data_sources && scrapy crawl {spider} -a dates=daily_update -a save_data=True"
-    ec2_command = f"cd /home/ubuntu/NBA_Betting/src/data_feeds/data_sources && scrapy crawl {spider} -a dates=daily_update -a save_data=True"
+    if os.environ.get("ENVIRONMENT") == "EC2":
+        command = f"cd /home/ubuntu/NBA_Betting/src/data_feeds/data_sources && scrapy crawl {spider} -a dates=daily_update -a save_data=True"
+    else:
+        command = f"cd /workspaces/NBA_Betting/src/data_feeds/data_sources && scrapy crawl {spider} -a dates=daily_update -a save_data=True"
 
     BashOperator(
         task_id=f"run_{spider}",
-        bash_command=local_command,
+        bash_command=command,
         dag=dag,
     )
