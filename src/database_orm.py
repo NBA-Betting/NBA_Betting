@@ -22,7 +22,7 @@ Base = declarative_base()
 
 class NbaStatsPlayerGeneralTraditionalTable(Base):
     __tablename__ = "ibd_nba_stats_player_general_traditional"
-    __table_args__ = (PrimaryKeyConstraint("player_id", "to_date"),)
+    __table_args__ = (PrimaryKeyConstraint("player_id", "to_date", "season_type"),)
 
     to_date = Column(Date)
     season_year = Column(String)
@@ -65,7 +65,7 @@ class NbaStatsPlayerGeneralTraditionalTable(Base):
 
 class NbaStatsPlayerGeneralAdvancedTable(Base):
     __tablename__ = "ibd_nba_stats_player_general_advanced"
-    __table_args__ = (PrimaryKeyConstraint("player_id", "to_date"),)
+    __table_args__ = (PrimaryKeyConstraint("player_id", "to_date", "season_type"),)
 
     to_date = Column(Date)
     season_year = Column(String)
@@ -116,7 +116,7 @@ class NbaStatsPlayerGeneralAdvancedTable(Base):
 
 class NbaStatsPlayerGeneralMiscTable(Base):
     __tablename__ = "ibd_nba_stats_player_general_misc"
-    __table_args__ = (PrimaryKeyConstraint("player_id", "to_date"),)
+    __table_args__ = (PrimaryKeyConstraint("player_id", "to_date", "season_type"),)
 
     to_date = Column(Date)
     season_year = Column(String)
@@ -148,7 +148,7 @@ class NbaStatsPlayerGeneralMiscTable(Base):
 
 class NbaStatsPlayerGeneralScoringTable(Base):
     __tablename__ = "ibd_nba_stats_player_general_scoring"
-    __table_args__ = (PrimaryKeyConstraint("player_id", "to_date"),)
+    __table_args__ = (PrimaryKeyConstraint("player_id", "to_date", "season_type"),)
 
     to_date = Column(Date)
     season_year = Column(String)
@@ -185,7 +185,7 @@ class NbaStatsPlayerGeneralScoringTable(Base):
 
 class NbaStatsPlayerGeneralUsageTable(Base):
     __tablename__ = "ibd_nba_stats_player_general_usage"
-    __table_args__ = (PrimaryKeyConstraint("player_id", "to_date"),)
+    __table_args__ = (PrimaryKeyConstraint("player_id", "to_date", "season_type"),)
 
     to_date = Column(Date)
     season_year = Column(String)
@@ -222,7 +222,9 @@ class NbaStatsPlayerGeneralUsageTable(Base):
 
 class NbaStatsPlayerGeneralOpponentTable(Base):
     __tablename__ = "ibd_nba_stats_player_general_opponent"
-    __table_args__ = (PrimaryKeyConstraint("player_id", "to_date"),)
+    __table_args__ = (
+        PrimaryKeyConstraint("vs_player_id", "to_date", "season_type", "team_id"),
+    )
 
     to_date = Column(Date)
     season_year = Column(String)
@@ -263,7 +265,7 @@ class NbaStatsPlayerGeneralOpponentTable(Base):
 
 class NbaStatsPlayerGeneralDefenseTable(Base):
     __tablename__ = "ibd_nba_stats_player_general_defense"
-    __table_args__ = (PrimaryKeyConstraint("player_id", "to_date"),)
+    __table_args__ = (PrimaryKeyConstraint("player_id", "to_date", "season_type"),)
 
     to_date = Column(Date)
     season_year = Column(String)
