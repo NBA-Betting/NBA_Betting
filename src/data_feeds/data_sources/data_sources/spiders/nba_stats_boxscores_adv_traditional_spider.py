@@ -1,9 +1,11 @@
 import json
+import os
 import re
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import parse_qs, urlencode, urlparse
 
+import pytz
 import scrapy
 from data_sources.item_loaders import NbaStatsBoxscoresAdvTraditionalItemLoader
 from data_sources.items import NbaStatsBoxscoresAdvTraditionalItem
@@ -20,19 +22,26 @@ class NbaStatsBoxscoresAdvTraditionalSpider(BaseSpider):
         "ITEM_PIPELINES": {
             "data_sources.pipelines.NbaStatsBoxscoresAdvTraditionalPipeline": 300
         },
-        # # Zyte API Required Settings
-        # "DOWNLOAD_HANDLERS" = {
-        #     "http": "scrapy_zyte_api.ScrapyZyteAPIDownloadHandler",
-        #     "https": "scrapy_zyte_api.ScrapyZyteAPIDownloadHandler",
-        # },
-        # "DOWNLOADER_MIDDLEWARES" = {"scrapy_zyte_api.ScrapyZyteAPIDownloaderMiddleware": 1000},
-        # "REQUEST_FINGERPRINTER_CLASS" = "scrapy_zyte_api.ScrapyZyteAPIRequestFingerprinter",
-        # "TWISTED_REACTOR" = "twisted.internet.asyncioreactor.AsyncioSelectorReactor",
-        # "ZYTE_API_KEY" = API_KEY_ZYTE,
-        "ZYTE_API_ENABLED": False,
     }
 
-    first_season = 1976  # This data source goes back to 1946-1947, but the NBA-ABA merger was in 1976
+    if os.environ.get("ENVIRONMENT") == "EC2":
+        custom_settings.update(
+            {
+                "DOWNLOAD_HANDLERS": {
+                    "http": "scrapy_zyte_api.ScrapyZyteAPIDownloadHandler",
+                    "https": "scrapy_zyte_api.ScrapyZyteAPIDownloadHandler",
+                },
+                "DOWNLOADER_MIDDLEWARES": {
+                    "scrapy_zyte_api.ScrapyZyteAPIDownloaderMiddleware": 1000,
+                },
+                "REQUEST_FINGERPRINTER_CLASS": "scrapy_zyte_api.ScrapyZyteAPIRequestFingerprinter",
+                "ZYTE_API_KEY": API_KEY_ZYTE,
+                "ZYTE_API_TRANSPARENT_MODE": True,
+                "ZYTE_API_ENABLED": True,
+            }
+        )
+
+    first_season = "1996 - 1997"  # First season of advanced boxscores
 
     def __init__(self, dates, save_data=False, view_data=True, *args, **kwargs):
         super().__init__(
@@ -44,7 +53,7 @@ class NbaStatsBoxscoresAdvTraditionalSpider(BaseSpider):
             **kwargs,
         )
 
-        if dates == "all":
+        if dates == "all" or dates == "daily_update":
             pass
         else:
             self.dates = []
@@ -52,7 +61,7 @@ class NbaStatsBoxscoresAdvTraditionalSpider(BaseSpider):
             for date_str in dates.split(","):
                 if not date_pattern.match(date_str):
                     raise ValueError(
-                        f"Invalid date format: {date_str}. Date format should be 'YYYY-MM-DD' or 'all'"
+                        f"Invalid date format: {date_str}. Date format should be 'YYYY-MM-DD', 'daily_update', or 'all'"
                     )
                 self.dates.append(date_str)
 
@@ -99,16 +108,49 @@ class NbaStatsBoxscoresAdvTraditionalSpider(BaseSpider):
         }
 
         if self.dates == "all":
+            # Extract start year of first_season
+            first_season_start_year = int(self.first_season.split("-")[0])
+
+            # Update the list comprehension to include condition
             seasons = [
                 f"{season.split('-')[0]}-{season.split('-')[1][-2:]}"
                 for season in self.NBA_IMPORTANT_DATES.keys()
+                if int(season.split("-")[0]) >= first_season_start_year
             ]
             for season in seasons:
                 params.update({"Season": season})
-                for season_type in ["Regular+Season", "PlayIn", "Playoffs"]:
+                for season_type in ["Regular Season", "PlayIn", "Playoffs"]:
                     params.update({"SeasonType": season_type})
                     url = base_url + "?" + urlencode(params)
                     yield scrapy.Request(url, headers=headers, callback=self.parse)
+
+        elif self.dates == "daily_update":
+            now_mountain = datetime.now(pytz.timezone("America/Denver"))
+            yesterday_mountain = now_mountain - timedelta(1)
+            yesterday_str = yesterday_mountain.strftime("%Y-%m-%d")
+            season_info_result = self.find_season_information(yesterday_str)
+            if season_info_result["error"]:
+                print(
+                    f"Error: {season_info_result['error']} for the date {yesterday_str}"
+                )
+                self.handle_failed_date(yesterday_str, "find_season_information")
+            else:
+                season = season_info_result["info"]
+                date_param = datetime.strptime(yesterday_str, "%Y-%m-%d").strftime(
+                    "%m/%d/%Y"
+                )
+                params.update(
+                    {
+                        "Season": season,
+                        "DateFrom": date_param,
+                        "DateTo": date_param,
+                    }
+                )
+                for season_type in ["Regular Season", "PlayIn", "Playoffs"]:
+                    params.update({"SeasonType": season_type})
+                    url = base_url + "?" + urlencode(params)
+                    yield scrapy.Request(url, headers=headers, callback=self.parse)
+
         else:
             for season_type in ["Regular Season", "PlayIn", "Playoffs"]:
                 params.update({"SeasonType": season_type})

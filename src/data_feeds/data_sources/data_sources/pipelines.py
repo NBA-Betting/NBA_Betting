@@ -18,6 +18,14 @@ from src.database_orm import (
     NbaStatsBoxscoresAdvTraditionalTable,
     NbaStatsBoxscoresAdvUsageTable,
     NbaStatsBoxscoresTraditionalTable,
+    NbaStatsGameResultsTable,
+    NbaStatsPlayerGeneralAdvancedTable,
+    NbaStatsPlayerGeneralDefenseTable,
+    NbaStatsPlayerGeneralMiscTable,
+    NbaStatsPlayerGeneralOpponentTable,
+    NbaStatsPlayerGeneralScoringTable,
+    NbaStatsPlayerGeneralTraditionalTable,
+    NbaStatsPlayerGeneralUsageTable,
 )
 
 pd.set_option("display.max_columns", None)
@@ -65,6 +73,10 @@ class BasePipeline:
         try:
             # Processing logic here
             self.nba_data.append(item)
+            if (
+                len(self.nba_data) % 1000 == 0
+            ):  # If the length of self.nba_data is a multiple of 1000
+                self.save_to_database()  # Save to the database
             return item
         except Exception as e:
             self.processing_errors += 1
@@ -91,13 +103,15 @@ class BasePipeline:
                 data = self.ITEM_CLASS(**item)
                 session.add(data)
             session.commit()
-            print("Data successfully saved into nba_betting database.")
+            print(
+                f"Data successfully saved into nba_betting database. {len(self.nba_data)} records inserted."
+            )
         except Exception as e:
             print(f"Error: Unable to insert data into the RDS table. Details: {str(e)}")
             session.rollback()
         finally:
             session.close()
-            self.nba_data = []
+            self.nba_data = []  # Empty the list after saving the data
 
     def display_data(self):
         """
@@ -162,6 +176,38 @@ class InpredictableWPAPipeline(BasePipeline):
 
 # class Nba2kPlayerPipeline(BasePipeline):
 #     ITEM_CLASS = Nba2kPlayerTable
+
+
+class NbaStatsGameResultsPipeline(BasePipeline):
+    ITEM_CLASS = NbaStatsGameResultsTable
+
+
+class NbaStatsPlayerGeneralTraditionalPipeline(BasePipeline):
+    ITEM_CLASS = NbaStatsPlayerGeneralTraditionalTable
+
+
+class NbaStatsPlayerGeneralAdvancedPipeline(BasePipeline):
+    ITEM_CLASS = NbaStatsPlayerGeneralAdvancedTable
+
+
+class NbaStatsPlayerGeneralMiscPipeline(BasePipeline):
+    ITEM_CLASS = NbaStatsPlayerGeneralMiscTable
+
+
+class NbaStatsPlayerGeneralUsagePipeline(BasePipeline):
+    ITEM_CLASS = NbaStatsPlayerGeneralUsageTable
+
+
+class NbaStatsPlayerGeneralScoringPipeline(BasePipeline):
+    ITEM_CLASS = NbaStatsPlayerGeneralScoringTable
+
+
+class NbaStatsPlayerGeneralOpponentPipeline(BasePipeline):
+    ITEM_CLASS = NbaStatsPlayerGeneralOpponentTable
+
+
+class NbaStatsPlayerGeneralDefensePipeline(BasePipeline):
+    ITEM_CLASS = NbaStatsPlayerGeneralDefenseTable
 
 
 class NbaStatsBoxscoresTraditionalPipeline(BasePipeline):

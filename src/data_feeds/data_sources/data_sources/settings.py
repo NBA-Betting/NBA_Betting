@@ -12,10 +12,10 @@ NEWSPIDER_MODULE = "data_sources.spiders"
 # USER_AGENT = "data_sources (+http://www.yourdomain.com)"
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
 
-LOG_FILE = "scrapy_output.log"
-LOG_LEVEL = "WARNING"
+# LOG_FILE = "scrapy_output.log"
+# LOG_LEVEL = "WARNING"
 
 
 # FEED_FORMAT = "csv"
@@ -37,7 +37,7 @@ DOWNLOAD_DELAY = 3
 # COOKIES_ENABLED = False
 
 # Disable Telnet Console (enabled by default)
-# TELNETCONSOLE_ENABLED = False
+TELNETCONSOLE_ENABLED = False
 
 # Override the default request headers:
 # DEFAULT_REQUEST_HEADERS = {

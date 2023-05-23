@@ -242,14 +242,14 @@ airflow tasks test <dag_name> <task_name>
 
 <br>
 
-## Step 13: Create a pull request, merge the branch into Version-2, and update EC2
+## Step 13: Create a pull request, merge the branch into main, and update EC2
 1. On GitHub or Jira, create a new pull request.
-2. Select Version-2 as the base branch and your feature branch as the compare branch.
+2. Select main as the base branch and your feature branch as the compare branch.
 3. Review the changes made in the feature branch, add comments, and discuss any improvements with your team.
 4. If there are any conflicts, resolve them in the feature branch and push the changes to GitHub.
-5. Once the changes have been reviewed and approved, merge the pull request to incorporate the changes from the feature branch into Version-2.
+5. Once the changes have been reviewed and approved, merge the pull request to incorporate the changes from the feature branch into main.
 6. SSH into your EC2 instance.
 7. Navigate to the project directory.
 8. Fetch the latest changes from GitHub by running git fetch.
-9. Switch to the Version-2 branch by running git checkout Version-2.
-10. Pull the latest changes for the Version-2 branch by running git pull origin Version-2.
+9. Switch to the main branch by running git checkout main.
+10. Pull the latest changes for the main branch by running git pull origin main.

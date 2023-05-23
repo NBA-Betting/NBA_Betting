@@ -12,11 +12,308 @@ from src.data_feeds.data_sources.data_sources.items import (
     NbaStatsBoxscoresAdvAdvancedItem,
     NbaStatsBoxscoresAdvMiscItem,
     NbaStatsBoxscoresAdvScoringItem,
+    NbaStatsBoxscoresAdvTraditionalItem,
     NbaStatsBoxscoresAdvUsageItem,
     NbaStatsBoxscoresTraditionalItem,
+    NbaStatsGameResultsItem,
+    NbaStatsPlayerGeneralAdvancedItem,
+    NbaStatsPlayerGeneralDefenseItem,
+    NbaStatsPlayerGeneralMiscItem,
+    NbaStatsPlayerGeneralOpponentItem,
+    NbaStatsPlayerGeneralScoringItem,
+    NbaStatsPlayerGeneralTraditionalItem,
+    NbaStatsPlayerGeneralUsageItem,
 )
 
 # ADD NEW ITEM LOADERS HERE
+
+
+class NbaStatsGameResultsItemLoader(ItemLoader):
+    default_item_class = NbaStatsGameResultsItem
+    default_output_processor = TakeFirst()
+
+    game_id_in = MapCompose(str.strip)
+    game_date_in = MapCompose(str.strip)
+    home_team_id_in = MapCompose(int)
+    away_team_id_in = MapCompose(int)
+    home_team_in = MapCompose(str.strip)
+    away_team_in = MapCompose(str.strip)
+    home_score_in = MapCompose(int)
+    away_score_in = MapCompose(int)
+
+
+class NbaStatsPlayerGeneralTraditionalItemLoader(ItemLoader):
+    default_item_class = NbaStatsPlayerGeneralTraditionalItem
+    default_output_processor = TakeFirst()
+
+    to_date_in = MapCompose(str.strip)
+    season_year_in = MapCompose(str)
+    season_type_in = MapCompose(str)
+    player_id_in = MapCompose(int)
+    player_name_in = MapCompose(str)
+    team_id_in = MapCompose(int)
+    team_abbreviation_in = MapCompose(str)
+    age_in = MapCompose(int)
+    gp_in = MapCompose(int)
+    w_in = MapCompose(int)
+    l_in = MapCompose(int)
+    w_pct_in = MapCompose(float)
+    min_in = MapCompose(float)
+    fgm_in = MapCompose(float)
+    fga_in = MapCompose(float)
+    fg_pct_in = MapCompose(float)
+    fg3m_in = MapCompose(float)
+    fg3a_in = MapCompose(float)
+    fg3_pct_in = MapCompose(float)
+    ftm_in = MapCompose(float)
+    fta_in = MapCompose(float)
+    ft_pct_in = MapCompose(float)
+    oreb_in = MapCompose(float)
+    dreb_in = MapCompose(float)
+    reb_in = MapCompose(float)
+    ast_in = MapCompose(float)
+    tov_in = MapCompose(float)
+    stl_in = MapCompose(float)
+    blk_in = MapCompose(float)
+    blka_in = MapCompose(float)
+    pf_in = MapCompose(float)
+    pfd_in = MapCompose(float)
+    pts_in = MapCompose(int)
+    plus_minus_in = MapCompose(float)
+    nba_fantasy_pts_in = MapCompose(float)
+    dd2_in = MapCompose(int)
+    td3_in = MapCompose(int)
+
+
+class NbaStatsPlayerGeneralAdvancedItemLoader(ItemLoader):
+    default_item_class = NbaStatsPlayerGeneralAdvancedItem
+    default_output_processor = TakeFirst()
+
+    to_date_in = MapCompose(str.strip)
+    season_year_in = MapCompose(str)
+    season_type_in = MapCompose(str)
+    player_id_in = MapCompose(int)
+    player_name_in = MapCompose(str)
+    team_id_in = MapCompose(int)
+    team_abbreviation_in = MapCompose(str)
+    age_in = MapCompose(int)
+    gp_in = MapCompose(int)
+    w_in = MapCompose(int)
+    l_in = MapCompose(int)
+    w_pct_in = MapCompose(float)
+    min_in = MapCompose(float)
+    e_off_rating_in = MapCompose(float)
+    off_rating_in = MapCompose(float)
+    sp_work_off_rating_in = MapCompose(float)
+    e_def_rating_in = MapCompose(float)
+    def_rating_in = MapCompose(float)
+    sp_work_def_rating_in = MapCompose(float)
+    e_net_rating_in = MapCompose(float)
+    net_rating_in = MapCompose(float)
+    sp_work_net_rating_in = MapCompose(float)
+    ast_pct_in = MapCompose(float)
+    ast_to_in = MapCompose(float)
+    ast_ratio_in = MapCompose(float)
+    oreb_pct_in = MapCompose(float)
+    dreb_pct_in = MapCompose(float)
+    reb_pct_in = MapCompose(float)
+    tm_tov_pct_in = MapCompose(float)
+    e_tov_pct_in = MapCompose(float)
+    efg_pct_in = MapCompose(float)
+    ts_pct_in = MapCompose(float)
+    usg_pct_in = MapCompose(float)
+    e_usg_pct_in = MapCompose(float)
+    e_pace_in = MapCompose(float)
+    pace_in = MapCompose(float)
+    pace_per40_in = MapCompose(float)
+    sp_work_pace_in = MapCompose(float)
+    pie_in = MapCompose(float)
+    poss_in = MapCompose(int)
+    fgm_in = MapCompose(int)
+    fga_in = MapCompose(int)
+    fgm_pg_in = MapCompose(float)
+    fga_pg_in = MapCompose(float)
+    fg_pct_in = MapCompose(float)
+
+
+class NbaStatsPlayerGeneralMiscItemLoader(ItemLoader):
+    default_item_class = NbaStatsPlayerGeneralMiscItem
+    default_output_processor = TakeFirst()
+
+    to_date_in = MapCompose(str.strip)
+    season_year_in = MapCompose(str)
+    season_type_in = MapCompose(str)
+    player_id_in = MapCompose(int)
+    player_name_in = MapCompose(str.strip)
+    team_id_in = MapCompose(int)
+    team_abbreviation_in = MapCompose(str.strip)
+    age_in = MapCompose(int)
+    gp_in = MapCompose(int)
+    w_in = MapCompose(int)
+    l_in = MapCompose(int)
+    w_pct_in = MapCompose(float)
+    min_in = MapCompose(float)
+    pts_off_tov_in = MapCompose(float)
+    pts_2nd_chance_in = MapCompose(float)
+    pts_fb_in = MapCompose(float)
+    pts_paint_in = MapCompose(float)
+    opp_pts_off_tov_in = MapCompose(float)
+    opp_pts_2nd_chance_in = MapCompose(float)
+    opp_pts_fb_in = MapCompose(float)
+    opp_pts_paint_in = MapCompose(float)
+    blk_in = MapCompose(float)
+    blka_in = MapCompose(float)
+    pf_in = MapCompose(float)
+    pfd_in = MapCompose(float)
+    nba_fantasy_pts_in = MapCompose(float)
+
+
+class NbaStatsPlayerGeneralScoringItemLoader(ItemLoader):
+    default_item_class = NbaStatsPlayerGeneralScoringItem
+    default_output_processor = TakeFirst()
+
+    to_date_in = MapCompose(str.strip)
+    season_year_in = MapCompose(str)
+    season_type_in = MapCompose(str)
+    player_id_in = MapCompose(int)
+    player_name_in = MapCompose(str.strip)
+    team_id_in = MapCompose(int)
+    team_abbreviation_in = MapCompose(str.strip)
+    age_in = MapCompose(int)
+    gp_in = MapCompose(int)
+    w_in = MapCompose(int)
+    l_in = MapCompose(int)
+    w_pct_in = MapCompose(float)
+    min_in = MapCompose(float)
+    pct_fga_2pt_in = MapCompose(float)
+    pct_fga_3pt_in = MapCompose(float)
+    pct_pts_2pt_in = MapCompose(float)
+    pct_pts_2pt_mr_in = MapCompose(float)
+    pct_pts_3pt_in = MapCompose(float)
+    pct_pts_fb_in = MapCompose(float)
+    pct_pts_ft_in = MapCompose(float)
+    pct_pts_off_tov_in = MapCompose(float)
+    pct_pts_paint_in = MapCompose(float)
+    pct_ast_2pm_in = MapCompose(float)
+    pct_uast_2pm_in = MapCompose(float)
+    pct_ast_3pm_in = MapCompose(float)
+    pct_uast_3pm_in = MapCompose(float)
+    pct_ast_fgm_in = MapCompose(float)
+    pct_uast_fgm_in = MapCompose(float)
+    fgm_in = MapCompose(int)
+    fga_in = MapCompose(int)
+    fg_pct_in = MapCompose(float)
+
+
+class NbaStatsPlayerGeneralUsageItemLoader(ItemLoader):
+    default_item_class = NbaStatsPlayerGeneralUsageItem
+    default_output_processor = TakeFirst()
+
+    to_date_in = MapCompose(str.strip)
+    season_year_in = MapCompose(str)
+    season_type_in = MapCompose(str)
+    player_id_in = MapCompose(int)
+    player_name_in = MapCompose(str.strip)
+    team_id_in = MapCompose(int)
+    team_abbreviation_in = MapCompose(str.strip)
+    age_in = MapCompose(int)
+    gp_in = MapCompose(int)
+    w_in = MapCompose(int)
+    l_in = MapCompose(int)
+    w_pct_in = MapCompose(float)
+    min_in = MapCompose(float)
+    usg_pct_in = MapCompose(float)
+    pct_fgm_in = MapCompose(float)
+    pct_fga_in = MapCompose(float)
+    pct_fg3m_in = MapCompose(float)
+    pct_fg3a_in = MapCompose(float)
+    pct_ftm_in = MapCompose(float)
+    pct_fta_in = MapCompose(float)
+    pct_oreb_in = MapCompose(float)
+    pct_dreb_in = MapCompose(float)
+    pct_reb_in = MapCompose(float)
+    pct_ast_in = MapCompose(float)
+    pct_tov_in = MapCompose(float)
+    pct_stl_in = MapCompose(float)
+    pct_blk_in = MapCompose(float)
+    pct_blka_in = MapCompose(float)
+    pct_pf_in = MapCompose(float)
+    pct_pfd_in = MapCompose(float)
+    pct_pts_in = MapCompose(float)
+
+
+class NbaStatsPlayerGeneralOpponentItemLoader(ItemLoader):
+    default_item_class = NbaStatsPlayerGeneralOpponentItem
+    default_output_processor = TakeFirst()
+
+    to_date_in = MapCompose(str.strip)
+    season_year_in = MapCompose(str)
+    season_type_in = MapCompose(str)
+    team_id_in = MapCompose(int)
+    team_abbreviation_in = MapCompose(str.strip)
+    team_name_in = MapCompose(str.strip)
+    vs_player_id_in = MapCompose(int)
+    vs_player_name_in = MapCompose(str.strip)
+    court_status_in = MapCompose(str.strip)
+    gp_in = MapCompose(int)
+    w_in = MapCompose(int)
+    l_in = MapCompose(int)
+    w_pct_in = MapCompose(float)
+    min_in = MapCompose(float)
+    opp_fgm_in = MapCompose(float)
+    opp_fga_in = MapCompose(float)
+    opp_fg_pct_in = MapCompose(float)
+    opp_fg3m_in = MapCompose(float)
+    opp_fg3a_in = MapCompose(float)
+    opp_fg3_pct_in = MapCompose(float)
+    opp_ftm_in = MapCompose(float)
+    opp_fta_in = MapCompose(float)
+    opp_ft_pct_in = MapCompose(float)
+    opp_oreb_in = MapCompose(float)
+    opp_dreb_in = MapCompose(float)
+    opp_reb_in = MapCompose(float)
+    opp_ast_in = MapCompose(float)
+    opp_tov_in = MapCompose(float)
+    opp_stl_in = MapCompose(float)
+    opp_blk_in = MapCompose(float)
+    opp_blka_in = MapCompose(float)
+    opp_pf_in = MapCompose(float)
+    opp_pfd_in = MapCompose(float)
+    opp_pts_in = MapCompose(float)
+    plus_minus_in = MapCompose(float)
+
+
+class NbaStatsPlayerGeneralDefenseItemLoader(ItemLoader):
+    default_item_class = NbaStatsPlayerGeneralDefenseItem
+    default_output_processor = TakeFirst()
+
+    to_date_in = MapCompose(str.strip)
+    season_year_in = MapCompose(str)
+    season_type_in = MapCompose(str)
+    player_id_in = MapCompose(int)
+    player_name_in = MapCompose(str.strip)
+    nickname_in = MapCompose(str.strip)
+    team_id_in = MapCompose(int)
+    team_abbreviation_in = MapCompose(str.strip)
+    age_in = MapCompose(int)
+    gp_in = MapCompose(int)
+    w_in = MapCompose(int)
+    l_in = MapCompose(int)
+    w_pct_in = MapCompose(float)
+    min_in = MapCompose(float)
+    def_rating_in = MapCompose(float)
+    dreb_in = MapCompose(float)
+    dreb_pct_in = MapCompose(float)
+    pct_dreb_in = MapCompose(float)
+    stl_in = MapCompose(float)
+    pct_stl_in = MapCompose(float)
+    blk_in = MapCompose(float)
+    pct_blk_in = MapCompose(float)
+    opp_pts_off_tov_in = MapCompose(float)
+    opp_pts_2nd_chance_in = MapCompose(float)
+    opp_pts_fb_in = MapCompose(float)
+    opp_pts_paint_in = MapCompose(float)
+    def_ws_in = MapCompose(float)
 
 
 class NbaStatsBoxscoresTraditionalItemLoader(ItemLoader):
@@ -57,6 +354,7 @@ class NbaStatsBoxscoresTraditionalItemLoader(ItemLoader):
 
 
 class NbaStatsBoxscoresAdvTraditionalItemLoader(ItemLoader):
+    default_item_class = NbaStatsBoxscoresAdvTraditionalItem
     default_output_processor = TakeFirst()
 
     season_year_in = MapCompose(str.strip)
@@ -68,7 +366,7 @@ class NbaStatsBoxscoresAdvTraditionalItemLoader(ItemLoader):
     team_abbreviation_in = MapCompose(str.strip)
     team_name_in = MapCompose(str.strip)
     game_id_in = MapCompose(str.strip)
-    game_date_in = MapCompose(lambda x: datetime.strptime(x, "%Y-%m-%dT%H:%M:%S").date())
+    game_date_in = MapCompose(str.strip)
     matchup_in = MapCompose(str.strip)
     w_l_in = MapCompose(str.strip)
     min_in = MapCompose(float)
@@ -99,6 +397,7 @@ class NbaStatsBoxscoresAdvTraditionalItemLoader(ItemLoader):
 
 
 class NbaStatsBoxscoresAdvAdvancedItemLoader(ItemLoader):
+    default_item_class = NbaStatsBoxscoresAdvAdvancedItem
     default_output_processor = TakeFirst()
 
     season_type_in = MapCompose(str.strip)
@@ -110,7 +409,7 @@ class NbaStatsBoxscoresAdvAdvancedItemLoader(ItemLoader):
     team_abbreviation_in = MapCompose(str.strip)
     team_name_in = MapCompose(str.strip)
     game_id_in = MapCompose(str.strip)
-    game_date_in = MapCompose(lambda x: datetime.strptime(x, "%Y-%m-%dT%H:%M:%S").date())
+    game_date_in = MapCompose(str.strip)
     matchup_in = MapCompose(str.strip)
     w_l_in = MapCompose(str.strip)
     min_in = MapCompose(float)
@@ -149,6 +448,7 @@ class NbaStatsBoxscoresAdvAdvancedItemLoader(ItemLoader):
 
 
 class NbaStatsBoxscoresAdvMiscItemLoader(ItemLoader):
+    default_item_class = NbaStatsBoxscoresAdvMiscItem
     default_output_processor = TakeFirst()
 
     season_type_in = MapCompose(str.strip)
@@ -160,7 +460,7 @@ class NbaStatsBoxscoresAdvMiscItemLoader(ItemLoader):
     team_abbreviation_in = MapCompose(str.strip)
     team_name_in = MapCompose(str.strip)
     game_id_in = MapCompose(str.strip)
-    game_date_in = MapCompose(lambda x: datetime.strptime(x, "%Y-%m-%dT%H:%M:%S").date())
+    game_date_in = MapCompose(str.strip)
     matchup_in = MapCompose(str.strip)
     w_l_in = MapCompose(str.strip)
     min_in = MapCompose(float)
@@ -180,6 +480,7 @@ class NbaStatsBoxscoresAdvMiscItemLoader(ItemLoader):
 
 
 class NbaStatsBoxscoresAdvScoringItemLoader(ItemLoader):
+    default_item_class = NbaStatsBoxscoresAdvScoringItem
     default_output_processor = TakeFirst()
 
     season_type_in = MapCompose(str.strip)
@@ -191,9 +492,9 @@ class NbaStatsBoxscoresAdvScoringItemLoader(ItemLoader):
     team_abbreviation_in = MapCompose(str.strip)
     team_name_in = MapCompose(str.strip)
     game_id_in = MapCompose(str.strip)
-    game_date_in = MapCompose(lambda x: datetime.strptime(x, "%Y-%m-%dT%H:%M:%S").date())
+    game_date_in = MapCompose(str.strip)
     matchup_in = MapCompose(str.strip)
-    wl_in = MapCompose(str.strip)
+    w_l_in = MapCompose(str.strip)
     min_in = MapCompose(float)
     pct_fga_2pt_in = MapCompose(float)
     pct_fga_3pt_in = MapCompose(float)
@@ -216,6 +517,7 @@ class NbaStatsBoxscoresAdvScoringItemLoader(ItemLoader):
 
 
 class NbaStatsBoxscoresAdvUsageItemLoader(ItemLoader):
+    default_item_class = NbaStatsBoxscoresAdvUsageItem
     default_output_processor = TakeFirst()
 
     season_type_in = MapCompose(str.strip)
@@ -227,9 +529,9 @@ class NbaStatsBoxscoresAdvUsageItemLoader(ItemLoader):
     team_abbreviation_in = MapCompose(str.strip)
     team_name_in = MapCompose(str.strip)
     game_id_in = MapCompose(str.strip)
-    game_date_in = MapCompose(lambda x: datetime.strptime(x, "%Y-%m-%dT%H:%M:%S").date())
+    game_date_in = MapCompose(str.strip)
     matchup_in = MapCompose(str.strip)
-    wl_in = MapCompose(str.strip)
+    w_l_in = MapCompose(str.strip)
     min_in = MapCompose(int)
     usg_pct_in = MapCompose(float)
     pct_fgm_in = MapCompose(float)

@@ -7,20 +7,20 @@ from urllib.parse import parse_qs, urlencode, urlparse
 
 import pytz
 import scrapy
-from data_sources.item_loaders import NbaStatsBoxscoresAdvScoringItemLoader
-from data_sources.items import NbaStatsBoxscoresAdvScoringItem
+from data_sources.item_loaders import NbaStatsPlayerGeneralMiscItemLoader
+from data_sources.items import NbaStatsPlayerGeneralMiscItem
 from data_sources.spiders.base_spider import BaseSpider
 
 sys.path.append("../../../../")
 from passkeys import API_KEY_ZYTE
 
 
-class NbaStatsBoxscoresAdvScoringSpider(BaseSpider):
-    name = "nba_stats_boxscores_adv_scoring_spider"
+class NbaStatsPlayerGeneralMiscSpider(BaseSpider):
+    name = "nba_stats_player_general_misc_spider"
     allowed_domains = ["www.nba.com"]
     custom_settings = {
         "ITEM_PIPELINES": {
-            "data_sources.pipelines.NbaStatsBoxscoresAdvScoringPipeline": 300
+            "data_sources.pipelines.NbaStatsPlayerGeneralMiscPipeline": 300
         },
     }
 
@@ -41,7 +41,7 @@ class NbaStatsBoxscoresAdvScoringSpider(BaseSpider):
             }
         )
 
-    first_season = "1996 - 1997"  # This data source goes back to 1946-1947, but the NBA-ABA merger was in 1976
+    first_season = 1976  # This data source goes back to 1946-1947, but the NBA-ABA merger was in 1976
 
     def __init__(self, dates, save_data=False, view_data=True, *args, **kwargs):
         super().__init__(
@@ -85,7 +85,7 @@ class NbaStatsBoxscoresAdvScoringSpider(BaseSpider):
         return {"info": None, "error": "Unable to find season information"}
 
     def start_requests(self):
-        base_url = "https://stats.nba.com/stats/playergamelogs"
+        base_url = "https://stats.nba.com/stats/leaguedashplayerstats"
         headers = {
             "Accept": "*/*",
             "Accept-Language": "en-US,en;q=0.9",
@@ -104,26 +104,76 @@ class NbaStatsBoxscoresAdvScoringSpider(BaseSpider):
             "sec-ch-ua-platform": '"Linux"',
         }
         params = {
-            "MeasureType": "Scoring",
-            "PerMode": "Totals",
+            "LastNGames": 0,
+            "LeagueID": "00",
+            "MeasureType": "Misc",
+            "Month": 0,
+            "OpponentTeamID": 0,
+            "PORound": 0,
+            "PaceAdjust": "N",
+            "PerMode": "PerGame",
+            "Period": 0,
+            "PlusMinus": "N",
+            "Rank": "N",
+            "Season": "2022-23",
+            "SeasonType": "Playoffs",
+            "TeamID": 0,
         }
 
         if self.dates == "all":
-            # Extract start year of first_season
-            first_season_start_year = int(self.first_season.split("-")[0])
+            for season in self.NBA_IMPORTANT_DATES.keys():
+                season_param = f"{season.split('-')[0]}-{season.split('-')[1][-2:]}"
+                params.update({"Season": season_param})
+                reg_season_start_date = self.NBA_IMPORTANT_DATES[season][
+                    "reg_season_start_date"
+                ]
+                reg_season_end_date = self.NBA_IMPORTANT_DATES[season][
+                    "reg_season_end_date"
+                ]
+                postseason_start_date = self.NBA_IMPORTANT_DATES[season][
+                    "postseason_start_date"
+                ]
+                postseason_end_date = self.NBA_IMPORTANT_DATES[season][
+                    "postseason_end_date"
+                ]
 
-            # Update the list comprehension to include condition
-            seasons = [
-                f"{season.split('-')[0]}-{season.split('-')[1][-2:]}"
-                for season in self.NBA_IMPORTANT_DATES.keys()
-                if int(season.split("-")[0]) >= first_season_start_year
-            ]
-            for season in seasons:
-                params.update({"Season": season})
+                # convert string dates to datetime objects
+                reg_season_start_date = datetime.strptime(
+                    reg_season_start_date, "%Y-%m-%d"
+                )
+                reg_season_end_date = datetime.strptime(reg_season_end_date, "%Y-%m-%d")
+                postseason_start_date = datetime.strptime(
+                    postseason_start_date, "%Y-%m-%d"
+                )
+                postseason_end_date = datetime.strptime(postseason_end_date, "%Y-%m-%d")
+
                 for season_type in ["Regular Season", "PlayIn", "Playoffs"]:
                     params.update({"SeasonType": season_type})
-                    url = base_url + "?" + urlencode(params)
-                    yield scrapy.Request(url, headers=headers, callback=self.parse)
+                    if season_type in ["PlayIn", "Playoffs"]:
+                        # loop through each day between postseason start and end dates
+                        dt = postseason_start_date
+                        while dt <= postseason_end_date:
+                            params.update(
+                                {"DateTo": dt.strftime("%m/%d/%Y")}
+                            )  # convert datetime object to string
+                            url = base_url + "?" + urlencode(params)
+                            dt += timedelta(days=1)
+                            yield scrapy.Request(
+                                url, headers=headers, callback=self.parse
+                            )
+                            dt += timedelta(days=1)
+                    elif season_type == "Regular Season":
+                        # loop through each day between regular season start and end dates
+                        dt = reg_season_start_date
+                        while dt <= reg_season_end_date:
+                            params.update(
+                                {"DateTo": dt.strftime("%m/%d/%Y")}
+                            )  # convert datetime object to string
+                            url = base_url + "?" + urlencode(params)
+                            dt += timedelta(days=1)
+                            yield scrapy.Request(
+                                url, headers=headers, callback=self.parse
+                            )
 
         elif self.dates == "daily_update":
             now_mountain = datetime.now(pytz.timezone("America/Denver"))
@@ -143,7 +193,6 @@ class NbaStatsBoxscoresAdvScoringSpider(BaseSpider):
                 params.update(
                     {
                         "Season": season,
-                        "DateFrom": date_param,
                         "DateTo": date_param,
                     }
                 )
@@ -169,9 +218,7 @@ class NbaStatsBoxscoresAdvScoringSpider(BaseSpider):
 
                     season = season_info_result["info"]
 
-                    params.update(
-                        {"Season": season, "DateFrom": date_param, "DateTo": date_param}
-                    )
+                    params.update({"Season": season, "DateTo": date_param})
                     url = base_url + "?" + urlencode(params)
                     yield scrapy.Request(url, headers=headers, callback=self.parse)
 
@@ -179,45 +226,39 @@ class NbaStatsBoxscoresAdvScoringSpider(BaseSpider):
         json_response = json.loads(response.body)
         row_set = json_response["resultSets"][0]["rowSet"]
         headers = json_response["resultSets"][0]["headers"]
-        season = json_response["parameters"]["SeasonYear"]
+        season = json_response["parameters"]["Season"]
         season_type = json_response["parameters"]["SeasonType"]
+        to_date = json_response["parameters"]["DateTo"]
 
         for row in row_set:
             row_dict = dict(zip(headers, row))
 
-            loader = NbaStatsBoxscoresAdvScoringItemLoader(
-                item=NbaStatsBoxscoresAdvScoringItem()
+            loader = NbaStatsPlayerGeneralMiscItemLoader(
+                item=NbaStatsPlayerGeneralMiscItem()
             )
+            loader.add_value("to_date", to_date)
             loader.add_value("season_year", season)
             loader.add_value("season_type", season_type)
             loader.add_value("player_id", row_dict["PLAYER_ID"])
             loader.add_value("player_name", row_dict["PLAYER_NAME"])
-            loader.add_value("nickname", row_dict["NICKNAME"])
-            loader.add_value("team_id", row_dict["TEAM_ID"])
-            loader.add_value("team_abbreviation", row_dict["TEAM_ABBREVIATION"])
-            loader.add_value("team_name", row_dict["TEAM_NAME"])
-            loader.add_value("game_id", row_dict["GAME_ID"])
-            loader.add_value("game_date", row_dict["GAME_DATE"])
-            loader.add_value("matchup", row_dict["MATCHUP"])
-            loader.add_value("w_l", row_dict["WL"])
+            loader.add_value("age", row_dict["AGE"])
+            loader.add_value("gp", row_dict["GP"])
+            loader.add_value("w", row_dict["W"])
+            loader.add_value("l", row_dict["L"])
+            loader.add_value("w_pct", row_dict["W_PCT"])
             loader.add_value("min", row_dict["MIN"])
-            loader.add_value("pct_fga_2pt", row_dict["PCT_FGA_2PT"])
-            loader.add_value("pct_fga_3pt", row_dict["PCT_FGA_3PT"])
-            loader.add_value("pct_pts_2pt", row_dict["PCT_PTS_2PT"])
-            loader.add_value("pct_pts_2pt_mr", row_dict["PCT_PTS_2PT_MR"])
-            loader.add_value("pct_pts_3pt", row_dict["PCT_PTS_3PT"])
-            loader.add_value("pct_pts_fb", row_dict["PCT_PTS_FB"])
-            loader.add_value("pct_pts_ft", row_dict["PCT_PTS_FT"])
-            loader.add_value("pct_pts_off_tov", row_dict["PCT_PTS_OFF_TOV"])
-            loader.add_value("pct_pts_paint", row_dict["PCT_PTS_PAINT"])
-            loader.add_value("pct_ast_2pm", row_dict["PCT_AST_2PM"])
-            loader.add_value("pct_uast_2pm", row_dict["PCT_UAST_2PM"])
-            loader.add_value("pct_ast_3pm", row_dict["PCT_AST_3PM"])
-            loader.add_value("pct_uast_3pm", row_dict["PCT_UAST_3PM"])
-            loader.add_value("pct_ast_fgm", row_dict["PCT_AST_FGM"])
-            loader.add_value("pct_uast_fgm", row_dict["PCT_UAST_FGM"])
-            loader.add_value("fgm", row_dict["FGM"])
-            loader.add_value("fga", row_dict["FGA"])
-            loader.add_value("fg_pct", row_dict["FG_PCT"])
+            loader.add_value("pts_off_tov", row_dict["PTS_OFF_TOV"])
+            loader.add_value("pts_2nd_chance", row_dict["PTS_2ND_CHANCE"])
+            loader.add_value("pts_fb", row_dict["PTS_FB"])
+            loader.add_value("pts_paint", row_dict["PTS_PAINT"])
+            loader.add_value("opp_pts_off_tov", row_dict["OPP_PTS_OFF_TOV"])
+            loader.add_value("opp_pts_2nd_chance", row_dict["OPP_PTS_2ND_CHANCE"])
+            loader.add_value("opp_pts_fb", row_dict["OPP_PTS_FB"])
+            loader.add_value("opp_pts_paint", row_dict["OPP_PTS_PAINT"])
+            loader.add_value("blk", row_dict["BLK"])
+            loader.add_value("blka", row_dict["BLKA"])
+            loader.add_value("pf", row_dict["PF"])
+            loader.add_value("pfd", row_dict["PFD"])
+            loader.add_value("nba_fantasy_pts", row_dict["NBA_FANTASY_PTS"])
 
             yield loader.load_item()

@@ -1,9 +1,11 @@
 import json
+import os
 import re
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import parse_qs, urlencode, urlparse
 
+import pytz
 import scrapy
 from data_sources.item_loaders import NbaStatsBoxscoresAdvAdvancedItemLoader
 from data_sources.items import NbaStatsBoxscoresAdvAdvancedItem
@@ -20,19 +22,26 @@ class NbaStatsBoxscoresAdvAdvancedSpider(BaseSpider):
         "ITEM_PIPELINES": {
             "data_sources.pipelines.NbaStatsBoxscoresAdvAdvancedPipeline": 300
         },
-        # # Zyte API Required Settings
-        # "DOWNLOAD_HANDLERS" = {
-        #     "http": "scrapy_zyte_api.ScrapyZyteAPIDownloadHandler",
-        #     "https": "scrapy_zyte_api.ScrapyZyteAPIDownloadHandler",
-        # },
-        # "DOWNLOADER_MIDDLEWARES" = {"scrapy_zyte_api.ScrapyZyteAPIDownloaderMiddleware": 1000},
-        # "REQUEST_FINGERPRINTER_CLASS" = "scrapy_zyte_api.ScrapyZyteAPIRequestFingerprinter",
-        # "TWISTED_REACTOR" = "twisted.internet.asyncioreactor.AsyncioSelectorReactor",
-        # "ZYTE_API_KEY" = API_KEY_ZYTE,
-        "ZYTE_API_ENABLED": False,
     }
 
-    first_season = 1976  # This data source goes back to 1946-1947, but the NBA-ABA merger was in 1976
+    if os.environ.get("ENVIRONMENT") == "EC2":
+        custom_settings.update(
+            {
+                "DOWNLOAD_HANDLERS": {
+                    "http": "scrapy_zyte_api.ScrapyZyteAPIDownloadHandler",
+                    "https": "scrapy_zyte_api.ScrapyZyteAPIDownloadHandler",
+                },
+                "DOWNLOADER_MIDDLEWARES": {
+                    "scrapy_zyte_api.ScrapyZyteAPIDownloaderMiddleware": 1000,
+                },
+                "REQUEST_FINGERPRINTER_CLASS": "scrapy_zyte_api.ScrapyZyteAPIRequestFingerprinter",
+                "ZYTE_API_KEY": API_KEY_ZYTE,
+                "ZYTE_API_TRANSPARENT_MODE": True,
+                "ZYTE_API_ENABLED": True,
+            }
+        )
+
+    first_season = "1996 - 1997"  # This data source goes back to 1946-1947, but the NBA-ABA merger was in 1976
 
     def __init__(self, dates, save_data=False, view_data=True, *args, **kwargs):
         super().__init__(
@@ -44,7 +53,7 @@ class NbaStatsBoxscoresAdvAdvancedSpider(BaseSpider):
             **kwargs,
         )
 
-        if dates == "all":
+        if dates == "all" or dates == "daily_update":
             pass
         else:
             self.dates = []
@@ -52,7 +61,7 @@ class NbaStatsBoxscoresAdvAdvancedSpider(BaseSpider):
             for date_str in dates.split(","):
                 if not date_pattern.match(date_str):
                     raise ValueError(
-                        f"Invalid date format: {date_str}. Date format should be 'YYYY-MM-DD' or 'all'"
+                        f"Invalid date format: {date_str}. Date format should be 'YYYY-MM-DD', 'daily_update', or 'all'"
                     )
                 self.dates.append(date_str)
 
@@ -76,7 +85,7 @@ class NbaStatsBoxscoresAdvAdvancedSpider(BaseSpider):
         return {"info": None, "error": "Unable to find season information"}
 
     def start_requests(self):
-        base_url = "https://stats.nba.com/stats/playergamelogs?"
+        base_url = "https://stats.nba.com/stats/playergamelogs"
         headers = {
             "Accept": "*/*",
             "Accept-Language": "en-US,en;q=0.9",
@@ -100,16 +109,49 @@ class NbaStatsBoxscoresAdvAdvancedSpider(BaseSpider):
         }
 
         if self.dates == "all":
+            # Extract start year of first_season
+            first_season_start_year = int(self.first_season.split("-")[0])
+
+            # Update the list comprehension to include condition
             seasons = [
                 f"{season.split('-')[0]}-{season.split('-')[1][-2:]}"
                 for season in self.NBA_IMPORTANT_DATES.keys()
+                if int(season.split("-")[0]) >= first_season_start_year
             ]
             for season in seasons:
                 params.update({"Season": season})
-                for season_type in ["Regular+Season", "PlayIn", "Playoffs"]:
+                for season_type in ["Regular Season", "PlayIn", "Playoffs"]:
                     params.update({"SeasonType": season_type})
                     url = base_url + "?" + urlencode(params)
                     yield scrapy.Request(url, headers=headers, callback=self.parse)
+
+        elif self.dates == "daily_update":
+            now_mountain = datetime.now(pytz.timezone("America/Denver"))
+            yesterday_mountain = now_mountain - timedelta(1)
+            yesterday_str = yesterday_mountain.strftime("%Y-%m-%d")
+            season_info_result = self.find_season_information(yesterday_str)
+            if season_info_result["error"]:
+                print(
+                    f"Error: {season_info_result['error']} for the date {yesterday_str}"
+                )
+                self.handle_failed_date(yesterday_str, "find_season_information")
+            else:
+                season = season_info_result["info"]
+                date_param = datetime.strptime(yesterday_str, "%Y-%m-%d").strftime(
+                    "%m/%d/%Y"
+                )
+                params.update(
+                    {
+                        "Season": season,
+                        "DateFrom": date_param,
+                        "DateTo": date_param,
+                    }
+                )
+                for season_type in ["Regular Season", "PlayIn", "Playoffs"]:
+                    params.update({"SeasonType": season_type})
+                    url = base_url + "?" + urlencode(params)
+                    yield scrapy.Request(url, headers=headers, callback=self.parse)
+
         else:
             for season_type in ["Regular Season", "PlayIn", "Playoffs"]:
                 params.update({"SeasonType": season_type})
@@ -124,9 +166,7 @@ class NbaStatsBoxscoresAdvAdvancedSpider(BaseSpider):
                     date_param = datetime.strptime(date_str, "%Y-%m-%d").strftime(
                         "%m/%d/%Y"
                     )
-
                     season = season_info_result["info"]
-
                     params.update(
                         {"Season": season, "DateFrom": date_param, "DateTo": date_param}
                     )
@@ -142,7 +182,6 @@ class NbaStatsBoxscoresAdvAdvancedSpider(BaseSpider):
 
         for row in row_set:
             row_dict = dict(zip(headers, row))
-            print(row_dict)
 
             loader = NbaStatsBoxscoresAdvAdvancedItemLoader(
                 item=NbaStatsBoxscoresAdvAdvancedItem()
