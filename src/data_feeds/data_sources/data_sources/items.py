@@ -1,6 +1,16 @@
 import scrapy
 
+
 # ADD NEW ITEMS HERE
+class NbaStatsGameResultsItem(scrapy.Item):
+    game_id = scrapy.Field()
+    game_date = scrapy.Field()
+    home_team_id = scrapy.Field()
+    away_team_id = scrapy.Field()
+    home_team = scrapy.Field()
+    away_team = scrapy.Field()
+    home_score = scrapy.Field()
+    away_score = scrapy.Field()
 
 
 class NbaStatsPlayerGeneralTraditionalItem(scrapy.Item):

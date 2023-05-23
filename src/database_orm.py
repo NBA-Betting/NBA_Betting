@@ -20,6 +20,19 @@ Base = declarative_base()
 # ADD TABLES HERE
 
 
+class NbaStatsGameResultsTable(Base):
+    __tablename__ = "ibd_nba_stats_game_results"
+    __table_args__ = (PrimaryKeyConstraint("game_id"),)
+    game_id = Column(String)
+    game_date = Column(Date)
+    home_team_id = Column(Integer)
+    away_team_id = Column(Integer)
+    home_team = Column(String)
+    away_team = Column(String)
+    home_score = Column(Integer)
+    away_score = Column(Integer)
+
+
 class NbaStatsPlayerGeneralTraditionalTable(Base):
     __tablename__ = "ibd_nba_stats_player_general_traditional"
     __table_args__ = (PrimaryKeyConstraint("player_id", "to_date", "season_type"),)
@@ -61,6 +74,15 @@ class NbaStatsPlayerGeneralTraditionalTable(Base):
     nba_fantasy_pts = Column(Float)
     dd2 = Column(Integer)
     td3 = Column(Integer)
+
+    # def __eq__(self, other):
+    #     if isinstance(other, self.__class__):
+    #         return (
+    #             self.player_id == other.player_id
+    #             and self.to_date == other.to_date
+    #             and self.season_type == other.season_type
+    #         )
+    #     return False
 
 
 class NbaStatsPlayerGeneralAdvancedTable(Base):

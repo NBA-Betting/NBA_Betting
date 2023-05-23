@@ -61,7 +61,7 @@ class BaseSpider(Spider):
             if start_year < first_season:
                 continue
             start_date = datetime.strptime(dates["reg_season_start_date"], "%Y-%m-%d")
-            end_date = datetime.strptime(dates["reg_season_end_date"], "%Y-%m-%d")
+            end_date = datetime.strptime(dates["postseason_end_date"], "%Y-%m-%d")
             current_date = start_date
             while current_date <= end_date:
                 all_dates.append(current_date.strftime("%Y-%m-%d"))
@@ -72,8 +72,23 @@ class BaseSpider(Spider):
         self.failed_dates[reason].append(date_str)
 
     def find_season_information(self, date_str):
-        # Logic to use NBA_IMPORTANT_DATES to find necessary season information
-        pass
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+
+        for season, dates in self.NBA_IMPORTANT_DATES.items():
+            reg_season_start_date = datetime.strptime(
+                dates["reg_season_start_date"], "%Y-%m-%d"
+            )
+            postseason_end_date = datetime.strptime(
+                dates["postseason_end_date"], "%Y-%m-%d"
+            )
+
+            if reg_season_start_date <= date_obj <= postseason_end_date:
+                year1, year2 = season.split("-")
+                return {
+                    "info": f"{year1}-{year2[-2:]}",
+                    "error": None,
+                }
+        return {"info": None, "error": "Unable to find season information"}
 
     def start_requests(self):
         pass

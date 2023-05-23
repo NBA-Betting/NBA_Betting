@@ -14,8 +14,8 @@ NEWSPIDER_MODULE = "data_sources.spiders"
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
 
-LOG_FILE = "scrapy_output.log"
-LOG_LEVEL = "WARNING"
+# LOG_FILE = "scrapy_output.log"
+# LOG_LEVEL = "WARNING"
 
 
 # FEED_FORMAT = "csv"

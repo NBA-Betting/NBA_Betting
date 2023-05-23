@@ -15,6 +15,7 @@ from src.data_feeds.data_sources.data_sources.items import (
     NbaStatsBoxscoresAdvTraditionalItem,
     NbaStatsBoxscoresAdvUsageItem,
     NbaStatsBoxscoresTraditionalItem,
+    NbaStatsGameResultsItem,
     NbaStatsPlayerGeneralAdvancedItem,
     NbaStatsPlayerGeneralDefenseItem,
     NbaStatsPlayerGeneralMiscItem,
@@ -25,6 +26,20 @@ from src.data_feeds.data_sources.data_sources.items import (
 )
 
 # ADD NEW ITEM LOADERS HERE
+
+
+class NbaStatsGameResultsItemLoader(ItemLoader):
+    default_item_class = NbaStatsGameResultsItem
+    default_output_processor = TakeFirst()
+
+    game_id_in = MapCompose(str.strip)
+    game_date_in = MapCompose(str.strip)
+    home_team_id_in = MapCompose(int)
+    away_team_id_in = MapCompose(int)
+    home_team_in = MapCompose(str.strip)
+    away_team_in = MapCompose(str.strip)
+    home_score_in = MapCompose(int)
+    away_score_in = MapCompose(int)
 
 
 class NbaStatsPlayerGeneralTraditionalItemLoader(ItemLoader):
@@ -351,7 +366,7 @@ class NbaStatsBoxscoresAdvTraditionalItemLoader(ItemLoader):
     team_abbreviation_in = MapCompose(str.strip)
     team_name_in = MapCompose(str.strip)
     game_id_in = MapCompose(str.strip)
-    game_date_in = MapCompose(lambda x: datetime.strptime(x, "%Y-%m-%dT%H:%M:%S").date())
+    game_date_in = MapCompose(str.strip)
     matchup_in = MapCompose(str.strip)
     w_l_in = MapCompose(str.strip)
     min_in = MapCompose(float)
@@ -394,7 +409,7 @@ class NbaStatsBoxscoresAdvAdvancedItemLoader(ItemLoader):
     team_abbreviation_in = MapCompose(str.strip)
     team_name_in = MapCompose(str.strip)
     game_id_in = MapCompose(str.strip)
-    game_date_in = MapCompose(lambda x: datetime.strptime(x, "%Y-%m-%dT%H:%M:%S").date())
+    game_date_in = MapCompose(str.strip)
     matchup_in = MapCompose(str.strip)
     w_l_in = MapCompose(str.strip)
     min_in = MapCompose(float)
@@ -445,7 +460,7 @@ class NbaStatsBoxscoresAdvMiscItemLoader(ItemLoader):
     team_abbreviation_in = MapCompose(str.strip)
     team_name_in = MapCompose(str.strip)
     game_id_in = MapCompose(str.strip)
-    game_date_in = MapCompose(lambda x: datetime.strptime(x, "%Y-%m-%dT%H:%M:%S").date())
+    game_date_in = MapCompose(str.strip)
     matchup_in = MapCompose(str.strip)
     w_l_in = MapCompose(str.strip)
     min_in = MapCompose(float)
@@ -477,7 +492,7 @@ class NbaStatsBoxscoresAdvScoringItemLoader(ItemLoader):
     team_abbreviation_in = MapCompose(str.strip)
     team_name_in = MapCompose(str.strip)
     game_id_in = MapCompose(str.strip)
-    game_date_in = MapCompose(lambda x: datetime.strptime(x, "%Y-%m-%dT%H:%M:%S").date())
+    game_date_in = MapCompose(str.strip)
     matchup_in = MapCompose(str.strip)
     w_l_in = MapCompose(str.strip)
     min_in = MapCompose(float)
@@ -514,7 +529,7 @@ class NbaStatsBoxscoresAdvUsageItemLoader(ItemLoader):
     team_abbreviation_in = MapCompose(str.strip)
     team_name_in = MapCompose(str.strip)
     game_id_in = MapCompose(str.strip)
-    game_date_in = MapCompose(lambda x: datetime.strptime(x, "%Y-%m-%dT%H:%M:%S").date())
+    game_date_in = MapCompose(str.strip)
     matchup_in = MapCompose(str.strip)
     w_l_in = MapCompose(str.strip)
     min_in = MapCompose(int)

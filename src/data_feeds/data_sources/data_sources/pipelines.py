@@ -18,6 +18,7 @@ from src.database_orm import (
     NbaStatsBoxscoresAdvTraditionalTable,
     NbaStatsBoxscoresAdvUsageTable,
     NbaStatsBoxscoresTraditionalTable,
+    NbaStatsGameResultsTable,
     NbaStatsPlayerGeneralAdvancedTable,
     NbaStatsPlayerGeneralDefenseTable,
     NbaStatsPlayerGeneralMiscTable,
@@ -175,6 +176,10 @@ class InpredictableWPAPipeline(BasePipeline):
 
 # class Nba2kPlayerPipeline(BasePipeline):
 #     ITEM_CLASS = Nba2kPlayerTable
+
+
+class NbaStatsGameResultsPipeline(BasePipeline):
+    ITEM_CLASS = NbaStatsGameResultsTable
 
 
 class NbaStatsPlayerGeneralTraditionalPipeline(BasePipeline):

@@ -41,7 +41,7 @@ class NbaStatsBoxscoresAdvAdvancedSpider(BaseSpider):
             }
         )
 
-    first_season = 1976  # This data source goes back to 1946-1947, but the NBA-ABA merger was in 1976
+    first_season = "1996 - 1997"  # This data source goes back to 1946-1947, but the NBA-ABA merger was in 1976
 
     def __init__(self, dates, save_data=False, view_data=True, *args, **kwargs):
         super().__init__(
@@ -109,9 +109,14 @@ class NbaStatsBoxscoresAdvAdvancedSpider(BaseSpider):
         }
 
         if self.dates == "all":
+            # Extract start year of first_season
+            first_season_start_year = int(self.first_season.split("-")[0])
+
+            # Update the list comprehension to include condition
             seasons = [
                 f"{season.split('-')[0]}-{season.split('-')[1][-2:]}"
                 for season in self.NBA_IMPORTANT_DATES.keys()
+                if int(season.split("-")[0]) >= first_season_start_year
             ]
             for season in seasons:
                 params.update({"Season": season})
@@ -177,7 +182,6 @@ class NbaStatsBoxscoresAdvAdvancedSpider(BaseSpider):
 
         for row in row_set:
             row_dict = dict(zip(headers, row))
-            print(row_dict)
 
             loader = NbaStatsBoxscoresAdvAdvancedItemLoader(
                 item=NbaStatsBoxscoresAdvAdvancedItem()

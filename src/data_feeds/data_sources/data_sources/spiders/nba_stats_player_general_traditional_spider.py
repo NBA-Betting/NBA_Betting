@@ -41,7 +41,7 @@ class NbaStatsPlayerGeneralTraditionalSpider(BaseSpider):
             }
         )
 
-    first_season = 1976  # This data source goes back to 1946-1947, but the NBA-ABA merger was in 1976
+    first_season = "2016 - 2017"
 
     def __init__(self, dates, save_data=False, view_data=True, *args, **kwargs):
         super().__init__(
@@ -121,7 +121,17 @@ class NbaStatsPlayerGeneralTraditionalSpider(BaseSpider):
         }
 
         if self.dates == "all":
-            for season in self.NBA_IMPORTANT_DATES.keys():
+            # Extract start year of first_season
+            first_season_start_year = int(self.first_season.split("-")[0])
+
+            # Update the list comprehension to include condition
+            seasons = [
+                season
+                for season in self.NBA_IMPORTANT_DATES.keys()
+                if int(season.split("-")[0]) >= first_season_start_year
+            ]
+
+            for season in seasons:
                 season_param = f"{season.split('-')[0]}-{season.split('-')[1][-2:]}"
                 params.update({"Season": season_param})
                 reg_season_start_date = self.NBA_IMPORTANT_DATES[season][
