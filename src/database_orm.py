@@ -1,5 +1,6 @@
-import sys
+import os
 
+from dotenv import load_dotenv
 from sqlalchemy import (
     Column,
     Date,
@@ -11,8 +12,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import declarative_base
 
-sys.path.append("../")
-from passkeys import RDS_ENDPOINT, RDS_PASSWORD
+load_dotenv()
+RDS_ENDPOINT = os.environ.get("RDS_ENDPOINT")
+RDS_PASSWORD = os.environ.get("RDS_PASSWORD")
+
 
 Base = declarative_base()
 
@@ -69,7 +72,7 @@ class NbaStatsPlayerGeneralTraditionalTable(Base):
     blka = Column(Float)
     pf = Column(Float)
     pfd = Column(Float)
-    pts = Column(Integer)
+    pts = Column(Float)
     plus_minus = Column(Float)
     nba_fantasy_pts = Column(Float)
     dd2 = Column(Integer)

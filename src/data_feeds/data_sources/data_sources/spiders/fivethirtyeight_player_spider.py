@@ -2,12 +2,9 @@ import datetime
 
 import pandas as pd
 import scrapy
-
-from src.data_feeds.data_sources.data_sources.item_loaders import (
-    FivethirtyeightPlayerItemLoader,
-)
-from src.data_feeds.data_sources.data_sources.items import FivethirtyeightPlayerItem
-from src.data_feeds.data_sources.data_sources.spiders.base_spider import BaseSpider
+from data_sources.item_loaders import FivethirtyeightPlayerItemLoader
+from data_sources.items import FivethirtyeightPlayerItem
+from data_sources.spiders.base_spider import BaseSpider
 
 
 class FivethirtyeightPlayerSpider(BaseSpider):

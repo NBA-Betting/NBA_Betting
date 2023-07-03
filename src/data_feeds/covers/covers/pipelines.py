@@ -1,11 +1,12 @@
 # Used for connection to Postgres Database on AWS RDS.
-import sys
-from datetime import datetime
+import os
 
 import psycopg2
+from dotenv import load_dotenv
 
-sys.path.append("../../../../")
-from passkeys import RDS_ENDPOINT, RDS_PASSWORD
+load_dotenv()
+RDS_PASSWORD = os.environ.get("RDS_PASSWORD")
+RDS_ENDPOINT = os.environ.get("RDS_ENDPOINT")
 
 
 class CoversPostgresPipeline(object):

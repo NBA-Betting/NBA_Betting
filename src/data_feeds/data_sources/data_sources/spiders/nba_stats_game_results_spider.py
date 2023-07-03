@@ -1,19 +1,19 @@
 import json
 import os
 import re
-import sys
 from datetime import datetime, timedelta
-from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.parse import urlencode
 
 import pytz
 import scrapy
-from data_sources.item_loaders import NbaStatsGameResultsItemLoader
-from data_sources.items import NbaStatsGameResultsItem
-from data_sources.spiders.base_spider import BaseSpider
-from scrapy.loader.processors import Join, MapCompose
+from dotenv import load_dotenv
 
-sys.path.append("../../../../")
-from passkeys import API_KEY_ZYTE
+from ..item_loaders import NbaStatsGameResultsItemLoader
+from ..items import NbaStatsGameResultsItem
+from .base_spider import BaseSpider
+
+load_dotenv()
+ZYTE_API_KEY = os.environ.get("ZYTE_API_KEY")
 
 
 class NbaStatsGameResultsSpider(BaseSpider):
@@ -23,22 +23,22 @@ class NbaStatsGameResultsSpider(BaseSpider):
         "ITEM_PIPELINES": {"data_sources.pipelines.NbaStatsGameResultsPipeline": 300},
     }
 
-    # if os.environ.get("ENVIRONMENT") == "EC2":
-    custom_settings.update(
-        {
-            "DOWNLOAD_HANDLERS": {
-                "http": "scrapy_zyte_api.ScrapyZyteAPIDownloadHandler",
-                "https": "scrapy_zyte_api.ScrapyZyteAPIDownloadHandler",
-            },
-            "DOWNLOADER_MIDDLEWARES": {
-                "scrapy_zyte_api.ScrapyZyteAPIDownloaderMiddleware": 1000,
-            },
-            "REQUEST_FINGERPRINTER_CLASS": "scrapy_zyte_api.ScrapyZyteAPIRequestFingerprinter",
-            "ZYTE_API_KEY": API_KEY_ZYTE,
-            "ZYTE_API_TRANSPARENT_MODE": True,
-            "ZYTE_API_ENABLED": True,
-        }
-    )
+    if os.environ.get("ENVIRONMENT") == "EC2":
+        custom_settings.update(
+            {
+                "DOWNLOAD_HANDLERS": {
+                    "http": "scrapy_zyte_api.ScrapyZyteAPIDownloadHandler",
+                    "https": "scrapy_zyte_api.ScrapyZyteAPIDownloadHandler",
+                },
+                "DOWNLOADER_MIDDLEWARES": {
+                    "scrapy_zyte_api.ScrapyZyteAPIDownloaderMiddleware": 1000,
+                },
+                "REQUEST_FINGERPRINTER_CLASS": "scrapy_zyte_api.ScrapyZyteAPIRequestFingerprinter",
+                "ZYTE_API_KEY": ZYTE_API_KEY,
+                "ZYTE_API_TRANSPARENT_MODE": True,
+                "ZYTE_API_ENABLED": True,
+            }
+        )
 
     first_season = 1976
 

@@ -1,11 +1,8 @@
-from datetime import datetime
-
-import scrapy
-from itemloaders.processors import Join, MapCompose, TakeFirst
+from itemloaders.processors import MapCompose, TakeFirst
 from scrapy.loader import ItemLoader
 
 # IMPORT ITEMS HERE
-from src.data_feeds.data_sources.data_sources.items import (
+from .items import (
     FivethirtyeightPlayerItem,
     InpredictableWPAItem,
     Nba2kPlayerItem,

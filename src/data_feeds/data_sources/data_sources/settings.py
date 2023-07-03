@@ -1,8 +1,3 @@
-import sys
-
-sys.path.append("../../../")
-from passkeys import API_KEY_ZYTE
-
 BOT_NAME = "data_sources"
 
 SPIDER_MODULES = ["data_sources.spiders"]

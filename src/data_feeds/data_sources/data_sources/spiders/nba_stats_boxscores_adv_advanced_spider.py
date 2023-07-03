@@ -1,18 +1,19 @@
 import json
 import os
 import re
-import sys
 from datetime import datetime, timedelta
-from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.parse import urlencode
 
 import pytz
 import scrapy
-from data_sources.item_loaders import NbaStatsBoxscoresAdvAdvancedItemLoader
-from data_sources.items import NbaStatsBoxscoresAdvAdvancedItem
-from data_sources.spiders.base_spider import BaseSpider
+from dotenv import load_dotenv
 
-sys.path.append("../../../../")
-from passkeys import API_KEY_ZYTE
+from ..item_loaders import NbaStatsBoxscoresAdvAdvancedItemLoader
+from ..items import NbaStatsBoxscoresAdvAdvancedItem
+from .base_spider import BaseSpider
+
+load_dotenv()
+ZYTE_API_KEY = os.environ.get("ZYTE_API_KEY")
 
 
 class NbaStatsBoxscoresAdvAdvancedSpider(BaseSpider):
@@ -35,7 +36,7 @@ class NbaStatsBoxscoresAdvAdvancedSpider(BaseSpider):
                     "scrapy_zyte_api.ScrapyZyteAPIDownloaderMiddleware": 1000,
                 },
                 "REQUEST_FINGERPRINTER_CLASS": "scrapy_zyte_api.ScrapyZyteAPIRequestFingerprinter",
-                "ZYTE_API_KEY": API_KEY_ZYTE,
+                "ZYTE_API_KEY": ZYTE_API_KEY,
                 "ZYTE_API_TRANSPARENT_MODE": True,
                 "ZYTE_API_ENABLED": True,
             }
@@ -117,6 +118,16 @@ class NbaStatsBoxscoresAdvAdvancedSpider(BaseSpider):
                 f"{season.split('-')[0]}-{season.split('-')[1][-2:]}"
                 for season in self.NBA_IMPORTANT_DATES.keys()
                 if int(season.split("-")[0]) >= first_season_start_year
+            ]
+            seasons = [
+                "2011-12",
+                "2012-13",
+                "2013-14",
+                "2014-15",
+                "2015-16",
+                "2016-17",
+                "2021-22",
+                "2022-23",
             ]
             for season in seasons:
                 params.update({"Season": season})

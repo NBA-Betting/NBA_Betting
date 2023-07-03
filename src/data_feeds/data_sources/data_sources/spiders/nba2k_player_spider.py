@@ -1,12 +1,8 @@
-import sys
-
 import scrapy
-from data_sources.item_loaders import Nba2kPlayerItemLoader
-from data_sources.items import Nba2kPlayerItem
-from data_sources.spiders.base_spider import BaseSpider
 
-sys.path.append("../../../")
-# from passkeys import
+from ..item_loaders import Nba2kPlayerItemLoader
+from ..items import Nba2kPlayerItem
+from .base_spider import BaseSpider
 
 
 class Nba2kPlayerSpider(BaseSpider):
