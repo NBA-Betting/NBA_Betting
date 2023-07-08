@@ -12,15 +12,12 @@ sys.path.append("../../src")
 # IMPORT TABLES HERE
 from database_orm import (
     FivethirtyeightPlayerTable,
-    InpredictableWPATable,
-    Nba2kPlayerTable,
     NbaStatsBoxscoresAdvAdvancedTable,
     NbaStatsBoxscoresAdvMiscTable,
     NbaStatsBoxscoresAdvScoringTable,
     NbaStatsBoxscoresAdvTraditionalTable,
     NbaStatsBoxscoresAdvUsageTable,
     NbaStatsBoxscoresTraditionalTable,
-    NbaStatsGameResultsTable,
     NbaStatsPlayerGeneralAdvancedTable,
     NbaStatsPlayerGeneralDefenseTable,
     NbaStatsPlayerGeneralMiscTable,
@@ -172,18 +169,6 @@ class FivethirtyeightPlayerPipeline(BasePipeline):
 
         # Convert the DataFrame back to a list of dictionaries
         self.nba_data = df.to_dict("records")
-
-
-class InpredictableWPAPipeline(BasePipeline):
-    ITEM_CLASS = InpredictableWPATable
-
-
-# class Nba2kPlayerPipeline(BasePipeline):
-#     ITEM_CLASS = Nba2kPlayerTable
-
-
-class NbaStatsGameResultsPipeline(BasePipeline):
-    ITEM_CLASS = NbaStatsGameResultsTable
 
 
 class NbaStatsPlayerGeneralTraditionalPipeline(BasePipeline):

@@ -1,3 +1,33 @@
+FEATURE_TABLE_INFO = {
+    "ibd_nba_stats_boxscores_traditional": {
+        "primary_key": ["game_date", "player_id"],
+        "date_column": "game_date",
+        "columns_to_use": [
+            "player",
+            "player_id",
+            "team",
+            "match_up",
+            "game_date",
+            "min",
+            "pts",
+            "plus_minus",
+        ],
+    },
+    "ibd_nba_stats_player_general_traditional": {
+        "primary_key": ["to_date", "player_id"],
+        "date_column": "to_date",
+        "columns_to_use": [
+            "to_date",
+            "player_id",
+            "player_name",
+            "min",
+            "pts",
+            "plus_minus",
+        ],
+    },
+}
+
+
 TEAM_FULL_NAME_MAP = {
     "Washington Wizards": "WAS",
     "Brooklyn Nets": "BKN",
@@ -70,45 +100,64 @@ TEAM_SHORT_NAME_MAP = {
     "Wizards": "WAS",
 }
 
+VALID_TEAM_ABBREVIATIONS = [
+    "ATL",
+    "BKN",
+    "BOS",
+    "CHA",
+    "CHI",
+    "CLE",
+    "DAL",
+    "DEN",
+    "DET",
+    "GSW",
+    "HOU",
+    "IND",
+    "LAC",
+    "LAL",
+    "MEM",
+    "MIA",
+    "MIL",
+    "MIN",
+    "NOP",
+    "NYK",
+    "OKC",
+    "ORL",
+    "PHI",
+    "PHX",
+    "POR",
+    "SAC",
+    "SAS",
+    "TOR",
+    "UTA",
+    "WAS",
+]
+
+VALID_TEAM_ABBREVIATION_MAP = {team: team for team in VALID_TEAM_ABBREVIATIONS}
+
+
 TEAM_ABBREVIATION_MAP = {
     "BK": "BKN",
     "BRK": "BKN",
-    "BKN": "BKN",
-    "BOS": "BOS",
-    "MIL": "MIL",
-    "ATL": "ATL",
-    "CHA": "CHA",
     "CHO": "CHA",
-    "CHI": "CHI",
-    "CLE": "CLE",
-    "DAL": "DAL",
-    "DEN": "DEN",
-    "DET": "DET",
     "GS": "GSW",
-    "GSW": "GSW",
-    "HOU": "HOU",
-    "IND": "IND",
-    "LAC": "LAC",
-    "LAL": "LAL",
-    "MEM": "MEM",
-    "MIA": "MIA",
-    "MIN": "MIN",
+    "NOK": "NOP",
     "NO": "NOP",
-    "NOP": "NOP",
     "NY": "NYK",
-    "NYK": "NYK",
-    "OKC": "OKC",
-    "ORL": "ORL",
-    "PHI": "PHI",
+    "SEA": "OKC",
     "PHO": "PHX",
-    "PHX": "PHX",
-    "POR": "POR",
     "SA": "SAS",
-    "SAS": "SAS",
-    "SAC": "SAC",
-    "TOR": "TOR",
-    "UTA": "UTA",
-    "WAS": "WAS",
+    "NOJ": "UTA",
+    "BUF": "LAC",
+    "VAN": "MEM",
+    "NJN": "BKN",
+    "NOH": "NOP",
+    "SAN": "SAS",
+    "SDC": "LAC",
+    "CHH": "CHA",
+    "UTH": "UTA",
+    "KCK": "SAC",
+    "PHL": "PHI",
 }
 
 
@@ -116,6 +165,7 @@ TEAM_MAP = dict(
     TEAM_FULL_NAME_MAP.items()
     | TEAM_SHORT_NAME_MAP.items()
     | TEAM_ABBREVIATION_MAP.items()
+    | VALID_TEAM_ABBREVIATION_MAP.items()
 )
 
 NBA_IMPORTANT_DATES = {

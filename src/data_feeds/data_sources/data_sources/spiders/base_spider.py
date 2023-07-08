@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from scrapy.spiders import Spider
 
 sys.path.append("../../../src")
-from src.config import NBA_IMPORTANT_DATES
+from config import NBA_IMPORTANT_DATES
 
 
 class BaseSpider(Spider):

@@ -69,21 +69,33 @@ class NbaStatsPlayerGeneralTraditionalSpider(BaseSpider):
     def find_season_information(self, date_str):
         date_obj = datetime.strptime(date_str, "%Y-%m-%d")
 
-        for season, dates in self.NBA_IMPORTANT_DATES.items():
+        for _season, dates in self.NBA_IMPORTANT_DATES.items():
             reg_season_start_date = datetime.strptime(
                 dates["reg_season_start_date"], "%Y-%m-%d"
+            )
+            reg_season_end_date = datetime.strptime(
+                dates["reg_season_end_date"], "%Y-%m-%d"
+            )
+            postseason_start_date = datetime.strptime(
+                dates["postseason_start_date"], "%Y-%m-%d"
             )
             postseason_end_date = datetime.strptime(
                 dates["postseason_end_date"], "%Y-%m-%d"
             )
 
-            if reg_season_start_date <= date_obj <= postseason_end_date:
-                year1, year2 = season.split("-")
-                return {
-                    "info": f"{year1}-{year2[-2:]}",
-                    "error": None,
-                }
-        return {"info": None, "error": "Unable to find season information"}
+            if reg_season_start_date <= date_obj <= reg_season_end_date:
+                year1, year2 = _season.split("-")
+                season = f"{year1}-{year2[-2:]}"
+                season_type = "Regular Season"
+                return {"season": season, "season_type": season_type, "error": None}
+
+            elif postseason_start_date <= date_obj <= postseason_end_date:
+                year1, year2 = _season.split("-")
+                season = f"{year1}-{year2[-2:]}"
+                season_type = "Playoffs"
+                return {"season": season, "season_type": season_type, "error": None}
+
+        return {"error": "Unable to find season information"}
 
     def start_requests(self):
         base_url = "https://stats.nba.com/stats/leaguedashplayerstats"
@@ -158,9 +170,9 @@ class NbaStatsPlayerGeneralTraditionalSpider(BaseSpider):
                 )
                 postseason_end_date = datetime.strptime(postseason_end_date, "%Y-%m-%d")
 
-                for season_type in ["Regular Season", "PlayIn", "Playoffs"]:
+                for season_type in ["Regular Season", "Playoffs"]:
                     params.update({"SeasonType": season_type})
-                    if season_type in ["PlayIn", "Playoffs"]:
+                    if season_type == "Playoffs":
                         # loop through each day between postseason start and end dates
                         dt = postseason_start_date
                         while dt <= postseason_end_date:
@@ -197,7 +209,8 @@ class NbaStatsPlayerGeneralTraditionalSpider(BaseSpider):
                 )
                 self.handle_failed_date(yesterday_str, "find_season_information")
             else:
-                season = season_info_result["info"]
+                season = season_info_result["season"]
+                season_type = season_info_result["season_type"]
                 date_param = datetime.strptime(yesterday_str, "%Y-%m-%d").strftime(
                     "%m/%d/%Y"
                 )
@@ -205,33 +218,31 @@ class NbaStatsPlayerGeneralTraditionalSpider(BaseSpider):
                     {
                         "Season": season,
                         "DateTo": date_param,
+                        "SeasonType": season_type,
                     }
                 )
-                for season_type in ["Regular Season", "PlayIn", "Playoffs"]:
-                    params.update({"SeasonType": season_type})
-                    url = base_url + "?" + urlencode(params)
-                    yield scrapy.Request(url, headers=headers, callback=self.parse)
+                url = base_url + "?" + urlencode(params)
+                yield scrapy.Request(url, headers=headers, callback=self.parse)
 
         else:
-            for season_type in ["Regular Season", "PlayIn", "Playoffs"]:
-                params.update({"SeasonType": season_type})
-                for date_str in self.dates:
-                    season_info_result = self.find_season_information(date_str)
-                    if season_info_result["error"]:
-                        print(
-                            f"Error: {season_info_result['error']} for the date {date_str}"
-                        )
-                        self.handle_failed_date(date_str, "find_season_information")
-                        continue
-                    date_param = datetime.strptime(date_str, "%Y-%m-%d").strftime(
-                        "%m/%d/%Y"
+            for date_str in self.dates:
+                season_info_result = self.find_season_information(date_str)
+                if season_info_result["error"]:
+                    print(
+                        f"Error: {season_info_result['error']} for the date {date_str}"
                     )
+                    self.handle_failed_date(date_str, "find_season_information")
+                    continue
 
-                    season = season_info_result["info"]
+                date_param = datetime.strptime(date_str, "%Y-%m-%d").strftime("%m/%d/%Y")
+                season = season_info_result["season"]
+                season_type = season_info_result["season_type"]
 
-                    params.update({"Season": season, "DateTo": date_param})
-                    url = base_url + "?" + urlencode(params)
-                    yield scrapy.Request(url, headers=headers, callback=self.parse)
+                params.update(
+                    {"Season": season, "DateTo": date_param, "SeasonType": season_type}
+                )
+                url = base_url + "?" + urlencode(params)
+                yield scrapy.Request(url, headers=headers, callback=self.parse)
 
     def parse(self, response):
         json_response = json.loads(response.body)

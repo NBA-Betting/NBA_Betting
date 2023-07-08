@@ -1,16 +1,6 @@
 import scrapy
 
-
 # ADD NEW ITEMS HERE
-class NbaStatsGameResultsItem(scrapy.Item):
-    game_id = scrapy.Field()
-    game_date = scrapy.Field()
-    home_team_id = scrapy.Field()
-    away_team_id = scrapy.Field()
-    home_team = scrapy.Field()
-    away_team = scrapy.Field()
-    home_score = scrapy.Field()
-    away_score = scrapy.Field()
 
 
 class NbaStatsPlayerGeneralTraditionalItem(scrapy.Item):
@@ -485,60 +475,6 @@ class NbaStatsBoxscoresAdvUsageItem(scrapy.Item):
     pct_pts = scrapy.Field()
 
 
-class Nba2kPlayerItem(scrapy.Item):
-    access_date = scrapy.Field()
-    player_name = scrapy.Field()
-    bronze_badges = scrapy.Field()
-    silver_badges = scrapy.Field()
-    gold_badges = scrapy.Field()
-    hall_of_fame_badges = scrapy.Field()
-    outside_scoring = scrapy.Field()
-    close_shot = scrapy.Field()
-    mid_range_shot = scrapy.Field()
-    three_point_shot = scrapy.Field()
-    free_throw = scrapy.Field()
-    shot_iq = scrapy.Field()
-    offensive_consistency = scrapy.Field()
-    athleticism = scrapy.Field()
-    speed = scrapy.Field()
-    acceleration = scrapy.Field()
-    strength = scrapy.Field()
-    vertical = scrapy.Field()
-    stamina = scrapy.Field()
-    hustle = scrapy.Field()
-    overall_durability = scrapy.Field()
-    inside_scoring = scrapy.Field()
-    layup = scrapy.Field()
-    standing_dunk = scrapy.Field()
-    driving_dunk = scrapy.Field()
-    post_hook = scrapy.Field()
-    post_fade = scrapy.Field()
-    post_control = scrapy.Field()
-    draw_foul = scrapy.Field()
-    hands = scrapy.Field()
-    playmaking = scrapy.Field()
-    pass_accuracy = scrapy.Field()
-    ball_handle = scrapy.Field()
-    speed_with_ball = scrapy.Field()
-    pass_iq = scrapy.Field()
-    pass_vision = scrapy.Field()
-    defending = scrapy.Field()
-    interior_defense = scrapy.Field()
-    perimeter_defense = scrapy.Field()
-    steal = scrapy.Field()
-    block = scrapy.Field()
-    lateral_quickness = scrapy.Field()
-    help_defense_iq = scrapy.Field()
-    pass_perception = scrapy.Field()
-    defensive_consistency = scrapy.Field()
-    rebounding = scrapy.Field()
-    offensive_rebound = scrapy.Field()
-    defensive_rebound = scrapy.Field()
-    intangibles = scrapy.Field()
-    potential = scrapy.Field()
-    total_attributes = scrapy.Field()
-
-
 class FivethirtyeightPlayerItem(scrapy.Item):
     priority = scrapy.Field()
     to_date = scrapy.Field()
@@ -563,23 +499,3 @@ class FivethirtyeightPlayerItem(scrapy.Item):
     predator_defense = scrapy.Field()
     predator_total = scrapy.Field()
     pace_impact = scrapy.Field()
-
-
-class InpredictableWPAItem(scrapy.Item):
-    rnk = scrapy.Field()
-    player = scrapy.Field()
-    pos = scrapy.Field()
-    gms = scrapy.Field()
-    wpa = scrapy.Field()
-    ewpa = scrapy.Field()
-    clwpa = scrapy.Field()
-    gbwpa = scrapy.Field()
-    sh = scrapy.Field()
-    to = scrapy.Field()
-    ft = scrapy.Field()
-    reb = scrapy.Field()
-    ast = scrapy.Field()
-    stl = scrapy.Field()
-    blk = scrapy.Field()
-    kwpa = scrapy.Field()
-    to_date = scrapy.Field()

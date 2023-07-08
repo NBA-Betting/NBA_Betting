@@ -20,18 +20,26 @@ RDS_PASSWORD = os.environ.get("RDS_PASSWORD")
 Base = declarative_base()
 
 
-# ADD TABLES HERE
-
-
-class NbaStatsGameResultsTable(Base):
-    __tablename__ = "ibd_nba_stats_game_results"
+class FeaturesTable(Base):
+    __tablename__ = "features"
     __table_args__ = (PrimaryKeyConstraint("game_id"),)
     game_id = Column(String)
-    game_date = Column(Date)
-    home_team_id = Column(Integer)
-    away_team_id = Column(Integer)
+
+
+class PredictionDataTable(Base):
+    __tablename__ = "prediction_data"
+    __table_args__ = (PrimaryKeyConstraint("game_id"),)
+    game_id = Column(String)
+
+
+class GameDataTable(Base):
+    __tablename__ = "game_data"
+    __table_args__ = (PrimaryKeyConstraint("game_id"),)
+    game_id = Column(String)
+    game_datetime = Column(Date)
     home_team = Column(String)
     away_team = Column(String)
+    open_line = Column(Float)
     home_score = Column(Integer)
     away_score = Column(Integer)
 
@@ -77,15 +85,6 @@ class NbaStatsPlayerGeneralTraditionalTable(Base):
     nba_fantasy_pts = Column(Float)
     dd2 = Column(Integer)
     td3 = Column(Integer)
-
-    # def __eq__(self, other):
-    #     if isinstance(other, self.__class__):
-    #         return (
-    #             self.player_id == other.player_id
-    #             and self.to_date == other.to_date
-    #             and self.season_type == other.season_type
-    #         )
-    #     return False
 
 
 class NbaStatsPlayerGeneralAdvancedTable(Base):
@@ -558,62 +557,6 @@ class NbaStatsBoxscoresAdvUsageTable(Base):
     pct_pts = Column(Float)
 
 
-class Nba2kPlayerTable(Base):
-    __tablename__ = "ibd_nba2k_player"
-    __table_args__ = (PrimaryKeyConstraint("player_name", "access_date"),)
-    access_date = Column(Date)
-    player_name = Column(String)
-    bronze_badges = Column(Integer)
-    silver_badges = Column(Integer)
-    gold_badges = Column(Integer)
-    hall_of_fame_badges = Column(Integer)
-    outside_scoring = Column(Integer)
-    close_shot = Column(Integer)
-    mid_range_shot = Column(Integer)
-    three_point_shot = Column(Integer)
-    free_throw = Column(Integer)
-    shot_iq = Column(Integer)
-    offensive_consistency = Column(Integer)
-    athleticism = Column(Integer)
-    speed = Column(Integer)
-    acceleration = Column(Integer)
-    strength = Column(Integer)
-    vertical = Column(Integer)
-    stamina = Column(Integer)
-    hustle = Column(Integer)
-    overall_durability = Column(Integer)
-    inside_scoring = Column(Integer)
-    layup = Column(Integer)
-    standing_dunk = Column(Integer)
-    driving_dunk = Column(Integer)
-    post_hook = Column(Integer)
-    post_fade = Column(Integer)
-    post_control = Column(Integer)
-    draw_foul = Column(Integer)
-    hands = Column(Integer)
-    playmaking = Column(Integer)
-    pass_accuracy = Column(Integer)
-    ball_handle = Column(Integer)
-    speed_with_ball = Column(Integer)
-    pass_iq = Column(Integer)
-    pass_vision = Column(Integer)
-    defending = Column(Integer)
-    interior_defense = Column(Integer)
-    perimeter_defense = Column(Integer)
-    steal = Column(Integer)
-    block = Column(Integer)
-    lateral_quickness = Column(Integer)
-    help_defense_iq = Column(Integer)
-    pass_perception = Column(Integer)
-    defensive_consistency = Column(Integer)
-    rebounding = Column(Integer)
-    offensive_rebound = Column(Integer)
-    defensive_rebound = Column(Integer)
-    intangibles = Column(Integer)
-    potential = Column(Integer)
-    total_attributes = Column(Integer)
-
-
 class FivethirtyeightPlayerTable(Base):
     __tablename__ = "ibd_fivethirtyeight_player"
     __table_args__ = (PrimaryKeyConstraint("player_id", "season", "to_date"),)
@@ -639,29 +582,6 @@ class FivethirtyeightPlayerTable(Base):
     predator_defense = Column(Float)
     predator_total = Column(Float)
     pace_impact = Column(Float)
-
-
-class InpredictableWPATable(Base):
-    __tablename__ = "ibd_inpredictable_wpa"
-    __table_args__ = (PrimaryKeyConstraint("to_date", "player", "rnk"),)
-
-    rnk = Column(Integer)
-    player = Column(String)
-    pos = Column(String)
-    gms = Column(Integer)
-    wpa = Column(Float)
-    ewpa = Column(Float)
-    clwpa = Column(Float)
-    gbwpa = Column(Float)
-    sh = Column(Float)
-    to = Column(Float)
-    ft = Column(Float)
-    reb = Column(Float)
-    ast = Column(Float)
-    stl = Column(Float)
-    blk = Column(Float)
-    kwpa = Column(Float)
-    to_date = Column(Date)
 
 
 if __name__ == "__main__":
