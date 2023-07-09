@@ -1,24 +1,23 @@
+import os
 import sys
 
 import pandas as pd
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
-sys.path.append("../../../")
-from passkeys import RDS_ENDPOINT, RDS_PASSWORD
+sys.path.append("../../src")
 
 # IMPORT TABLES HERE
-from src.database_orm import (
+from database_orm import (
     FivethirtyeightPlayerTable,
-    InpredictableWPATable,
-    Nba2kPlayerTable,
     NbaStatsBoxscoresAdvAdvancedTable,
     NbaStatsBoxscoresAdvMiscTable,
     NbaStatsBoxscoresAdvScoringTable,
     NbaStatsBoxscoresAdvTraditionalTable,
     NbaStatsBoxscoresAdvUsageTable,
     NbaStatsBoxscoresTraditionalTable,
-    NbaStatsGameResultsTable,
     NbaStatsPlayerGeneralAdvancedTable,
     NbaStatsPlayerGeneralDefenseTable,
     NbaStatsPlayerGeneralMiscTable,
@@ -27,6 +26,10 @@ from src.database_orm import (
     NbaStatsPlayerGeneralTraditionalTable,
     NbaStatsPlayerGeneralUsageTable,
 )
+
+load_dotenv()
+RDS_ENDPOINT = os.environ.get("RDS_ENDPOINT")
+RDS_PASSWORD = os.environ.get("RDS_PASSWORD")
 
 pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", 200)
@@ -90,28 +93,26 @@ class BasePipeline:
         pass
 
     def save_to_database(self):
-        """
-        This method is responsible for saving the data to the PostgreSQL database
-        using the ITEM_CLASS attribute, which should be set in the subclass.
-
-        Raises:
-            Exception: If there's an error while inserting data into the RDS table.
-        """
-        session = self.Session()
-        try:
+        with self.Session() as session:
             for item in self.nba_data:
                 data = self.ITEM_CLASS(**item)
-                session.add(data)
-            session.commit()
-            print(
-                f"Data successfully saved into nba_betting database. {len(self.nba_data)} records inserted."
-            )
-        except Exception as e:
-            print(f"Error: Unable to insert data into the RDS table. Details: {str(e)}")
-            session.rollback()
-        finally:
-            session.close()
-            self.nba_data = []  # Empty the list after saving the data
+                try:
+                    session.add(data)
+                    session.commit()
+                except IntegrityError:
+                    session.rollback()
+                    print(
+                        f"Error: A record with this primary key already exists. Skipping this item."
+                    )
+                except Exception as e:
+                    session.rollback()
+                    print(
+                        f"Error: Unable to insert data into the RDS table. Details: {str(e)}"
+                    )
+                    self.processing_errors += (
+                        1  # Increment processing errors if any error occurs
+                    )
+        self.nba_data = []  # Empty the list after saving the data
 
     def display_data(self):
         """
@@ -168,18 +169,6 @@ class FivethirtyeightPlayerPipeline(BasePipeline):
 
         # Convert the DataFrame back to a list of dictionaries
         self.nba_data = df.to_dict("records")
-
-
-class InpredictableWPAPipeline(BasePipeline):
-    ITEM_CLASS = InpredictableWPATable
-
-
-# class Nba2kPlayerPipeline(BasePipeline):
-#     ITEM_CLASS = Nba2kPlayerTable
-
-
-class NbaStatsGameResultsPipeline(BasePipeline):
-    ITEM_CLASS = NbaStatsGameResultsTable
 
 
 class NbaStatsPlayerGeneralTraditionalPipeline(BasePipeline):

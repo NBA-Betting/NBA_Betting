@@ -2,11 +2,15 @@ passkeys.py
 .vscode/
 .gitignore
 nba_venv
+.env
+models/
+all_data.csv
 
 # Tensorboard and PyCaret Logs
 tensorboard_logs/
 mlruns/
 0/
+catboost_info/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

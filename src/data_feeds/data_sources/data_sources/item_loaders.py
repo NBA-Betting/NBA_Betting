@@ -1,21 +1,15 @@
-from datetime import datetime
-
-import scrapy
-from itemloaders.processors import Join, MapCompose, TakeFirst
+from itemloaders.processors import MapCompose, TakeFirst
 from scrapy.loader import ItemLoader
 
 # IMPORT ITEMS HERE
-from src.data_feeds.data_sources.data_sources.items import (
+from .items import (
     FivethirtyeightPlayerItem,
-    InpredictableWPAItem,
-    Nba2kPlayerItem,
     NbaStatsBoxscoresAdvAdvancedItem,
     NbaStatsBoxscoresAdvMiscItem,
     NbaStatsBoxscoresAdvScoringItem,
     NbaStatsBoxscoresAdvTraditionalItem,
     NbaStatsBoxscoresAdvUsageItem,
     NbaStatsBoxscoresTraditionalItem,
-    NbaStatsGameResultsItem,
     NbaStatsPlayerGeneralAdvancedItem,
     NbaStatsPlayerGeneralDefenseItem,
     NbaStatsPlayerGeneralMiscItem,
@@ -26,20 +20,6 @@ from src.data_feeds.data_sources.data_sources.items import (
 )
 
 # ADD NEW ITEM LOADERS HERE
-
-
-class NbaStatsGameResultsItemLoader(ItemLoader):
-    default_item_class = NbaStatsGameResultsItem
-    default_output_processor = TakeFirst()
-
-    game_id_in = MapCompose(str.strip)
-    game_date_in = MapCompose(str.strip)
-    home_team_id_in = MapCompose(int)
-    away_team_id_in = MapCompose(int)
-    home_team_in = MapCompose(str.strip)
-    away_team_in = MapCompose(str.strip)
-    home_score_in = MapCompose(int)
-    away_score_in = MapCompose(int)
 
 
 class NbaStatsPlayerGeneralTraditionalItemLoader(ItemLoader):
@@ -553,63 +533,6 @@ class NbaStatsBoxscoresAdvUsageItemLoader(ItemLoader):
     pct_pts_in = MapCompose(float)
 
 
-class Nba2kPlayerItemLoader(ItemLoader):
-    default_item_class = Nba2kPlayerItem
-    default_output_processor = TakeFirst()
-
-    access_date_in = MapCompose(str.strip)
-    player_name_in = MapCompose(str.strip)
-    bronze_badges_in = MapCompose(int)
-    silver_badges_in = MapCompose(int)
-    gold_badges_in = MapCompose(int)
-    hall_of_fame_badges_in = MapCompose(int)
-    outside_scoring_in = MapCompose(int)
-    close_shot_in = MapCompose(int)
-    mid_range_shot_in = MapCompose(int)
-    three_point_shot_in = MapCompose(int)
-    free_throw_in = MapCompose(int)
-    shot_iq_in = MapCompose(int)
-    offensive_consistency_in = MapCompose(int)
-    athleticism_in = MapCompose(int)
-    speed_in = MapCompose(int)
-    acceleration_in = MapCompose(int)
-    strength_in = MapCompose(int)
-    vertical_in = MapCompose(int)
-    stamina_in = MapCompose(int)
-    hustle_in = MapCompose(int)
-    overall_durability_in = MapCompose(int)
-    inside_scoring_in = MapCompose(int)
-    layup_in = MapCompose(int)
-    standing_dunk_in = MapCompose(int)
-    driving_dunk_in = MapCompose(int)
-    post_hook_in = MapCompose(int)
-    post_fade_in = MapCompose(int)
-    post_control_in = MapCompose(int)
-    draw_foul_in = MapCompose(int)
-    hands_in = MapCompose(int)
-    playmaking_in = MapCompose(int)
-    pass_accuracy_in = MapCompose(int)
-    ball_handle_in = MapCompose(int)
-    speed_with_ball_in = MapCompose(int)
-    pass_iq_in = MapCompose(int)
-    pass_vision_in = MapCompose(int)
-    defending_in = MapCompose(int)
-    interior_defense_in = MapCompose(int)
-    perimeter_defense_in = MapCompose(int)
-    steal_in = MapCompose(int)
-    block_in = MapCompose(int)
-    lateral_quickness_in = MapCompose(int)
-    help_defense_iq_in = MapCompose(int)
-    pass_perception_in = MapCompose(int)
-    defensive_consistency_in = MapCompose(int)
-    rebounding_in = MapCompose(int)
-    offensive_rebound_in = MapCompose(int)
-    defensive_rebound_in = MapCompose(int)
-    intangibles_in = MapCompose(int)
-    potential_in = MapCompose(int)
-    total_attributes_in = MapCompose(int)
-
-
 class FivethirtyeightPlayerItemLoader(ItemLoader):
     default_item_class = FivethirtyeightPlayerItem
     default_output_processor = TakeFirst()
@@ -637,26 +560,3 @@ class FivethirtyeightPlayerItemLoader(ItemLoader):
     predator_defense_in = MapCompose(float)
     predator_total_in = MapCompose(float)
     pace_impact_in = MapCompose(float)
-
-
-class InpredictableWPAItemLoader(ItemLoader):
-    default_item_class = InpredictableWPAItem
-    default_output_processor = TakeFirst()
-
-    rnk_in = MapCompose(int)
-    player_in = MapCompose(str.strip)
-    pos_in = MapCompose(str.strip)
-    gms_in = MapCompose(int)
-    wpa_in = MapCompose(float)
-    ewpa_in = MapCompose(float)
-    clwpa_in = MapCompose(float)
-    gbwpa_in = MapCompose(float)
-    sh_in = MapCompose(float)
-    to_in = MapCompose(float)
-    ft_in = MapCompose(float)
-    reb_in = MapCompose(float)
-    ast_in = MapCompose(float)
-    stl_in = MapCompose(float)
-    blk_in = MapCompose(float)
-    kwpa_in = MapCompose(float)
-    to_date_in = MapCompose(str.strip)

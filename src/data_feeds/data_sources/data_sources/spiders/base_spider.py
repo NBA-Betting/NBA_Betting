@@ -1,13 +1,10 @@
 import sys
 from datetime import datetime, timedelta
-from urllib.parse import parse_qs, urlencode, urlparse
 
-import pandas as pd
-import scrapy
 from scrapy.spiders import Spider
-from scrapy.utils.project import get_project_settings
 
-from src.data_feeds.data_sources_config import NBA_IMPORTANT_DATES
+sys.path.append("../../../src")
+from config import NBA_IMPORTANT_DATES
 
 
 class BaseSpider(Spider):

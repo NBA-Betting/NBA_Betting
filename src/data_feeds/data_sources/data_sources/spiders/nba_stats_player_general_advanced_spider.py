@@ -1,18 +1,19 @@
 import json
 import os
 import re
-import sys
 from datetime import datetime, timedelta
-from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.parse import urlencode
 
 import pytz
 import scrapy
-from data_sources.item_loaders import NbaStatsPlayerGeneralAdvancedItemLoader
-from data_sources.items import NbaStatsPlayerGeneralAdvancedItem
-from data_sources.spiders.base_spider import BaseSpider
+from dotenv import load_dotenv
 
-sys.path.append("../../../../")
-from passkeys import API_KEY_ZYTE
+from ..item_loaders import NbaStatsPlayerGeneralAdvancedItemLoader
+from ..items import NbaStatsPlayerGeneralAdvancedItem
+from .base_spider import BaseSpider
+
+load_dotenv()
+ZYTE_API_KEY = os.environ.get("ZYTE_API_KEY")
 
 
 class NbaStatsPlayerGeneralAdvancedSpider(BaseSpider):
@@ -35,13 +36,13 @@ class NbaStatsPlayerGeneralAdvancedSpider(BaseSpider):
                     "scrapy_zyte_api.ScrapyZyteAPIDownloaderMiddleware": 1000,
                 },
                 "REQUEST_FINGERPRINTER_CLASS": "scrapy_zyte_api.ScrapyZyteAPIRequestFingerprinter",
-                "ZYTE_API_KEY": API_KEY_ZYTE,
+                "ZYTE_API_KEY": ZYTE_API_KEY,
                 "ZYTE_API_TRANSPARENT_MODE": True,
                 "ZYTE_API_ENABLED": True,
             }
         )
 
-    first_season = "2022 - 2023"  # This data source goes back to 1946-1947, but the NBA-ABA merger was in 1976
+    first_season = "1996 - 1997"  # This data source goes back to 1946-1947, but the NBA-ABA merger was in 1976
 
     def __init__(self, dates, save_data=False, view_data=True, *args, **kwargs):
         super().__init__(
@@ -133,7 +134,7 @@ class NbaStatsPlayerGeneralAdvancedSpider(BaseSpider):
                 for season in self.NBA_IMPORTANT_DATES.keys()
                 if int(season.split("-")[0]) >= first_season_start_year
             ]
-
+            seasons = ["2013-2014", "2014-2015", "2021-2022"]
             for season in seasons:
                 season_param = f"{season.split('-')[0]}-{season.split('-')[1][-2:]}"
                 params.update({"Season": season_param})
