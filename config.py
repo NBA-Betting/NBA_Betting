@@ -1,27 +1,96 @@
 FEATURE_TABLE_INFO = {
-    "ibd_nba_stats_boxscores_traditional": {
-        "primary_key": ["game_date", "player_id"],
-        "date_column": "game_date",
-        "columns_to_use": [
-            "player",
-            "player_id",
-            "team",
-            "match_up",
-            "game_date",
-            "min",
-            "pts",
-            "plus_minus",
+    "team_fivethirtyeight_games": {
+        "primary_key": ["date", "team1", "team2"],
+        "date_column": "date",
+        "info_columns": ["date", "season", "season_type", "team1", "team2"],
+        "feature_columns": [
+            "elo1_pre",
+            "elo2_pre",
+            "elo_prob1",
+            "elo_prob2",
+            "carm_elo1_pre",
+            "carm_elo2_pre",
+            "carm_elo_prob1",
+            "carm_elo_prob2",
+            "raptor1_pre",
+            "raptor2_pre",
+            "raptor_prob1",
+            "raptor_prob2",
         ],
     },
-    "ibd_nba_stats_player_general_traditional": {
-        "primary_key": ["to_date", "player_id"],
+    "team_nbastats_general_traditional": {
+        "primary_key": ["team_name", "to_date", "games"],
         "date_column": "to_date",
-        "columns_to_use": [
-            "to_date",
-            "player_id",
-            "player_name",
-            "min",
-            "pts",
+        "info_columns": ["team_name", "to_date", "games", "season", "season_type"],
+        "feature_columns": ["gp", "w", "l", "w_pct", "min", "pts", "plus_minus"],
+    },
+    "team_nbastats_general_advanced": {
+        "primary_key": ["team_name", "to_date", "games"],
+        "date_column": "to_date",
+        "info_columns": ["team_name", "to_date", "games", "season", "season_type"],
+        "feature_columns": [
+            "off_rating",
+            "e_off_rating",
+            "def_rating",
+            "e_def_rating",
+            "net_rating",
+            "e_net_rating",
+            "ast_pct",
+            "ast_to",
+            "ast_ratio",
+            "oreb_pct",
+            "dreb_pct",
+            "reb_pct",
+            "tm_tov_pct",
+            "efg_pct",
+            "ts_pct",
+            "pace",
+            "e_pace",
+            "pace_per40",
+            "poss",
+            "pie",
+        ],
+    },
+    "team_nbastats_general_fourfactors": {
+        "primary_key": ["team_name", "to_date", "games"],
+        "date_column": "to_date",
+        "info_columns": ["team_name", "to_date", "games", "season", "season_type"],
+        "feature_columns": [
+            "efg_pct",
+            "fta_rate",
+            "tm_tov_pct",
+            "oreb_pct",
+            "opp_efg_pct",
+            "opp_fta_rate",
+            "opp_tov_pct",
+            "opp_oreb_pct",
+        ],
+    },
+    "team_nbastats_general_opponent": {
+        "primary_key": ["team_name", "to_date", "games"],
+        "date_column": "to_date",
+        "info_columns": ["team_name", "to_date", "games", "season", "season_type"],
+        "feature_columns": [
+            "opp_fgm",
+            "opp_fga",
+            "opp_fg_pct",
+            "opp_fg3m",
+            "opp_fg3a",
+            "opp_fg3_pct",
+            "opp_ftm",
+            "opp_fta",
+            "opp_ft_pct",
+            "opp_oreb",
+            "opp_dreb",
+            "opp_reb",
+            "opp_ast",
+            "opp_tov",
+            "opp_stl",
+            "opp_blk",
+            "opp_blka",
+            "opp_pf",
+            "opp_pfd",
+            "opp_pts",
             "plus_minus",
         ],
     },
@@ -167,6 +236,11 @@ TEAM_MAP = dict(
     | TEAM_ABBREVIATION_MAP.items()
     | VALID_TEAM_ABBREVIATION_MAP.items()
 )
+
+
+def team_name_mapper(team_name):
+    return TEAM_MAP.get(team_name, team_name)
+
 
 NBA_IMPORTANT_DATES = {
     "1976-1977": {
@@ -449,7 +523,7 @@ NBA_IMPORTANT_DATES = {
         "reg_season_start_date": "2022-10-18",
         "reg_season_end_date": "2023-04-09",
         "postseason_start_date": "2023-04-11",
-        "postseason_end_date": "2023-06-18",  # Estimated
+        "postseason_end_date": "2023-06-12",
     },
     "2023-2024": {  # Estimated
         "reg_season_start_date": "2023-10-17",

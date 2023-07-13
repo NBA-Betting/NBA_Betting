@@ -2,6 +2,7 @@ import os
 
 from dotenv import load_dotenv
 from sqlalchemy import (
+    Boolean,
     Column,
     Date,
     Float,
@@ -582,6 +583,198 @@ class FivethirtyeightPlayerTable(Base):
     predator_defense = Column(Float)
     predator_total = Column(Float)
     pace_impact = Column(Float)
+
+
+class NbastatsGeneralTraditionalTable(Base):
+    """
+    Data source provider: nbastats
+    Data source URL: https://www.nba.com/stats/teams/traditional
+    Data source description:
+    """
+
+    __tablename__ = "team_nbastats_general_traditional"
+    __table_args__ = (PrimaryKeyConstraint("team_name", "to_date", "games"),)
+    team_name = Column(String)
+    to_date = Column(Date)
+    season = Column(String)
+    season_type = Column(String)
+    games = Column(String)
+    gp = Column(Integer)
+    w = Column(Integer)
+    l = Column(Integer)
+    w_pct = Column(Float)
+    min = Column(Float)
+    fgm = Column(Float)
+    fga = Column(Float)
+    fg_pct = Column(Float)
+    fg3m = Column(Float)
+    fg3a = Column(Float)
+    fg3_pct = Column(Float)
+    ftm = Column(Float)
+    fta = Column(Float)
+    ft_pct = Column(Float)
+    oreb = Column(Float)
+    dreb = Column(Float)
+    reb = Column(Float)
+    ast = Column(Float)
+    tov = Column(Float)
+    stl = Column(Float)
+    blk = Column(Float)
+    blka = Column(Float)
+    pf = Column(Float)
+    pfd = Column(Float)
+    pts = Column(Float)
+    plus_minus = Column(Float)
+
+
+class NbastatsGeneralAdvancedTable(Base):
+    """
+    Data source provider: nbastats
+    Data source URL: https://www.nba.com/stats/teams/advanced
+    Data source description:
+    """
+
+    __tablename__ = "team_nbastats_general_advanced"
+    __table_args__ = (PrimaryKeyConstraint("team_name", "to_date", "games"),)
+    team_name = Column(String)
+    to_date = Column(Date)
+    season = Column(String)
+    season_type = Column(String)
+    games = Column(String)
+    gp = Column(Integer)
+    w = Column(Integer)
+    l = Column(Integer)
+    w_pct = Column(Float)
+    min = Column(Float)
+    e_off_rating = Column(Float)
+    off_rating = Column(Float)
+    e_def_rating = Column(Float)
+    def_rating = Column(Float)
+    e_net_rating = Column(Float)
+    net_rating = Column(Float)
+    ast_pct = Column(Float)
+    ast_to = Column(Float)
+    ast_ratio = Column(Float)
+    oreb_pct = Column(Float)
+    dreb_pct = Column(Float)
+    reb_pct = Column(Float)
+    tm_tov_pct = Column(Float)
+    efg_pct = Column(Float)
+    ts_pct = Column(Float)
+    e_pace = Column(Float)
+    pace = Column(Float)
+    pace_per40 = Column(Float)
+    poss = Column(Integer)
+    pie = Column(Float)
+
+
+class NbastatsGeneralFourfactorsTable(Base):
+    """
+    Data source provider: nbastats
+    Data source URL: https://www.nba.com/stats/teams/four-factors
+    Data source description:
+    """
+
+    __tablename__ = "team_nbastats_general_fourfactors"
+    __table_args__ = (PrimaryKeyConstraint("team_name", "to_date", "games"),)
+    team_name = Column(String)
+    to_date = Column(Date)
+    season = Column(String)
+    season_type = Column(String)
+    games = Column(String)
+    gp = Column(Integer)
+    w = Column(Integer)
+    l = Column(Integer)
+    w_pct = Column(Float)
+    min = Column(Float)
+    efg_pct = Column(Float)
+    fta_rate = Column(Float)
+    tm_tov_pct = Column(Float)
+    oreb_pct = Column(Float)
+    opp_efg_pct = Column(Float)
+    opp_fta_rate = Column(Float)
+    opp_tov_pct = Column(Float)
+    opp_oreb_pct = Column(Float)
+
+
+class NbastatsGeneralOpponentTable(Base):
+    """
+    Data source provider: nbastats
+    Data source URL: https://www.nba.com/stats/teams/opponent
+    Data source description:
+    """
+
+    __tablename__ = "team_nbastats_general_opponent"
+    __table_args__ = (PrimaryKeyConstraint("team_name", "to_date", "games"),)
+    team_name = Column(String)
+    to_date = Column(Date)
+    season = Column(String)
+    season_type = Column(String)
+    games = Column(String)
+    gp = Column(Integer)
+    w = Column(Integer)
+    l = Column(Integer)
+    w_pct = Column(Float)
+    min = Column(Float)
+    opp_fgm = Column(Float)
+    opp_fga = Column(Float)
+    opp_fg_pct = Column(Float)
+    opp_fg3m = Column(Float)
+    opp_fg3a = Column(Float)
+    opp_fg3_pct = Column(Float)
+    opp_ftm = Column(Float)
+    opp_fta = Column(Float)
+    opp_ft_pct = Column(Float)
+    opp_oreb = Column(Float)
+    opp_dreb = Column(Float)
+    opp_reb = Column(Float)
+    opp_ast = Column(Float)
+    opp_tov = Column(Float)
+    opp_stl = Column(Float)
+    opp_blk = Column(Float)
+    opp_blka = Column(Float)
+    opp_pf = Column(Float)
+    opp_pfd = Column(Float)
+    opp_pts = Column(Float)
+    plus_minus = Column(Float)
+
+
+class FivethirtyeightGamesTable(Base):
+    """
+    Data source provider: fivethirtyeight
+    Data source URL: https://projects.fivethirtyeight.com/nba-model/nba_elo.csv
+    Data source description: CSV file going back to 1947. Also includes game scores.
+    """
+
+    __tablename__ = "team_fivethirtyeight_games"
+    __table_args__ = (PrimaryKeyConstraint("date", "team1", "team2"),)
+    date = Column(Date)
+    season = Column(String)
+    neutral = Column(Boolean)
+    season_type = Column(String)
+    team1 = Column(String)
+    team2 = Column(String)
+    elo1_pre = Column(Float)
+    elo2_pre = Column(Float)
+    elo_prob1 = Column(Float)
+    elo_prob2 = Column(Float)
+    elo1_post = Column(Float)
+    elo2_post = Column(Float)
+    carm_elo1_pre = Column(Float)
+    carm_elo2_pre = Column(Float)
+    carm_elo_prob1 = Column(Float)
+    carm_elo_prob2 = Column(Float)
+    carm_elo1_post = Column(Float)
+    carm_elo2_post = Column(Float)
+    raptor1_pre = Column(Float)
+    raptor2_pre = Column(Float)
+    raptor_prob1 = Column(Float)
+    raptor_prob2 = Column(Float)
+    score1 = Column(Float)
+    score2 = Column(Float)
+    quality = Column(Float)
+    importance = Column(Float)
+    total_rating = Column(Float)
 
 
 if __name__ == "__main__":

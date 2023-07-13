@@ -5,10 +5,12 @@ from datetime import datetime
 import pandas as pd
 import pytz
 from dotenv import load_dotenv
+from feature_creation import FeatureCreationPreMerge
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.engine import reflection
 
-sys.path.append("../")
+here = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.join(here, "../.."))
 import config
 
 load_dotenv()
@@ -32,7 +34,7 @@ class ETLPipeline:
         self.config = config
         self.start_date = start_date
         self.game_data = self.load_game_data()
-        self.features_data = None
+        self.features_data = {}
 
     # DATA LOADING
 
@@ -44,9 +46,9 @@ class ETLPipeline:
         if start_date is None:
             start_date = self.start_date
 
-        query = (
-            f"SELECT {columns} FROM {table_name} WHERE {date_column} >= '{start_date}';"
-        )
+        todays_date = datetime.now(pytz.timezone("America/Denver")).strftime("%Y-%m-%d")
+
+        query = f"SELECT {columns} FROM {table_name} WHERE {date_column} >= '{start_date}' AND {date_column} <= '{todays_date}';"
         with self.database_engine.connect() as connection:
             return pd.read_sql_query(query, connection, parse_dates=[date_column])
 
@@ -73,7 +75,10 @@ class ETLPipeline:
         for table_name in table_names:
             try:
                 date_column = self.config.FEATURE_TABLE_INFO[table_name]["date_column"]
-                columns = self.config.FEATURE_TABLE_INFO[table_name]["columns_to_use"]
+                columns = (
+                    self.config.FEATURE_TABLE_INFO[table_name]["info_columns"]
+                    + self.config.FEATURE_TABLE_INFO[table_name]["feature_columns"]
+                )
                 features_data[table_name] = self.load_table(
                     table_name, date_column, columns
                 )
@@ -106,7 +111,14 @@ class ETLPipeline:
             self.prepare_table(table, table_name)
         print("\n+++ All Tables Prepared")
 
-    # ENSURE GAME ID
+    def feature_creation_pre_merge(self):
+        self.features_data = FeatureCreationPreMerge(
+            self.features_data
+        ).full_feature_creation()
+        print("\n+++ Feature Creation Pre-Merge Complete")
+        print("Updated Tables:")
+        for k, v in self.features_data.items():
+            print(k, v.shape)
 
     def _standardize_teams_in_dataframe(self, df, table_name):
         possible_team_columns = [
@@ -115,6 +127,8 @@ class ETLPipeline:
             "team",
             "opponent",
             "team_name",
+            "team1",
+            "team2",
         ]
         try:
             columns_to_standardize = [
@@ -249,9 +263,11 @@ if __name__ == "__main__":
 
     ETL.load_features_data(
         [
-            "ibd_nba_stats_boxscores_traditional",
-            "ibd_nba_stats_player_general_traditional",
+            "team_fivethirtyeight_games",
+            "team_nbastats_general_traditional",
         ]
     )
 
     ETL.prepare_all_tables()
+
+    ETL.feature_creation_pre_merge()
