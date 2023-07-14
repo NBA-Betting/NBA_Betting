@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 from datetime import datetime
@@ -5,7 +6,7 @@ from datetime import datetime
 import pandas as pd
 import pytz
 from dotenv import load_dotenv
-from feature_creation import FeatureCreationPreMerge
+from feature_creation import FeatureCreationPostMerge, FeatureCreationPreMerge
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.engine import reflection
 
@@ -17,7 +18,7 @@ load_dotenv()
 RDS_ENDPOINT = os.getenv("RDS_ENDPOINT")
 RDS_PASSWORD = os.getenv("RDS_PASSWORD")
 
-pd.set_option("display.max_columns", None)
+pd.set_option("display.max_columns", 200)
 
 
 class ETLPipeline:
@@ -35,6 +36,7 @@ class ETLPipeline:
         self.start_date = start_date
         self.game_data = self.load_game_data()
         self.features_data = {}
+        self.combined_features = None
 
     # DATA LOADING
 
@@ -119,6 +121,160 @@ class ETLPipeline:
         print("Updated Tables:")
         for k, v in self.features_data.items():
             print(k, v.shape)
+
+    def merge_features_data(self):
+        self.combined_features = self._merge_game_to_538_team(
+            self.game_data, self.features_data["team_fivethirtyeight_games"]
+        )
+        # self.combined_features = self._merge_game_to_nbastats_team(
+        #     self.combined_features,
+        #     {
+        #         "team_nbastats_general_traditional": self.features_data[
+        #             "team_nbastats_general_traditional"
+        #         ],
+        #         # "team_nbastats_general_advanced": self.features_data[
+        #         #     "team_nbastats_general_advanced"
+        #         # ],
+        #         # "team_nbastats_general_fourfactors": self.features_data[
+        #         #     "team_nbastats_general_fourfactors"
+        #         # ],
+        #         # "team_nbastats_general_opponent": self.features_data[
+        #         #     "team_nbastats_general_opponent"
+        #         # ],
+        #     },
+        # )
+        print("\n+++ Features Data Merged with Game Data")
+        print("Combined Data Shape:", self.combined_features.shape)
+
+    def feature_creation_post_merge(self):
+        self.combined_features = FeatureCreationPostMerge(
+            self.combined_features
+        ).full_feature_creation()
+        print("\n+++ Feature Creation Post-Merge Complete")
+        print("Updated Combined Features Shape:", self.combined_features.shape)
+
+    def clean_and_save_combined_features(self):
+        self.combined_features, info = self.check_duplicates(
+            self.combined_features, "game_id", filter=False
+        )
+        if info["num_duplicate_keys"] > 0:
+            raise Exception("\n*** Duplicate Game IDs Found Before Saving")
+
+        self.combined_features, info = self.downcast_data_types(
+            self.combined_features, downcast_floats=True
+        )
+        print("\n+++ Data Types Downcasted")
+        print("Total Savings:", info["Savings"])
+
+        self._save_as_jsonb(self.combined_features)
+        print("\n+++ Combined Features Saved to JSONB Table")
+
+    def _save_as_jsonb(self, df):
+        try:
+            df["game_datetime"] = df["game_datetime"].dt.strftime("%Y-%m-%d %H:%M:%S")
+            df = df.fillna("")
+            df_data = df.to_dict(orient="records")
+            df_new = pd.DataFrame(df_data)
+            df_new["data"] = df_new.apply(
+                lambda row: {
+                    key: value for key, value in row.items() if key != "game_id"
+                },
+                axis=1,
+            )
+            df_new["data"] = df_new["data"].apply(json.dumps)
+
+            df_new.to_sql(
+                "temp_table", self.database_engine, if_exists="replace", index=False
+            )
+
+            with self.database_engine.begin() as connection:
+                query = f"""
+                    INSERT INTO all_features_json (game_id, data)
+                    SELECT game_id, data::jsonb FROM temp_table
+                    ON CONFLICT (game_id) 
+                    DO UPDATE
+                    SET data = excluded.data
+                """
+
+                connection.execute(query)
+                drop_query = "DROP TABLE temp_table;"
+                connection.execute(drop_query)
+        except Exception as e:
+            print("\n*** Error Saving Combined Features as JSONB")
+            raise e
+
+    def _merge_game_to_538_team(self, game, five38_team):
+        game["game_date"] = game["game_datetime"].dt.date
+        five38_team["date"] = five38_team["date"].dt.date
+
+        game_538 = game.merge(
+            five38_team,
+            left_on=["game_date", "home_team", "away_team"],
+            right_on=["date", "team1", "team2"],
+            how="left",
+            suffixes=("_game", "_538team"),
+            indicator="_merge_game_538team",
+            validate="1:1",
+        )
+
+        # self.get_merge_statistics(game_538, "_merge_game_538team")
+
+        game_538.drop(
+            columns=["date", "game_date", "team1", "team2", "_merge_game_538team"],
+            inplace=True,
+        )
+        return game_538
+
+    def _merge_game_to_nbastats_team(self, game, nbastats_team_dfs):
+        combo_df = game.copy()
+        combo_df["game_date"] = combo_df["game_datetime"].dt.date.astype("str")
+
+        for name, table in nbastats_team_dfs.items():
+            df = table.copy()
+            df["merge_date"] = (df["to_date"].dt.date - pd.DateOffset(days=1)).astype(
+                "str"
+            )
+
+            for team in ["home", "away"]:
+                for game_set in ["all", "l2w"]:
+                    sub_df = df.loc[df.games == game_set].copy()
+                    sub_df.columns = [
+                        f"{col}_{team}_{game_set}"
+                        if col
+                        not in [
+                            "team_name",
+                            "to_date",
+                            "merge_date",
+                            "season",
+                            "season_type",
+                            "games",
+                        ]
+                        else col
+                        for col in sub_df.columns
+                    ]
+
+                    combo_df = combo_df.merge(
+                        sub_df,
+                        left_on=["game_date", f"{team}_team"],
+                        right_on=["merge_date", "team_name"],
+                        how="left",
+                        suffixes=("", f"_{name}_{team}_{game_set}"),
+                        validate="1:1",
+                    )
+
+                    combo_df.drop(
+                        columns=[
+                            "to_date",
+                            "merge_date",
+                            "team_name",
+                            "games",
+                            f"season_{name}_{team}_{game_set}",
+                            f"season_type_{name}_{team}_{game_set}",
+                        ],
+                        inplace=True,
+                    )
+        combo_df.drop(columns=["game_date"], inplace=True)
+        return combo_df
 
     def _standardize_teams_in_dataframe(self, df, table_name):
         possible_team_columns = [
@@ -256,6 +412,32 @@ class ETLPipeline:
         info["Savings"] = f"{savings} MB ({savings_pct}%)"
         return df, info
 
+    @staticmethod
+    def get_merge_statistics(merged_df, indicator_column="_merge"):
+        # Total number of records in the merged dataframe
+        total_records = len(merged_df)
+
+        # Number of records from df1 only, df2 only, and both
+        records_df1_only = len(merged_df[merged_df[indicator_column] == "left_only"])
+        records_df2_only = len(merged_df[merged_df[indicator_column] == "right_only"])
+        records_both = len(merged_df[merged_df[indicator_column] == "both"])
+
+        # Calculate the percentages
+        percentage_df1_only = records_df1_only / total_records * 100
+        percentage_df2_only = records_df2_only / total_records * 100
+        percentage_both = records_both / total_records * 100
+
+        print(f"Total number of records: {total_records}")
+        print(
+            f"Number of records from df1 only: {records_df1_only} ({percentage_df1_only:.2f}%)"
+        )
+        print(
+            f"Number of records from df2 only: {records_df2_only} ({percentage_df2_only:.2f}%)"
+        )
+        print(
+            f"Number of records present in both df1 and df2: {records_both} ({percentage_both:.2f}%)"
+        )
+
 
 if __name__ == "__main__":
     start_date = "2020-09-01"
@@ -264,10 +446,19 @@ if __name__ == "__main__":
     ETL.load_features_data(
         [
             "team_fivethirtyeight_games",
-            "team_nbastats_general_traditional",
+            # "team_nbastats_general_traditional",
+            # "team_nbastats_general_advanced",
+            # "team_nbastats_general_fourfactors",
+            # "team_nbastats_general_opponent"
         ]
     )
 
     ETL.prepare_all_tables()
 
     ETL.feature_creation_pre_merge()
+
+    ETL.merge_features_data()
+
+    ETL.feature_creation_post_merge()
+
+    ETL.clean_and_save_combined_features()

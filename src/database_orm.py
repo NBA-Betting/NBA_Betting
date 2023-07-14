@@ -11,6 +11,7 @@ from sqlalchemy import (
     String,
     create_engine,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import declarative_base
 
 load_dotenv()
@@ -21,10 +22,18 @@ RDS_PASSWORD = os.environ.get("RDS_PASSWORD")
 Base = declarative_base()
 
 
-class FeaturesTable(Base):
-    __tablename__ = "features"
+class AllFeaturesTable(Base):
+    __tablename__ = "all_features"
     __table_args__ = (PrimaryKeyConstraint("game_id"),)
     game_id = Column(String)
+    # Many More Columns
+
+
+class AllFeaturesJSONTable(Base):
+    __tablename__ = "all_features_json"
+    __table_args__ = (PrimaryKeyConstraint("game_id"),)
+    game_id = Column(String)
+    data = Column(JSONB)
 
 
 class PredictionDataTable(Base):
