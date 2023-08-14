@@ -1,11 +1,13 @@
-import sys
+import os
 from datetime import datetime
 
 import pytz
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 
-sys.path.append("../../")
-from passkeys import RDS_ENDPOINT, RDS_PASSWORD
+load_dotenv()
+RDS_ENDPOINT = os.getenv("RDS_ENDPOINT")
+RDS_PASSWORD = os.getenv("RDS_PASSWORD")
 
 
 class BankAccount:

@@ -5,6 +5,7 @@ from sqlalchemy import (
     Boolean,
     Column,
     Date,
+    DateTime,
     Float,
     Integer,
     PrimaryKeyConstraint,
@@ -42,16 +43,117 @@ class PredictionDataTable(Base):
     game_id = Column(String)
 
 
-class GameDataTable(Base):
-    __tablename__ = "game_data"
+class GamesTable(Base):
+    __tablename__ = "games"
     __table_args__ = (PrimaryKeyConstraint("game_id"),)
+
     game_id = Column(String)
-    game_datetime = Column(Date)
+    game_datetime = Column(DateTime)
     home_team = Column(String)
     away_team = Column(String)
     open_line = Column(Float)
     home_score = Column(Integer)
     away_score = Column(Integer)
+    game_completed = Column(Boolean)
+    odds_last_update = Column(DateTime)
+    scores_last_update = Column(DateTime)
+
+    # Columns for each bookmaker
+    # Barstool Sportsbook
+    barstool_home_line = Column(Float)
+    barstool_home_line_price = Column(Float)
+    barstool_away_line = Column(Float)
+    barstool_away_line_price = Column(Float)
+
+    # BetOnline.ag
+    betonlineag_home_line = Column(Float)
+    betonlineag_home_line_price = Column(Float)
+    betonlineag_away_line = Column(Float)
+    betonlineag_away_line_price = Column(Float)
+
+    # BetMGM
+    betmgm_home_line = Column(Float)
+    betmgm_home_line_price = Column(Float)
+    betmgm_away_line = Column(Float)
+    betmgm_away_line_price = Column(Float)
+
+    # BetRivers
+    betrivers_home_line = Column(Float)
+    betrivers_home_line_price = Column(Float)
+    betrivers_away_line = Column(Float)
+    betrivers_away_line_price = Column(Float)
+
+    # BetUS
+    betus_home_line = Column(Float)
+    betus_home_line_price = Column(Float)
+    betus_away_line = Column(Float)
+    betus_away_line_price = Column(Float)
+
+    # Bovada
+    bovada_home_line = Column(Float)
+    bovada_home_line_price = Column(Float)
+    bovada_away_line = Column(Float)
+    bovada_away_line_price = Column(Float)
+
+    # DraftKings
+    draftkings_home_line = Column(Float)
+    draftkings_home_line_price = Column(Float)
+    draftkings_away_line = Column(Float)
+    draftkings_away_line_price = Column(Float)
+
+    # FanDuel
+    fanduel_home_line = Column(Float)
+    fanduel_home_line_price = Column(Float)
+    fanduel_away_line = Column(Float)
+    fanduel_away_line_price = Column(Float)
+
+    # LowVig.ag
+    lowvig_home_line = Column(Float)
+    lowvig_home_line_price = Column(Float)
+    lowvig_away_line = Column(Float)
+    lowvig_away_line_price = Column(Float)
+
+    # MyBookie.ag
+    mybookieag_home_line = Column(Float)
+    mybookieag_home_line_price = Column(Float)
+    mybookieag_away_line = Column(Float)
+    mybookieag_away_line_price = Column(Float)
+
+    # PointsBet (US)
+    pointsbetus_home_line = Column(Float)
+    pointsbetus_home_line_price = Column(Float)
+    pointsbetus_away_line = Column(Float)
+    pointsbetus_away_line_price = Column(Float)
+
+    # SuperBook
+    superbook_home_line = Column(Float)
+    superbook_home_line_price = Column(Float)
+    superbook_away_line = Column(Float)
+    superbook_away_line_price = Column(Float)
+
+    # TwinSpires
+    twinspires_home_line = Column(Float)
+    twinspires_home_line_price = Column(Float)
+    twinspires_away_line = Column(Float)
+    twinspires_away_line_price = Column(Float)
+
+    # Unibet
+    unibet_us_home_line = Column(Float)
+    unibet_us_home_line_price = Column(Float)
+    unibet_us_away_line = Column(Float)
+    unibet_us_away_line_price = Column(Float)
+
+    # William Hill (Caesars)
+    williamhill_us_home_line = Column(Float)
+    williamhill_us_home_line_price = Column(Float)
+    williamhill_us_away_line = Column(Float)
+    williamhill_us_away_line_price = Column(Float)
+
+    # WynnBET
+    wynnbet_home_line = Column(Float)
+    wynnbet_home_line_price = Column(Float)
+    wynnbet_away_line = Column(Float)
+    wynnbet_away_line_price = Column(Float)
 
 
 class NbaStatsPlayerGeneralTraditionalTable(Base):

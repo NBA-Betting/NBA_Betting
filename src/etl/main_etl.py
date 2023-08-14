@@ -65,7 +65,7 @@ class ETLPipeline:
             "away_score",
         ]
         try:
-            game_data = self.load_table("game_data", "game_datetime", features)
+            game_data = self.load_table("games", "game_datetime", features)
             print("\n+++ Game Data Loaded", game_data.shape)
             return game_data
         except Exception as e:

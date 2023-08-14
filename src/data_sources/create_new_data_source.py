@@ -471,13 +471,12 @@ class {class_name}(BaseSpider):
     custom_settings = BaseSpider.create_pipeline_settings(project_section, pipeline_name)
 
     def __init__(
-        self, dates, save_data=False, view_data=True, use_zyte=False, *args, **kwargs
+        self, dates, save_data=False, view_data=True, *args, **kwargs
     ):
         super().__init__(
             dates,
             save_data=save_data,
             view_data=view_data,
-            use_zyte=use_zyte,
             *args,
             **kwargs
         )
