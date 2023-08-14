@@ -68,7 +68,7 @@ class TeamNbastatsGeneralFourfactorsSpider(BaseSpider):
         }
 
         for date_str in (
-            [datetime.now(pytz.timezone("US/Denver"))]
+            [datetime.now(pytz.timezone("America/Denver"))]
             if self.dates == "daily_update"
             else self.dates
         ):
