@@ -126,23 +126,23 @@ class ETLPipeline:
         self.combined_features = self._merge_game_to_538_team(
             self.game_data, self.features_data["team_fivethirtyeight_games"]
         )
-        # self.combined_features = self._merge_game_to_nbastats_team(
-        #     self.combined_features,
-        #     {
-        #         "team_nbastats_general_traditional": self.features_data[
-        #             "team_nbastats_general_traditional"
-        #         ],
-        #         # "team_nbastats_general_advanced": self.features_data[
-        #         #     "team_nbastats_general_advanced"
-        #         # ],
-        #         # "team_nbastats_general_fourfactors": self.features_data[
-        #         #     "team_nbastats_general_fourfactors"
-        #         # ],
-        #         # "team_nbastats_general_opponent": self.features_data[
-        #         #     "team_nbastats_general_opponent"
-        #         # ],
-        #     },
-        # )
+        self.combined_features = self._merge_game_to_nbastats_team(
+            self.combined_features,
+            {
+                "team_nbastats_general_traditional": self.features_data[
+                    "team_nbastats_general_traditional"
+                ],
+                "team_nbastats_general_advanced": self.features_data[
+                    "team_nbastats_general_advanced"
+                ],
+                "team_nbastats_general_fourfactors": self.features_data[
+                    "team_nbastats_general_fourfactors"
+                ],
+                "team_nbastats_general_opponent": self.features_data[
+                    "team_nbastats_general_opponent"
+                ],
+            },
+        )
         print("\n+++ Features Data Merged with Game Data")
         print("Combined Data Shape:", self.combined_features.shape)
 
@@ -166,29 +166,39 @@ class ETLPipeline:
         print("\n+++ Data Types Downcasted")
         print("Total Savings:", info["Savings"])
 
+        print(self.combined_features.info(verbose=True))
+
         self._save_as_jsonb(self.combined_features)
         print("\n+++ Combined Features Saved to JSONB Table")
 
     def _save_as_jsonb(self, df):
         try:
+            # Convert datetime to string format
             df["game_datetime"] = df["game_datetime"].dt.strftime("%Y-%m-%d %H:%M:%S")
-            df = df.fillna("")
-            df_data = df.to_dict(orient="records")
-            df_new = pd.DataFrame(df_data)
-            df_new["data"] = df_new.apply(
+
+            # Constructing the data column
+            df["data"] = df.apply(
                 lambda row: {
-                    key: value for key, value in row.items() if key != "game_id"
+                    key: (value if pd.notna(value) else None)
+                    for key, value in row.items()
+                    if key != "game_id"
                 },
                 axis=1,
             )
-            df_new["data"] = df_new["data"].apply(json.dumps)
 
-            df_new.to_sql(
+            # Convert the 'data' column directly to JSON string
+            df["data"] = df["data"].apply(json.dumps)
+
+            # Filter to keep only 'game_id' and 'data' columns
+            df = df[["game_id", "data"]]
+
+            # Save to temporary table
+            df.to_sql(
                 "temp_table", self.database_engine, if_exists="replace", index=False
             )
 
             with self.database_engine.begin() as connection:
-                query = f"""
+                query = """
                     INSERT INTO all_features_json (game_id, data)
                     SELECT game_id, data::jsonb FROM temp_table
                     ON CONFLICT (game_id) 
@@ -196,7 +206,11 @@ class ETLPipeline:
                     SET data = excluded.data
                 """
 
-                connection.execute(query)
+                result = connection.execute(query)
+
+                # Optional: Check the number of rows affected
+                # print(f"{result.rowcount} rows affected.")
+
                 drop_query = "DROP TABLE temp_table;"
                 connection.execute(drop_query)
         except Exception as e:
@@ -204,32 +218,42 @@ class ETLPipeline:
             raise e
 
     def _merge_game_to_538_team(self, game, five38_team):
+        # Convert datetime to date for merging
         game["game_date"] = game["game_datetime"].dt.date
         five38_team["date"] = five38_team["date"].dt.date
 
-        game_538 = game.merge(
-            five38_team,
-            left_on=["game_date", "home_team", "away_team"],
-            right_on=["date", "team1", "team2"],
-            how="left",
-            suffixes=("_game", "_538team"),
-            indicator="_merge_game_538team",
-            validate="1:1",
-        )
+        try:
+            game_538 = game.merge(
+                five38_team,
+                left_on=["game_date", "home_team", "away_team"],
+                right_on=["date", "team1", "team2"],
+                how="left",
+                suffixes=("_game", "_538team"),
+                indicator="_merge_game_538team",
+                validate="1:1",
+            )
+        except ValueError as e:
+            raise ValueError(f"Merge failed: {str(e)}")
 
-        # self.get_merge_statistics(game_538, "_merge_game_538team")
+        # Optionally, validate the merge (uncomment if needed)
+        # if game_538["_merge_game_538team"].eq("left_only").any():
+        #     print("Some game records don't have matching 538 team records.")
 
+        # Drop unnecessary columns
         game_538.drop(
             columns=["date", "game_date", "team1", "team2", "_merge_game_538team"],
             inplace=True,
         )
+
         return game_538
 
+    # Performance Warning - Fragmented Dataframe
+    # Low concern on small dataframes
     def _merge_game_to_nbastats_team(self, game, nbastats_team_dfs):
         combo_df = game.copy()
         combo_df["game_date"] = combo_df["game_datetime"].dt.date.astype("str")
 
-        for name, table in nbastats_team_dfs.items():
+        for table_name, table in nbastats_team_dfs.items():
             df = table.copy()
             df["merge_date"] = (df["to_date"].dt.date - pd.DateOffset(days=1)).astype(
                 "str"
@@ -239,7 +263,7 @@ class ETLPipeline:
                 for game_set in ["all", "l2w"]:
                     sub_df = df.loc[df.games == game_set].copy()
                     sub_df.columns = [
-                        f"{col}_{team}_{game_set}"
+                        f"{col}_{team}_{game_set}_{table_name.split('_')[-1]}"
                         if col
                         not in [
                             "team_name",
@@ -258,7 +282,7 @@ class ETLPipeline:
                         left_on=["game_date", f"{team}_team"],
                         right_on=["merge_date", "team_name"],
                         how="left",
-                        suffixes=("", f"_{name}_{team}_{game_set}"),
+                        suffixes=("", f"_{table_name}_{team}_{game_set}"),
                         validate="1:1",
                     )
 
@@ -268,12 +292,14 @@ class ETLPipeline:
                             "merge_date",
                             "team_name",
                             "games",
-                            f"season_{name}_{team}_{game_set}",
-                            f"season_type_{name}_{team}_{game_set}",
+                            f"season_{table_name}_{team}_{game_set}",
+                            f"season_type_{table_name}_{team}_{game_set}",
                         ],
                         inplace=True,
                     )
+        combo_df = combo_df.copy()
         combo_df.drop(columns=["game_date"], inplace=True)
+
         return combo_df
 
     def _standardize_teams_in_dataframe(self, df, table_name):
@@ -440,16 +466,16 @@ class ETLPipeline:
 
 
 if __name__ == "__main__":
-    start_date = "2020-09-01"
+    start_date = "1996-09-01"
     ETL = ETLPipeline(start_date)
 
     ETL.load_features_data(
         [
             "team_fivethirtyeight_games",
-            # "team_nbastats_general_traditional",
-            # "team_nbastats_general_advanced",
-            # "team_nbastats_general_fourfactors",
-            # "team_nbastats_general_opponent"
+            "team_nbastats_general_traditional",
+            "team_nbastats_general_advanced",
+            "team_nbastats_general_fourfactors",
+            "team_nbastats_general_opponent",
         ]
     )
 

@@ -23,13 +23,6 @@ RDS_PASSWORD = os.environ.get("RDS_PASSWORD")
 Base = declarative_base()
 
 
-class AllFeaturesTable(Base):
-    __tablename__ = "all_features"
-    __table_args__ = (PrimaryKeyConstraint("game_id"),)
-    game_id = Column(String)
-    # Many More Columns
-
-
 class AllFeaturesJSONTable(Base):
     __tablename__ = "all_features_json"
     __table_args__ = (PrimaryKeyConstraint("game_id"),)

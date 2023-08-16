@@ -99,6 +99,7 @@ FEATURE_TABLE_INFO = {
 
 TEAM_FULL_NAME_MAP = {
     "Washington Wizards": "WAS",
+    "Washington Bullets": "WAS",
     "Brooklyn Nets": "BKN",
     "Chicago Bulls": "CHI",
     "Miami Heat": "MIA",
@@ -122,6 +123,7 @@ TEAM_FULL_NAME_MAP = {
     "Utah Jazz": "UTA",
     "Los Angeles Lakers": "LAL",
     "Memphis Grizzlies": "MEM",
+    "Vancouver Grizzlies": "MEM",
     "Portland Trail Blazers": "POR",
     "Sacramento Kings": "SAC",
     "Oklahoma City Thunder": "OKC",
@@ -227,6 +229,7 @@ TEAM_ABBREVIATION_MAP = {
     "UTH": "UTA",
     "KCK": "SAC",
     "PHL": "PHI",
+    "WSB": "WAS",
 }
 
 
