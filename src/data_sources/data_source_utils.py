@@ -363,6 +363,9 @@ def find_season_information(date_str):
         elif postseason_start_date <= date_obj <= postseason_end_date:
             season_info["season_type"] = "Playoffs"
             return season_info
+        else:
+            season_info["season_type"] = "Unknown"
+            return season_info
 
     raise ValueError(f"Could not find season information for: {date_str}.")
 

@@ -6,9 +6,10 @@ from datetime import datetime
 import pandas as pd
 import pytz
 from dotenv import load_dotenv
-from feature_creation import FeatureCreationPostMerge, FeatureCreationPreMerge
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.engine import reflection
+
+from .feature_creation import FeatureCreationPostMerge, FeatureCreationPreMerge
 
 here = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(here, "../.."))
@@ -328,7 +329,7 @@ class ETLPipeline:
                 )
                 if info["rows_removed"] > 0:
                     print(
-                        f"***{info['rows_removed']} Rows Removed from {table_name} due to Unknow Team Names: {info['not_found']}"
+                        f"***{info['rows_removed']} Rows Removed from {table_name} due to Unknown Team Names: {info['not_found']}"
                     )
                     # raise Exception("Unknown Team Names")
         except Exception as e:
@@ -354,10 +355,14 @@ class ETLPipeline:
         return df
 
     @staticmethod
-    def standardize_team_names(df, columns, mapping, filter=False):
+    def standardize_team_names(df, columns, mapping, filter=False, print_details=False):
+        # Step 1: Create a copy of the relevant columns
+        original_values = df[columns].copy()
+
+        # Replace team names in the DataFrame with the standardized names from the mapping
         df[columns] = df[columns].replace(mapping)
 
-        info = {"not_found": [], "rows_removed": 0}
+        info = {"not_found": [], "rows_removed": 0, "rows_updated": 0}
 
         # Find team names that are in the DataFrame but not in the mapping
         for column in columns:
@@ -367,6 +372,10 @@ class ETLPipeline:
                     info["not_found"].append(team)
 
         info["not_found"] = list(set(info["not_found"]))
+
+        # Step 2: Compare original values to updated values to find the number of rows updated
+        for column in columns:
+            info["rows_updated"] += (original_values[column] != df[column]).sum()
 
         # Store the initial number of rows
         initial_rows = df.shape[0]
@@ -379,10 +388,19 @@ class ETLPipeline:
             # Calculate the number of rows removed
             info["rows_removed"] = initial_rows - df.shape[0]
 
-        return df, info
+        if print_details:
+            print(f"Columns: {columns}")
+            print(f"Initial Rows: {initial_rows}")
+            print(f"Rows Updated: {info['rows_updated']}")
+            print(f"Rows Removed: {info['rows_removed']}")
+            print(f"Final Rows: {df.shape[0]}")
+
+            return df
+        else:
+            return df, info
 
     @staticmethod
-    def check_duplicates(df, primary_key, filter=False):
+    def check_duplicates(df, primary_key, filter=False, print_details=False):
         # if primary_key is a single string, make it a list
         if isinstance(primary_key, str):
             primary_key = [primary_key]
@@ -409,10 +427,17 @@ class ETLPipeline:
             "num_non_perfect_duplicates": num_non_perfect_duplicates,
         }
 
-        return df, info
+        if print_details:
+            print(f"Primary Key: {primary_key}")
+            print(f"Number of Duplicate Keys: {num_duplicate_keys}")
+            print(f"Number of Perfect Duplicates: {num_perfect_duplicates}")
+            print(f"Number of Non-Perfect Duplicates: {num_non_perfect_duplicates}")
+            return df
+        else:
+            return df, info
 
     @staticmethod
-    def downcast_data_types(df, downcast_floats=True):
+    def downcast_data_types(df, downcast_floats=True, print_details=False):
         info = {}
         mem_used_before = round(df.memory_usage(deep=True).sum() / 1024**2, 2)
         info["Before"] = {
@@ -436,7 +461,14 @@ class ETLPipeline:
         savings = round(mem_used_before - mem_used_after, 2)
         savings_pct = round((savings / mem_used_before) * 100)
         info["Savings"] = f"{savings} MB ({savings_pct}%)"
-        return df, info
+
+        if print_details:
+            print(f"Memory Usage Before (MB): {mem_used_before}")
+            print(f"Memory Usage After (MB): {mem_used_after}")
+            print(f"Savings (MB): {savings} ({savings_pct}%)")
+            return df
+        else:
+            return df, info
 
     @staticmethod
     def get_merge_statistics(merged_df, indicator_column="_merge"):
