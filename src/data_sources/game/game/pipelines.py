@@ -10,10 +10,9 @@ sys.path.append(os.path.join(here, "../.."))
 sys.path.append(os.path.join(here, "../../.."))
 sys.path.append(os.path.join(here, "../../../.."))
 
-from data_source_utils import BasePipeline
-
 from config import team_name_mapper
 from database_orm import GamesTable
+from utils.data_source_utils import BasePipeline
 
 
 class CoversHistoricScoresAndOddsPipeline(BasePipeline):

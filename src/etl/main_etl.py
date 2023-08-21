@@ -6,13 +6,13 @@ from datetime import datetime
 import pandas as pd
 import pytz
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, inspect
-from sqlalchemy.engine import reflection
+from sqlalchemy import create_engine
 
 from .feature_creation import FeatureCreationPostMerge, FeatureCreationPreMerge
 
 here = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(here, "../.."))
+
 import config
 
 load_dotenv()
@@ -498,7 +498,7 @@ class ETLPipeline:
 
 
 if __name__ == "__main__":
-    start_date = "1996-09-01"
+    start_date = "2021-09-01"
     ETL = ETLPipeline(start_date)
 
     ETL.load_features_data(

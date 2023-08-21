@@ -15,9 +15,8 @@ here = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(here, "../.."))
 sys.path.append(os.path.join(here, "../../../../.."))
 
-from data_source_utils import convert_date_format_1, convert_season_to_long
-
 from config import team_name_mapper
+from utils.data_source_utils import convert_date_format_1, convert_season_to_long
 
 
 class NbastatsGeneralTraditionalItemLoader(ItemLoader):

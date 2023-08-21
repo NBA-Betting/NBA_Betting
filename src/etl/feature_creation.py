@@ -4,13 +4,13 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
-from scipy.stats import zscore
 
 here = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(here, "../.."))
 sys.path.append(os.path.join(here, ".."))
-import config
-from data_sources.data_source_utils import find_season_information
+
+from config import FEATURE_TABLE_INFO
+from utils.general_utils import find_season_information
 
 
 class FeatureCreationPreMerge:
@@ -37,25 +37,25 @@ class FeatureCreationPreMerge:
         return df
 
     def _create_features_team_nbastats_general_traditional(self, df):
-        table_info = config.FEATURE_TABLE_INFO["team_nbastats_general_traditional"]
+        table_info = FEATURE_TABLE_INFO["team_nbastats_general_traditional"]
         return self._zscore_and_percentiles(
             df, table_info["feature_columns"], table_info["date_column"]
         )
 
     def _create_features_team_nbastats_general_advanced(self, df):
-        table_info = config.FEATURE_TABLE_INFO["team_nbastats_general_advanced"]
+        table_info = FEATURE_TABLE_INFO["team_nbastats_general_advanced"]
         return self._zscore_and_percentiles(
             df, table_info["feature_columns"], table_info["date_column"]
         )
 
     def _create_features_team_nbastats_general_fourfactors(self, df):
-        table_info = config.FEATURE_TABLE_INFO["team_nbastats_general_fourfactors"]
+        table_info = FEATURE_TABLE_INFO["team_nbastats_general_fourfactors"]
         return self._zscore_and_percentiles(
             df, table_info["feature_columns"], table_info["date_column"]
         )
 
     def _create_features_team_nbastats_general_opponent(self, df):
-        table_info = config.FEATURE_TABLE_INFO["team_nbastats_general_opponent"]
+        table_info = FEATURE_TABLE_INFO["team_nbastats_general_opponent"]
         return self._zscore_and_percentiles(
             df, table_info["feature_columns"], table_info["date_column"]
         )
@@ -316,3 +316,7 @@ class FeatureCreationPostMerge:
         )
 
         return df
+
+
+if __name__ == "__main__":
+    pass

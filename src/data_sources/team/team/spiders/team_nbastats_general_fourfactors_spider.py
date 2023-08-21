@@ -15,7 +15,7 @@ from ..items import NbastatsGeneralFourfactorsItem
 here = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(here, "../../../.."))
 
-from data_source_utils import (
+from utils.data_source_utils import (
     BaseSpider,
     BaseSpiderZyte,
     convert_season_to_short,
