@@ -14,7 +14,7 @@ here = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(here, "../../.."))
 sys.path.append(os.path.join(here, "../.."))
 from config import team_name_mapper
-from database_orm import GamesTable
+from database_orm import GamesTable, LinesTable
 
 load_dotenv()
 ODDS_API_KEY = os.getenv("ODDS_API_KEY")
@@ -169,18 +169,40 @@ class OddsAPI:
         return merged_df
 
     def update_database(self, merged_df):
+        self.update_games_table(merged_df)
+        self.update_lines_table(merged_df)
+
+    def update_games_table(self, merged_df):
         Session = sessionmaker(bind=self.database_engine)
         with Session() as session:
             for index, row in merged_df.iterrows():
+                # Query for existing game
                 game = (
                     session.query(GamesTable)
                     .filter(GamesTable.game_id == row["game_id"])
                     .first()
                 )
 
+                # Columns to be added or updated in GamesTable
+                columns_to_include = [
+                    "game_id",
+                    "game_datetime",
+                    "home_team",
+                    "away_team",
+                    "home_score",
+                    "away_score",
+                    "game_completed",
+                    "scores_last_update",
+                    "odds_last_update",
+                ]
+
                 # If game does not exist, add new record
                 if not game:
-                    new_game = GamesTable(**row.to_dict())
+                    # Create a new game dictionary using only the specified columns
+                    game_data = {
+                        col: row[col] for col in columns_to_include if col in row
+                    }
+                    new_game = GamesTable(**game_data)
                     session.add(new_game)
 
                 # If game exists, update the specified columns
@@ -188,109 +210,124 @@ class OddsAPI:
                     # Always update game_datetime
                     setattr(game, "game_datetime", row["game_datetime"])
 
-                    # If scores_last_updated is not null, update score-related columns
-                    if not pd.isnull(row["scores_last_update"]):
-                        for col in [
-                            "scores_last_update",
-                            "game_completed",
-                            "home_score",
-                            "away_score",
-                        ]:
-                            if col in row and not pd.isnull(row[col]):
-                                setattr(game, col, row[col])
-
-                    # If odds_last_updated is not null, update odds-related columns
+                    # Update odds_last_update if not null
                     if not pd.isnull(row["odds_last_update"]):
                         setattr(game, "odds_last_update", row["odds_last_update"])
-                        odds_columns = [
-                            # Barstool Sportsbook
-                            "barstool_home_line",
-                            "barstool_home_line_price",
-                            "barstool_away_line",
-                            "barstool_away_line_price",
-                            # BetOnline.ag
-                            "betonlineag_home_line",
-                            "betonlineag_home_line_price",
-                            "betonlineag_away_line",
-                            "betonlineag_away_line_price",
-                            # BetMGM
-                            "betmgm_home_line",
-                            "betmgm_home_line_price",
-                            "betmgm_away_line",
-                            "betmgm_away_line_price",
-                            # BetRivers
-                            "betrivers_home_line",
-                            "betrivers_home_line_price",
-                            "betrivers_away_line",
-                            "betrivers_away_line_price",
-                            # BetUS
-                            "betus_home_line",
-                            "betus_home_line_price",
-                            "betus_away_line",
-                            "betus_away_line_price",
-                            # Bovada
-                            "bovada_home_line",
-                            "bovada_home_line_price",
-                            "bovada_away_line",
-                            "bovada_away_line_price",
-                            # DraftKings
-                            "draftkings_home_line",
-                            "draftkings_home_line_price",
-                            "draftkings_away_line",
-                            "draftkings_away_line_price",
-                            # FanDuel
-                            "fanduel_home_line",
-                            "fanduel_home_line_price",
-                            "fanduel_away_line",
-                            "fanduel_away_line_price",
-                            # LowVig.ag
-                            "lowvig_home_line",
-                            "lowvig_home_line_price",
-                            "lowvig_away_line",
-                            "lowvig_away_line_price",
-                            # MyBookie.ag
-                            "mybookieag_home_line",
-                            "mybookieag_home_line_price",
-                            "mybookieag_away_line",
-                            "mybookieag_away_line_price",
-                            # PointsBet (US)
-                            "pointsbetus_home_line",
-                            "pointsbetus_home_line_price",
-                            "pointsbetus_away_line",
-                            "pointsbetus_away_line_price",
-                            # SuperBook
-                            "superbook_home_line",
-                            "superbook_home_line_price",
-                            "superbook_away_line",
-                            "superbook_away_line_price",
-                            # TwinSpires
-                            "twinspires_home_line",
-                            "twinspires_home_line_price",
-                            "twinspires_away_line",
-                            "twinspires_away_line_price",
-                            # Unibet
-                            "unibet_us_home_line",
-                            "unibet_us_home_line_price",
-                            "unibet_us_away_line",
-                            "unibet_us_away_line_price",
-                            # William Hill (Caesars)
-                            "williamhill_us_home_line",
-                            "williamhill_us_home_line_price",
-                            "williamhill_us_away_line",
-                            "williamhill_us_away_line_price",
-                            # WynnBET
-                            "wynnbet_home_line",
-                            "wynnbet_home_line_price",
-                            "wynnbet_away_line",
-                            "wynnbet_away_line_price",
-                        ]
-                        for col in odds_columns:
-                            if col in row and not pd.isnull(row[col]):
-                                setattr(game, col, row[col])
-                            else:
-                                setattr(game, col, None)
 
-                session.commit()
+                    # If scores_last_updated is not null, update score-related columns
+                    for col in [
+                        "scores_last_update",
+                        "game_completed",
+                        "home_score",
+                        "away_score",
+                    ]:
+                        if col in row and not pd.isnull(row[col]):
+                            setattr(game, col, row[col])
+
+            session.commit()
+
+    def update_lines_table(self, merged_df):
+        Session = sessionmaker(bind=self.database_engine)
+        with Session() as session:
+            for index, row in merged_df.iterrows():
+                # If odds_last_updated is not null, add a new record to LinesTable
+                if not pd.isnull(row["odds_last_update"]):
+                    line_data = {
+                        "game_id": row["game_id"],
+                        "line_datetime": row["odds_last_update"],
+                    }
+                    odds_columns = [
+                        # Barstool Sportsbook
+                        "barstool_home_line",
+                        "barstool_home_line_price",
+                        "barstool_away_line",
+                        "barstool_away_line_price",
+                        # BetOnline.ag
+                        "betonlineag_home_line",
+                        "betonlineag_home_line_price",
+                        "betonlineag_away_line",
+                        "betonlineag_away_line_price",
+                        # BetMGM
+                        "betmgm_home_line",
+                        "betmgm_home_line_price",
+                        "betmgm_away_line",
+                        "betmgm_away_line_price",
+                        # BetRivers
+                        "betrivers_home_line",
+                        "betrivers_home_line_price",
+                        "betrivers_away_line",
+                        "betrivers_away_line_price",
+                        # BetUS
+                        "betus_home_line",
+                        "betus_home_line_price",
+                        "betus_away_line",
+                        "betus_away_line_price",
+                        # Bovada
+                        "bovada_home_line",
+                        "bovada_home_line_price",
+                        "bovada_away_line",
+                        "bovada_away_line_price",
+                        # DraftKings
+                        "draftkings_home_line",
+                        "draftkings_home_line_price",
+                        "draftkings_away_line",
+                        "draftkings_away_line_price",
+                        # FanDuel
+                        "fanduel_home_line",
+                        "fanduel_home_line_price",
+                        "fanduel_away_line",
+                        "fanduel_away_line_price",
+                        # LowVig.ag
+                        "lowvig_home_line",
+                        "lowvig_home_line_price",
+                        "lowvig_away_line",
+                        "lowvig_away_line_price",
+                        # MyBookie.ag
+                        "mybookieag_home_line",
+                        "mybookieag_home_line_price",
+                        "mybookieag_away_line",
+                        "mybookieag_away_line_price",
+                        # PointsBet (US)
+                        "pointsbetus_home_line",
+                        "pointsbetus_home_line_price",
+                        "pointsbetus_away_line",
+                        "pointsbetus_away_line_price",
+                        # SuperBook
+                        "superbook_home_line",
+                        "superbook_home_line_price",
+                        "superbook_away_line",
+                        "superbook_away_line_price",
+                        # TwinSpires
+                        "twinspires_home_line",
+                        "twinspires_home_line_price",
+                        "twinspires_away_line",
+                        "twinspires_away_line_price",
+                        # Unibet
+                        "unibet_us_home_line",
+                        "unibet_us_home_line_price",
+                        "unibet_us_away_line",
+                        "unibet_us_away_line_price",
+                        # William Hill (Caesars)
+                        "williamhill_us_home_line",
+                        "williamhill_us_home_line_price",
+                        "williamhill_us_away_line",
+                        "williamhill_us_away_line_price",
+                        # WynnBET
+                        "wynnbet_home_line",
+                        "wynnbet_home_line_price",
+                        "wynnbet_away_line",
+                        "wynnbet_away_line_price",
+                    ]
+                    for col in odds_columns:
+                        if col in row and not pd.isnull(row[col]):
+                            line_data[col] = row[col]
+                        else:
+                            line_data[col] = None
+
+                    new_line = LinesTable(**line_data)
+                    session.add(new_line)
+
+            session.commit()
 
 
 def update_game_data(past_games):
@@ -305,4 +342,4 @@ def update_game_data(past_games):
 
 
 if __name__ == "__main__":
-    update_game_data(past_games=True)
+    pass

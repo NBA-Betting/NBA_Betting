@@ -30,10 +30,29 @@ class AllFeaturesJSONTable(Base):
     data = Column(JSONB)
 
 
-class PredictionDataTable(Base):
-    __tablename__ = "prediction_data"
-    __table_args__ = (PrimaryKeyConstraint("game_id"),)
+class PredictionsTable(Base):
+    __tablename__ = "predictions"
+    __table_args__ = (PrimaryKeyConstraint("game_id", "prediction_datetime"),)
     game_id = Column(String)
+    prediction_datetime = Column(DateTime)
+    open_line_hv = Column(Float)
+    prediction_line_hv = Column(Float)
+    ml_cls_rating_hv = Column(Float)
+    game_rating_hv = Column(Float)
+    prediction_direction = Column(String)
+    directional_game_rating = Column(Float)
+    ml_reg_pred_1 = Column(Float)
+    ml_reg_pred_2 = Column(Float)
+    ml_cls_pred_1 = Column(Float)
+    ml_cls_pred_2 = Column(Float)
+    ml_cls_prob_1 = Column(Float)
+    ml_cls_prob_2 = Column(Float)
+    dl_reg_pred_1 = Column(Float)
+    dl_reg_pred_2 = Column(Float)
+    dl_cls_pred_1 = Column(Float)
+    dl_cls_pred_2 = Column(Float)
+    dl_cls_prob_1 = Column(Float)
+    dl_cls_prob_2 = Column(Float)
 
 
 class GamesTable(Base):
@@ -48,9 +67,16 @@ class GamesTable(Base):
     home_score = Column(Integer)
     away_score = Column(Integer)
     game_completed = Column(Boolean)
-    odds_last_update = Column(DateTime)
     scores_last_update = Column(DateTime)
+    odds_last_update = Column(DateTime)
 
+
+class LinesTable(Base):
+    __tablename__ = "lines"
+    __table_args__ = (PrimaryKeyConstraint("game_id", "line_datetime"),)
+
+    game_id = Column(String)
+    line_datetime = Column(DateTime)
     # Columns for each bookmaker
     # Barstool Sportsbook
     barstool_home_line = Column(Float)

@@ -1,5 +1,5 @@
 import datetime
-import sys
+import os
 
 import dash_bootstrap_components as dbc
 import pandas as pd
@@ -8,14 +8,15 @@ import plotly.graph_objects as go
 import plotly.graph_objs as go
 import pytz
 from dash import Dash, Input, Output, dcc
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 
-sys.path.append("../../../")
-from passkeys import RDS_ENDPOINT, RDS_PASSWORD
+load_dotenv()
+RDS_ENDPOINT = os.getenv("RDS_ENDPOINT")
+RDS_PASSWORD = os.getenv("RDS_PASSWORD")
 
 
 def init_public_dashboard(server):
-
     public_app = Dash(
         __name__,
         server=server,
@@ -463,14 +464,8 @@ def init_public_dashboard(server):
 
     # Loading Data
 
-    username = "postgres"
-    password = RDS_PASSWORD
-    endpoint = RDS_ENDPOINT
-    database = "nba_betting"
-    port = "5432"
-
     engine = create_engine(
-        f"postgresql+psycopg2://{username}:{password}@{endpoint}/{database}"
+        f"postgresql+psycopg2://postgres:{RDS_PASSWORD}@{RDS_ENDPOINT}/nba_betting"
     )
     with engine.connect() as connection:
         df = get_dashboard_data(connection)

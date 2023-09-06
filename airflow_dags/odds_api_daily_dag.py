@@ -1,9 +1,15 @@
 import os
+import sys
 from datetime import timedelta
 
 import pendulum
 from airflow import DAG
-from airflow.operators.bash import BashOperator
+from airflow.operators.python import PythonOperator
+
+here = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.join(here, ".."))
+
+from src.data_sources.game.odds_api import update_game_data
 
 # Define the DAG
 dag = DAG(
@@ -17,17 +23,14 @@ dag = DAG(
         "email_on_retry": True,
     },
     description="A DAG to run the Odds Api odds and scores update daily",
-    schedule="0 16 * * *",  # 10am MT
+    schedule_interval="0 16 * * *",  # 10am MT
     catchup=False,
 )
 
-if os.environ.get("ENVIRONMENT") == "EC2":
-    command = "cd /home/ubuntu/NBA_Betting/src/data_sources/game && python odds_api.py"
-else:
-    command = "cd ~/Documents/NBA_Betting/src/data_sources/game && python odds_api.py"
-# Define the task using the BashOperator
-run_fivethirtyeight_player_spider = BashOperator(
+# Define the task using the PythonOperator
+run_odds_api = PythonOperator(
     task_id="run_odds_api",
-    bash_command=command,
+    python_callable=update_game_data,
+    op_kwargs={"past_games": True},
     dag=dag,
 )

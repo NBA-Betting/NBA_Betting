@@ -40,10 +40,10 @@
             <div class="col-5">
                 <div class="row">
                     <h2 class="col text-center">Current Balance:
-                        {% if current_balance > 0 %}
-                        <span class="text-success">${{current_balance}}</span>
+                        {% if current_balance_rounded > 0 %}
+                        <span class="text-success">${{current_balance_rounded}}</span>
                         {% else %}
-                        <span class="text-danger">${{current_balance}}</span>
+                        <span class="text-danger">${{current_balance_rounded}}</span>
                         {% endif %}
                     </h2>
                 </div>
@@ -120,14 +120,14 @@
         <table class="table table-striped">
             <thead class="table-light">
                 <tr>
-                    <th scope="col" class="cell-center">Game ID</th>
-                    <th scope="col" class="cell-center">Date</th>
+                    <th scope="col" class="cell-center">Game Date/Time</th>
                     <th scope="col" class="cell-center">Home</th>
                     <th scope="col" class="cell-center">Away</th>
-                    <th scope="col" class="cell-center">Home Line</th>
-                    <th scope="col" class="cell-center">Game Score</th>
-                    <th scope="col" class="cell-center">Game Score Direction</th>
-                    <th scope="col" class="cell-center">Game Result</th>
+                    <th scope="col" class="cell-center">Open Line HV</th>
+                    <th scope="col" class="cell-center">Prediction Line HV</th>
+                    <th scope="col" class="cell-center">Game Rating</th>
+                    <th scope="col" class="cell-center">Direction</th>
+                    <th scope="col" class="cell-center">Game Result HV</th>
                     <th scope="col" class="cell-center">Bet Status</th>
                     <th scope="col" class="cell-center"></th>
                 </tr>
@@ -135,23 +135,22 @@
             <tbody>
                 {% for rec in records %}
                 <tr>
-                    <td class="cell-center"><a href="https://www.covers.com{{rec[16]}}" target="_blank">{{rec[0]}}</a>
-                    </td>
-                    <td class="cell-center">{{rec[1]}}</td>
-                    <td class="cell-center">{{rec[2]}}</td>
-                    <td class="cell-right">{{rec[3]}}</td>
-                    <td class="cell-right">{{rec[4]}}</td>
-                    <td class="cell-center">{{rec[5]}}</td>
-                    <td class="cell-center">{{rec[6]}}</td>
-                    <td class="cell-center">{{rec[7]}}</td>
-                    <td class="cell-center">{{rec[8]}}</td>
+                    <td class="cell-center">{{rec['game_datetime']}}</td>
+                    <td class="cell-center">{{rec['home_team']}}</td>
+                    <td class="cell-center">{{rec['away_team']}}</td>
+                    <td class="text-center">{{rec['open_line_hv']}}</td>
+                    <td class="text-center">{{rec['prediction_line_hv']}}</td>
+                    <td class="text-center">{{rec['game_rating']}}</td>
+                    <td class="cell-center">{{rec['prediction_direction']}}</td>
+                    <td class="text-center">{{rec['game_result']}}</td>
+                    <td class="cell-center">{{rec['bet_status']}}</td>
                     {% if current_user.is_authenticated %}
                     <td class="cell-center"><button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                            data-bs-target="#place_bet_modal" data-bs-gameId="{{rec[0]}}"
-                            data-bs-betDatetime="{{rec[15]}}" data-bs-betLocation="{{rec[13]}}"
-                            data-bs-betLine="{{rec[10]}}" data-bs-betAmount="{{rec[9]}}"
-                            data-bs-betDirection="{{rec[11]}}" data-bs-betPrice="{{rec[12]}}"
-                            data-bs-betStatus="{{rec[8]}}" data-bs-betProfitLoss="{{rec[14]}}"
+                            data-bs-target="#place_bet_modal" data-bs-gameId="{{rec['game_id']}}"
+                            data-bs-betDatetime="{{rec['bet_datetime']}}" data-bs-betLocation="{{rec['bet_location']}}"
+                            data-bs-betLine="{{rec['bet_line']}}" data-bs-betAmount="{{rec['bet_amount']}}"
+                            data-bs-betDirection="{{rec['bet_direction']}}" data-bs-betPrice="{{rec['bet_price']}}"
+                            data-bs-betStatus="{{rec['bet_status']}}" data-bs-betProfitLoss="{{rec['bet_profit_loss']}}"
                             data-bs-bankBalance="{{current_balance}}">
                             Bet Details
                         </button></td>
@@ -296,13 +295,7 @@
             </a>
 
             <ul class="nav col-md-4 justify-content-end list-unstyled d-flex">
-                <!-- <li class="ms-3"><a href="mailto:jeffjohannsen7@gmail.com" target="_blank"><img class="bi"
-                            src="static/img/email_icon.svg" alt="Email" width="30" height="30"></a>
-                </li> -->
-                <li class="ms-3"><a href="https://www.linkedin.com/in/jeffjohannsen/" target="_blank"><img class="bi"
-                            src="static/img/linkedin.svg" alt="LinkedIn" width="30" height="30"></a>
-                </li>
-                <li class="ms-3"><a href="https://github.com/jeffjohannsen" target="_blank"><img class="bi"
+                <li class="ms-3"><a href=https://github.com/NBA-Betting/NBA_Betting target="_blank"><img class="bi"
                             src="static/img/github.svg" alt="Github" width="30" height="30"></a>
                 </li>
             </ul>

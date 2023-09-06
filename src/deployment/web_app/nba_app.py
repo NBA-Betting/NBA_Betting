@@ -9,15 +9,18 @@ import matplotlib.dates as mdates
 import matplotlib.style as style
 import pandas as pd
 import pytz
+from dotenv import load_dotenv
 from flask import Response, redirect, render_template, request, url_for
 from flask_login import LoginManager, UserMixin, current_user, login_user, logout_user
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from werkzeug.security import check_password_hash, generate_password_hash
 
-sys.path.append("../../../")
-from passkeys import RDS_ENDPOINT, RDS_PASSWORD, WEB_APP_SECRET_KEY
+load_dotenv()
+RDS_ENDPOINT = os.getenv("RDS_ENDPOINT")
+RDS_PASSWORD = os.getenv("RDS_PASSWORD")
+WEB_APP_SECRET_KEY = os.getenv("WEB_APP_SECRET_KEY")
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -74,13 +77,8 @@ def create_app():
             - datetime.timedelta(days=365)
         ).strftime("%Y-%m-%d %H:%M:%S")
 
-        username = "postgres"
-        password = RDS_PASSWORD
-        endpoint = RDS_ENDPOINT
-        database = "nba_betting"
-
         engine = create_engine(
-            f"postgresql+psycopg2://{username}:{password}@{endpoint}/{database}"
+            f"postgresql+psycopg2://postgres:{RDS_PASSWORD}@{RDS_ENDPOINT}/nba_betting"
         )
 
         with engine.connect() as connection:
@@ -116,11 +114,11 @@ def create_app():
 
             # Yesterday's Win/Loss
             yest_win_loss_query = f"""SELECT COALESCE(SUM(bets.bet_profit_loss), 0)
-                                FROM game_records
-                                FULL OUTER JOIN bets
-                                ON game_records.game_id = bets.game_id
-                                WHERE game_records.date = '{yesterdays_datetime}'
-                                ;"""
+                                    FROM games
+                                    FULL OUTER JOIN bets
+                                    ON games.game_id = bets.game_id
+                                    WHERE DATE(games.game_datetime) = '{yesterdays_datetime}'
+                                    ;"""
             yest_win_loss = connection.execute(yest_win_loss_query).fetchall()[0][0]
 
             # Active Bets
@@ -131,35 +129,45 @@ def create_app():
             money_in_play_query = "SELECT COALESCE(SUM(bet_amount), 0) FROM bets WHERE bet_status IN ('Active', 'active', 'ACTIVE');"
             money_in_play = connection.execute(money_in_play_query).fetchall()[0][0]
 
-            # Game Table
-            games_query = """
-                        SELECT game_records.game_id,
-                            date,
-                            home,
-                            away,
-                            home_line,
-                            game_score,
-                            game_score_direction,
-                            game_result,
-                            bet_status,
-                            bet_amount,
-                            bet_line,
-                            bet_direction,
-                            bet_price,
-                            bet_location,
-                            bet_profit_loss,
-                            bet_datetime,
-                            game_info,
-                            bet_direction_vote
-                            FROM game_records
-                            FULL OUTER JOIN bets
-                            ON game_records.game_id = bets.game_id
-                            ORDER BY game_records.date DESC, game_records.game_score DESC
-                            LIMIT 100"""
-            games = connection.execute(games_query).fetchall()
+            # Game Table with Latest Predictions
+            game_table_query = f"""
+                WITH LatestPredictions AS (
+                    SELECT *,
+                        ROW_NUMBER() OVER (PARTITION BY game_id ORDER BY prediction_datetime DESC) AS rn
+                    FROM predictions
+                )
+                SELECT 
+                    games.game_id,
+                    games.game_datetime,
+                    games.home_team,
+                    games.away_team,
+                    games.open_line,
+                    games.home_score,
+                    games.away_score,
+                    LatestPredictions.prediction_line_hv,
+                    LatestPredictions.directional_game_rating,
+                    LatestPredictions.prediction_direction,
+                    bets.bet_status,
+                    bets.bet_amount,
+                    bets.bet_line,
+                    bets.bet_direction,
+                    bets.bet_price,
+                    bets.bet_location,
+                    bets.bet_profit_loss,
+                    bets.bet_datetime
+                FROM games
+                FULL OUTER JOIN bets ON games.game_id = bets.game_id
+                FULL OUTER JOIN LatestPredictions ON games.game_id = LatestPredictions.game_id
+                WHERE (LatestPredictions.rn = 1 OR LatestPredictions.rn IS NULL)
+                AND games.game_datetime <= '{todays_datetime}'
+                ORDER BY games.game_datetime DESC, LatestPredictions.directional_game_rating DESC
+                LIMIT 100;
+            """
+
+            game_table = connection.execute(game_table_query).fetchall()
 
         # ----- FORMAT DATA -----
-        current_balance = round(current_balance)
+        current_balance_rounded = round(current_balance)
         starting_balance = 1000
         alltime_diff = round(current_balance - starting_balance)
         alltime_pct_diff = round((alltime_diff / starting_balance) * 100, 1)
@@ -197,11 +205,31 @@ def create_app():
         yest_win_loss = round(yest_win_loss)
         money_in_play = round(money_in_play)
 
-        records_df = pd.DataFrame(games)
-        records_df["game_score"] = records_df["game_score"].apply(lambda x: round(x))
-        records_df["game_result"] = records_df["game_result"].apply(
-            lambda x: "-" if pd.isnull(x) else f"{x:.0f}"
+        records_df = pd.DataFrame(game_table)
+        records_df["prediction_line_hv"] = records_df["prediction_line_hv"].apply(
+            lambda x: x if pd.notnull(x) else "-"
         )
+
+        records_df["game_datetime"] = records_df["game_datetime"].apply(
+            lambda x: x.strftime("%Y-%m-%d %H:%M")
+        )
+        records_df["game_rating"] = records_df["directional_game_rating"].apply(
+            lambda x: round(x) if pd.notnull(x) else "-"
+        )
+        records_df["game_result"] = records_df.apply(
+            lambda row: row["home_score"] - row["away_score"]
+            if pd.notnull(row["home_score"]) and pd.notnull(row["away_score"])
+            else None,
+            axis=1,
+        )
+        records_df["game_result"] = records_df["game_result"].apply(
+            lambda x: "-" if pd.isnull(x) else int(x)
+        )
+        records_df["open_line_hv"] = 0 - records_df["open_line"]
+        records_df["prediction_direction"] = records_df["prediction_direction"].apply(
+            lambda x: "-" if pd.isnull(x) else x
+        )
+
         records_df["bet_status"] = records_df["bet_status"].apply(
             lambda x: "-" if pd.isnull(x) else x
         )
@@ -227,12 +255,13 @@ def create_app():
             lambda x: "-" if pd.isnull(x) else x
         )
 
-        output_records = list(records_df.to_records(index=False))
+        output_records = records_df.to_dict("records")
 
         # ----- RETURN DATA -----
         return {
             "records": output_records,
             "current_balance": current_balance,
+            "current_balance_rounded": current_balance_rounded,
             "starting_balance": starting_balance,
             "year_ago_balance": year_ago_balance,
             "month_ago_balance": month_ago_balance,
@@ -276,13 +305,8 @@ def create_app():
 
     @app.route("/", methods=["POST", "GET"])
     def home_table():
-        username = "postgres"
-        password = RDS_PASSWORD
-        endpoint = RDS_ENDPOINT
-        database = "nba_betting"
-
         engine = create_engine(
-            f"postgresql+psycopg2://{username}:{password}@{endpoint}/{database}"
+            f"postgresql+psycopg2://postgres:{RDS_PASSWORD}@{RDS_ENDPOINT}/nba_betting"
         )
         data = nba_data_inbound()
         if request.method == "POST":
@@ -342,10 +366,13 @@ def create_app():
                 "bet_direction": bet_direction,
             }
 
+            print("Upsert Statement:", upsert_stmt)
+            print("Parameters:", params)
+
             with engine.connect() as connection:
-                connection.execute(upsert_stmt, params)
+                connection.execute(text(upsert_stmt), params)
                 connection.execute(
-                    bank_account_stmt,
+                    text(bank_account_stmt),
                     {"bet_datetime": bet_datetime, "new_bank_balance": new_bank_balance},
                 )
 
@@ -377,13 +404,8 @@ def create_app():
         return Response(output.getvalue(), mimetype="image/png")
 
     def create_figure():
-        username = "postgres"
-        password = RDS_PASSWORD
-        endpoint = RDS_ENDPOINT
-        database = "nba_betting"
-
         engine = create_engine(
-            f"postgresql+psycopg2://{username}:{password}@{endpoint}/{database}"
+            f"postgresql+psycopg2://postgres:{RDS_PASSWORD}@{RDS_ENDPOINT}/nba_betting"
         )
         figure_data_query = "SELECT datetime, balance from (SELECT *, row_number() OVER (PARTITION BY date_trunc('day', datetime) ORDER BY datetime DESC) r FROM bank_account) T WHERE T.r=1;"
         with engine.connect() as connection:

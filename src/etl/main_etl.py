@@ -20,6 +20,8 @@ RDS_ENDPOINT = os.getenv("RDS_ENDPOINT")
 RDS_PASSWORD = os.getenv("RDS_PASSWORD")
 
 pd.set_option("display.max_columns", 200)
+pd.set_option("display.max_rows", None)
+pd.set_option("display.width", None)
 
 
 class ETLPipeline:
@@ -167,7 +169,7 @@ class ETLPipeline:
         print("\n+++ Data Types Downcasted")
         print("Total Savings:", info["Savings"])
 
-        print(self.combined_features.info(verbose=True))
+        # print(self.combined_features.info(verbose=True))
 
         self._save_as_jsonb(self.combined_features)
         print("\n+++ Combined Features Saved to JSONB Table")
@@ -498,7 +500,7 @@ class ETLPipeline:
 
 
 if __name__ == "__main__":
-    start_date = "2021-09-01"
+    start_date = "2010-09-01"
     ETL = ETLPipeline(start_date)
 
     ETL.load_features_data(

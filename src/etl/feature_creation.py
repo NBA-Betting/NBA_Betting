@@ -99,14 +99,30 @@ class FeatureCreationPostMerge:
         self.updated_combined_features = self._calculate_team_performance_metrics(
             self.updated_combined_features
         )
-        # self.updated_combined_features = self._encode_home_team(
-        #     self.updated_combined_features
-        # )
-        # self.updated_combined_features = self._encode_away_team(
-        #     self.updated_combined_features
-        # )
+        self.updated_combined_features = self._condense_538_features(
+            self.updated_combined_features
+        )
+        self.updated_combined_features = self._encode_home_team(
+            self.updated_combined_features
+        )
+        self.updated_combined_features = self._encode_away_team(
+            self.updated_combined_features
+        )
 
         return self.updated_combined_features
+
+    def _condense_538_features(self, df):
+        df["538_prob1"] = df.apply(
+            lambda row: row["raptor_prob1"]
+            if pd.notna(row["raptor_prob1"])
+            else (
+                row["carm_elo_prob1"]
+                if pd.notna(row["carm_elo_prob1"])
+                else row["elo_prob1"]
+            ),
+            axis=1,
+        )
+        return df
 
     def _add_day_of_season(self, df):
         def calculate_day_of_season(x):
@@ -213,9 +229,13 @@ class FeatureCreationPostMerge:
         for col in metrics_columns:
             df[col] = np.nan
 
+        # Loop through each season
+        # Metrics reset at the beginning of each season
         for season in df["season"].unique():
             season_df = df[df["season"] == season].copy()
 
+            # Loop through each team
+            # Metrics are calculated for each team
             for team in pd.concat(
                 [season_df["home_team"], season_df["away_team"]]
             ).unique():
@@ -223,9 +243,10 @@ class FeatureCreationPostMerge:
                     season_df["away_team"] == team
                 )
                 team_df = season_df[mask].copy()
+                team_df["team"] = team
 
-                # Determine if the team won the game
-                is_win = (
+                # Calculate if the team won the game
+                team_df["is_win"] = (
                     (team_df["home_team"] == team)
                     & (team_df["home_score"] > team_df["away_score"])
                 ) | (
@@ -234,26 +255,44 @@ class FeatureCreationPostMerge:
                 )
 
                 # Convert win/loss to +1/-1 representation
-                performance = is_win.replace({True: 1, False: -1})
+                team_df["performance"] = team_df["is_win"].replace({True: 1, False: -1})
 
-                # Calculate the results of the last 5 games
-                games_played = performance.expanding().count().shift(1).fillna(0)
-                for idx, games in games_played.items():
-                    window_size = int(min(games, 5))
-                    if window_size == 0:
-                        team_df.at[idx, "last_5_games_result"] = 0
+                # Calculate the results of the last 5 games (excluding current game),
+                # with a value even if there are fewer than 5 previous games.
+                # Fill NaN with 0 for no prior games.
+                team_df["last_5_games_result"] = (
+                    team_df["performance"]
+                    .rolling(window=5, min_periods=1)
+                    .sum()
+                    .shift(1)
+                    .fillna(0)
+                )
+
+                # Initialize an empty list to store the streaks
+                streaks = []
+
+                # Initialize streak for the team
+                current_streak = 0
+
+                # Loop through each game for the team
+                for i, row in team_df.iterrows():
+                    # Append the current streak to the list
+                    streaks.append(current_streak)
+
+                    # Update the streak based on the game outcome
+                    performance = row["performance"]
+                    if current_streak == 0:
+                        current_streak = performance
+                    elif np.sign(current_streak) == np.sign(performance):
+                        current_streak += performance
                     else:
-                        team_df.at[idx, "last_5_games_result"] = performance.iloc[
-                            int(games) - window_size : int(games)
-                        ].sum()
+                        current_streak = performance
 
-                # Calculate winning streaks
-                team_df["streak"] = performance.groupby(
-                    (performance != performance.shift()).cumsum()
-                ).cumsum()
+                # Add the calculated streaks to the DataFrame
+                team_df["streak"] = streaks
 
-                # Calculate win percentage
-                team_df["win_pct"] = performance.expanding().mean()
+                # Calculate win percentage (excluding current game)
+                team_df["win_pct"] = team_df["performance"].expanding().mean().shift(1)
 
                 # Calculate point differential
                 team_df["point_diff"] = np.where(
@@ -262,50 +301,36 @@ class FeatureCreationPostMerge:
                     team_df["away_score"] - team_df["home_score"],
                 )
 
-                # Compute the average point differential over all games
+                # Compute the average point differential over all games (excluding current game)
                 team_df["avg_point_diff"] = (
-                    team_df["point_diff"].expanding().mean().fillna(0)
+                    team_df["point_diff"].expanding().mean().shift(1).fillna(0)
                 )
 
-                # Compute the average point differential over the last 5 games
+                # Compute the average point differential over the last 5 games (excluding current game)
                 team_df["avg_point_diff_last_5"] = (
-                    team_df["point_diff"].rolling(window=5).mean().fillna(0)
+                    team_df["point_diff"].rolling(window=5).mean().shift(1).fillna(0)
                 )
 
                 # Update the main dataframe with the calculated metrics
-                df.loc[mask & (df["home_team"] == team), "home_team_last_5"] = team_df[
-                    "last_5_games_result"
+                update_cols = [
+                    "last_5_games_result",
+                    "streak",
+                    "win_pct",
+                    "avg_point_diff",
+                    "avg_point_diff_last_5",
                 ]
-                df.loc[mask & (df["away_team"] == team), "away_team_last_5"] = team_df[
-                    "last_5_games_result"
-                ]
-                df.loc[mask & (df["home_team"] == team), "home_team_streak"] = team_df[
-                    "streak"
-                ]
-                df.loc[mask & (df["away_team"] == team), "away_team_streak"] = team_df[
-                    "streak"
-                ]
-                df.loc[mask & (df["home_team"] == team), "home_team_win_pct"] = team_df[
-                    "win_pct"
-                ]
-                df.loc[mask & (df["away_team"] == team), "away_team_win_pct"] = team_df[
-                    "win_pct"
-                ]
-                df.loc[
-                    mask & (df["home_team"] == team), "home_team_avg_point_diff"
-                ] = team_df["avg_point_diff"]
-                df.loc[
-                    mask & (df["away_team"] == team), "away_team_avg_point_diff"
-                ] = team_df["avg_point_diff"]
-                df.loc[
-                    mask & (df["home_team"] == team), "home_team_avg_point_diff_last_5"
-                ] = team_df["avg_point_diff_last_5"]
-                df.loc[
-                    mask & (df["away_team"] == team), "away_team_avg_point_diff_last_5"
-                ] = team_df["avg_point_diff_last_5"]
+                for col in update_cols:
+                    df.loc[
+                        mask & (df["home_team"] == team), f"home_team_{col}"
+                    ] = team_df[col]
+                    df.loc[
+                        mask & (df["away_team"] == team), f"away_team_{col}"
+                    ] = team_df[col]
 
         # Compute the "home view" metrics
-        df["last_5_hv"] = df["home_team_last_5"] - df["away_team_last_5"]
+        df["last_5_hv"] = (
+            df["home_team_last_5_games_result"] - df["away_team_last_5_games_result"]
+        )
         df["streak_hv"] = df["home_team_streak"] - df["away_team_streak"]
         df["win_pct_hv"] = df["home_team_win_pct"] - df["away_team_win_pct"]
         df["point_diff_hv"] = (

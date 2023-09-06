@@ -3,6 +3,7 @@ import sys
 from datetime import datetime
 
 import pandas as pd
+import pytz
 from dotenv import load_dotenv
 from scrapy import Spider
 from scrapy.spiders import Spider
@@ -120,7 +121,7 @@ class BaseSpider(Spider):
 
     def _generate_all_dates(self):
         # Get the current year
-        current_year = datetime.now().year
+        current_year = datetime.now(pytz.timezone("America/Denver")).year
 
         # Accumulates all dates from first_season_start_year to current_year
         all_dates = []
