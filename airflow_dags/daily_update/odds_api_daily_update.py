@@ -7,7 +7,7 @@ from airflow import DAG
 from airflow.decorators import task
 
 here = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(here, ".."))
+sys.path.append(os.path.join(here, "../../"))
 
 from src.data_sources.game.odds_api import update_game_data
 
