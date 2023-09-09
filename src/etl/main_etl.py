@@ -169,7 +169,7 @@ class ETLPipeline:
         print("\n+++ Data Types Downcasted")
         print("Total Savings:", info["Savings"])
 
-        # print(self.combined_features.info(verbose=True))
+        print(self.combined_features.info())
 
         self._save_as_jsonb(self.combined_features)
         print("\n+++ Combined Features Saved to JSONB Table")

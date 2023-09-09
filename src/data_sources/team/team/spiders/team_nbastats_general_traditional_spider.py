@@ -15,12 +15,8 @@ from ..items import NbastatsGeneralTraditionalItem
 here = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(here, "../../../.."))
 
-from utils.data_source_utils import (
-    BaseSpider,
-    BaseSpiderZyte,
-    convert_season_to_short,
-    find_season_information,
-)
+from utils.data_source_utils import BaseSpider, BaseSpiderZyte, convert_season_to_short
+from utils.general_utils import find_season_information
 
 load_dotenv()
 ZYTE_API_KEY = os.environ.get("ZYTE_API_KEY")

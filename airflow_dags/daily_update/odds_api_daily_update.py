@@ -7,12 +7,13 @@ from airflow import DAG
 from airflow.decorators import task
 
 here = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(here, "../"))
-from src.bet_management.financials import BankAccount, update_bank_account_balance
+sys.path.append(os.path.join(here, ".."))
+
+from src.data_sources.game.odds_api import update_game_data
 
 # Define the DAG
 dag = DAG(
-    "Daily_Bank_Account_Balance_Update",
+    "Odds_Api_Daily_Update",
     default_args={
         "owner": "Jeff",
         "retries": 1,
@@ -21,17 +22,16 @@ dag = DAG(
         "email_on_failure": True,
         "email_on_retry": True,
     },
-    description="A DAG to update bank account balance daily",
-    schedule="0 6 * * *",  # 12am MT
+    description="A DAG to run the Odds Api odds and scores update daily",
+    schedule_interval="45 15 * * *",  # 9:45am MT
     catchup=False,
 )
 
 
-# Define the task using the TaskFlow API
 @task(dag=dag)
-def update_balance_task():
-    update_bank_account_balance()
+def run_odds_api_daily_update():
+    update_game_data(past_games=True)
 
 
 # Set the task to be executed by the DAG
-update_balance_task()
+run_odds_api_daily_update()

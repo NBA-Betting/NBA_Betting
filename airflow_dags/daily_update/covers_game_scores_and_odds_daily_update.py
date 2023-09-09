@@ -23,9 +23,9 @@ dag = DAG(
 
 
 if os.environ.get("ENVIRONMENT") == "EC2":
-    command = f"cd /home/ubuntu/NBA_Betting/src/data_sources/game && scrapy crawl game_covers_historic_scores_and_odds_spider -a dates=daily_update -a save_data=True"
+    command = f"cd /home/ubuntu/NBA_Betting/src/data_sources/game && scrapy crawl game_covers_historic_scores_and_odds_spider -a dates=daily_update -a save_data=True -a view_data=True"
 else:
-    command = f"cd ~/Documents/NBA_Betting/src/data_sources/game && scrapy crawl game_covers_historic_scores_and_odds_spider -a dates=daily_update -a save_data=True"
+    command = f"cd ~/Documents/NBA_Betting/src/data_sources/game && scrapy crawl game_covers_historic_scores_and_odds_spider -a dates=daily_update -a save_data=True -a view_data=True"
 
 BashOperator(
     task_id=f"run_covers_game_scores_and_odds_spider",

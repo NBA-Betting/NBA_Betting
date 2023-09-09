@@ -105,14 +105,14 @@ def create_app():
         with get_db_connection() as connection:
             # Current Balance
             current_balance_query = (
-                "SELECT balance FROM bank_account ORDER BY datetime DESC LIMIT 1;"
+                "SELECT balance FROM betting_account ORDER BY datetime DESC LIMIT 1;"
             )
             result = connection.execute(current_balance_query).fetchone()
             current_balance = result[0] if result else None
 
             # Year Ago Balance
             year_ago_query = text(
-                "SELECT * FROM bank_account WHERE datetime < :year_ago_datetime ORDER BY datetime DESC LIMIT 1;"
+                "SELECT * FROM betting_account WHERE datetime < :year_ago_datetime ORDER BY datetime DESC LIMIT 1;"
             )
             result = connection.execute(
                 year_ago_query, {"year_ago_datetime": year_ago_datetime}
@@ -121,7 +121,7 @@ def create_app():
 
             # Month Ago Balance
             month_ago_query = text(
-                "SELECT * FROM bank_account WHERE datetime < :month_ago_datetime ORDER BY datetime DESC LIMIT 1;"
+                "SELECT * FROM betting_account WHERE datetime < :month_ago_datetime ORDER BY datetime DESC LIMIT 1;"
             )
             result = connection.execute(
                 month_ago_query, {"month_ago_datetime": month_ago_datetime}
@@ -130,7 +130,7 @@ def create_app():
 
             # Week Ago Balance
             week_ago_query = text(
-                "SELECT * FROM bank_account WHERE datetime < :week_ago_datetime ORDER BY datetime DESC LIMIT 1;"
+                "SELECT * FROM betting_account WHERE datetime < :week_ago_datetime ORDER BY datetime DESC LIMIT 1;"
             )
             result = connection.execute(
                 week_ago_query, {"week_ago_datetime": week_ago_datetime}
@@ -329,10 +329,10 @@ def create_app():
                 if request.form["old_profit_loss"] == "-"
                 else float(request.form["old_profit_loss"].strip("$"))
             )
-            old_bank_balance = float(request.form["bankBalance"])
+            old_account_balance = float(request.form["accountBalance"])
 
             diff_bet_profit_loss = bet_profit_loss - old_profit_loss
-            new_bank_balance = old_bank_balance + diff_bet_profit_loss
+            new_account_balance = old_account_balance + diff_bet_profit_loss
 
             upsert_stmt = """
                 INSERT INTO bets (game_id, bet_datetime, bet_status, bet_amount, bet_price, bet_location, bet_line, bet_profit_loss, bet_direction)
@@ -351,9 +351,9 @@ def create_app():
                 ;
             """
 
-            bank_account_stmt = """
-                INSERT INTO bank_account (datetime, balance)
-                VALUES (:bet_datetime, :new_bank_balance);
+            betting_account_stmt = """
+                INSERT INTO betting_account (datetime, balance)
+                VALUES (:bet_datetime, :new_account_balance);
             """
 
             params = {
@@ -371,8 +371,11 @@ def create_app():
             with get_db_connection() as connection:
                 connection.execute(text(upsert_stmt), params)
                 connection.execute(
-                    text(bank_account_stmt),
-                    {"bet_datetime": bet_datetime, "new_bank_balance": new_bank_balance},
+                    text(betting_account_stmt),
+                    {
+                        "bet_datetime": bet_datetime,
+                        "new_account_balance": new_account_balance,
+                    },
                 )
 
             data = nba_data_inbound()
@@ -393,7 +396,7 @@ def create_app():
     def inject_app():
         return dict(app=app)
 
-    # ----- HOME PAGE PLOT of BANK ACCOUNT BALANCE -----
+    # ----- HOME PAGE PLOT of BETTING ACCOUNT BALANCE -----
 
     @app.route("/home_page_plot.png")
     def plot_png():
@@ -409,7 +412,7 @@ def create_app():
                                         row_number()
                                         OVER (PARTITION BY date_trunc('day', datetime)
                                             ORDER BY datetime DESC) r
-                                        FROM bank_account) T
+                                        FROM betting_account) T
                                 WHERE T.r=1;"""
         with get_db_connection() as connection:
             figure_records = connection.execute(figure_data_query).fetchall()

@@ -80,6 +80,8 @@ def update_all_data_538(engine):
             session.add(game)
         session.commit()
 
+    print(df.info())
+
 
 if __name__ == "__main__":
     try:

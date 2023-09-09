@@ -9,6 +9,7 @@ from scrapy import Spider
 from scrapy.spiders import Spider
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
 here = os.path.dirname(os.path.realpath(__file__))
@@ -244,12 +245,17 @@ class BasePipeline:
 
                 self.total_items += len(rows)
                 self.nba_data = []  # Empty the list after saving the data
+            except IntegrityError as ie:
+                print(f"Integrity Error: Unable to insert data. Details: {str(ie)}")
+                self.errors["saving"]["integrity"].append(ie)
+                sys.exit(1)
+
             except Exception as e:
                 print(
                     f"Error: Unable to insert data into the RDS table. Details: {str(e)}"
                 )
                 self.errors["saving"]["other"].append(e)
-                raise e
+                sys.exit(1)
             finally:
                 integrity_error_pct = round(
                     self.errors["saving"]["integrity_error_count"]

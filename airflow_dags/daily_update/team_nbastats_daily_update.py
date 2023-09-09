@@ -7,7 +7,7 @@ from airflow.operators.bash import BashOperator
 
 # Define the DAG
 dag = DAG(
-    "NBAStats_Team_Daily_Update",
+    "Team_NBAStats_Daily_Update",
     default_args={
         "owner": "Jeff",
         "retries": 1,
@@ -17,7 +17,7 @@ dag = DAG(
         "email_on_retry": True,
     },
     description="A DAG to run the NBA Stats Team Spiders daily",
-    schedule="0 15 * * *",  # 9am MT
+    schedule_interval="30 16 * * *",  # 10:30am MT (4:30 PM UTC)
     catchup=False,
 )
 
@@ -31,9 +31,9 @@ spiders = [
 
 for spider in spiders:
     if os.environ.get("ENVIRONMENT") == "EC2":
-        command = f"cd /home/ubuntu/NBA_Betting/src/data_sources/team && scrapy crawl {spider} -a dates=daily_update -a save_data=True -a view_data=False"
+        command = f"cd /home/ubuntu/NBA_Betting/src/data_sources/team && scrapy crawl {spider} -a dates=daily_update -a save_data=True -a view_data=True"
     else:
-        command = f"cd ~/Documents/NBA_Betting/src/data_sources/team && scrapy crawl {spider} -a dates=daily_update -a save_data=True -a view_data=False"
+        command = f"cd ~/Documents/NBA_Betting/src/data_sources/team && scrapy crawl {spider} -a dates=daily_update -a save_data=True -a view_data=True"
 
     BashOperator(
         task_id=f"run_{spider}",

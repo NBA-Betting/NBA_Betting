@@ -11,6 +11,7 @@ from sqlalchemy import create_engine
 load_dotenv()
 RDS_ENDPOINT = os.getenv("RDS_ENDPOINT")
 RDS_PASSWORD = os.getenv("RDS_PASSWORD")
+NBA_BETTING_BASE_DIR = os.getenv("NBA_BETTING_BASE_DIR")
 
 pd.set_option("display.width", 200)
 pd.set_option("display.max_columns", 100)
@@ -18,11 +19,18 @@ pd.set_option("display.max_columns", 100)
 
 class Predictions:
     TIME_ZONE = "America/Denver"
-    MODEL_FILE_LOCATION = "../../models/"
 
-    def __init__(self, database_engine, line_source="fanduel"):
+    def __init__(
+        self,
+        line_source="fanduel",
+        RDS_ENDPOINT=RDS_ENDPOINT,
+        RDS_PASSWORD=RDS_PASSWORD,
+    ):
         """Initialize Game_Record with a database engine."""
-        self.database_engine = database_engine
+
+        self.database_engine = create_engine(
+            f"postgresql://postgres:{RDS_PASSWORD}@{RDS_ENDPOINT}/nba_betting"
+        )
         self.line_source = line_source
         self.df = None
         self.prediction_df = None
@@ -43,16 +51,16 @@ class Predictions:
                         games.game_datetime,
                         games.home_team,
                         games.away_team,
-                        games.open_line AS spread,
+                        games.open_line AS open_line_copy,
                         features.data,
                         lines.{self.line_source}_home_line
                     FROM games
                     LEFT JOIN all_features_json AS features 
                         ON games.game_id = features.game_id
                     LEFT JOIN (
-                        SELECT game_id, fanduel_home_line
+                        SELECT game_id, {self.line_source}_home_line
                         FROM (
-                            SELECT game_id, fanduel_home_line, 
+                            SELECT game_id, {self.line_source}_home_line, 
                                 ROW_NUMBER() OVER (PARTITION BY game_id ORDER BY line_datetime DESC) AS rn
                             FROM lines
                         ) AS sub
@@ -77,11 +85,9 @@ class Predictions:
         else:
             raise ValueError("Invalid date parameters.")
 
-    def load_models(self, ml_cls_model_1_name=None, ml_reg_model_1_name=None):
+    def load_models(self, ml_cls_model_1_path=None, ml_reg_model_1_path=None):
         """Load machine learning models."""
         try:
-            ml_cls_model_1_path = self.MODEL_FILE_LOCATION + ml_cls_model_1_name
-            ml_reg_model_1_path = self.MODEL_FILE_LOCATION + ml_reg_model_1_name
             self.ml_cls_model_1 = pyc_cls.load_model(ml_cls_model_1_path)
             self.ml_reg_model_1 = pyc_reg.load_model(ml_reg_model_1_path)
         except Exception as e:
@@ -130,8 +136,8 @@ class Predictions:
                 "prediction_datetime": datetime.datetime.now(
                     pytz.timezone(self.TIME_ZONE)
                 ),
-                "open_line_hv": 0 - self.df["spread"],
-                "prediction_line_hv": 0 - self.df["spread"],
+                "open_line_hv": 0 - self.df["open_line_copy"],
+                "prediction_line_hv": 0 - self.df["open_line_copy"],
                 # "prediction_line_hv": 0 - self.df[f"{self.line_source}_home_line"],
                 "ml_reg_pred_1": self.df["ml_reg_pred_1"],
                 "ml_cls_pred_1": self.df["ml_cls_pred_1"],
@@ -205,15 +211,15 @@ class Predictions:
             print(f"An error occurred while saving records: {e}")
 
 
-if __name__ == "__main__":
-    database_engine = create_engine(
-        f"postgresql+psycopg2://postgres:{RDS_PASSWORD}@{RDS_ENDPOINT}/nba_betting"
+def main_predictions(current_date, start_date, end_date):
+    ml_cls_model_path = (
+        NBA_BETTING_BASE_DIR + "/models/AutoML/pycaret_cls_lr_2023_09_06_00_22_00"
     )
-
-    ml_cls_model_name = "AutoML/pycaret_cls_lr_2023_09_06_00_22_00"
-    dl_cls_model_name = None
-    ml_reg_model_name = "AutoML/pycaret_reg_linreg_2023_09_06_00_28_16"
-    dl_reg_model_name = None
+    dl_cls_model_path = None
+    ml_reg_model_path = (
+        NBA_BETTING_BASE_DIR + "/models/AutoML/pycaret_reg_linreg_2023_09_06_00_28_16"
+    )
+    dl_reg_model_path = None
 
     feature_set = [
         "open_line",
@@ -249,13 +255,13 @@ if __name__ == "__main__":
     ]
 
     try:
-        predictions = Predictions(database_engine=database_engine)
+        predictions = Predictions()
         predictions.load_models(
-            ml_cls_model_1_name=ml_cls_model_name,
-            ml_reg_model_1_name=ml_reg_model_name,
+            ml_cls_model_1_path=ml_cls_model_path,
+            ml_reg_model_1_path=ml_reg_model_path,
         )
         predictions.load_data(
-            current_date=False, start_date="2010-09-01", end_date="2023-09-01"
+            current_date=current_date, start_date=start_date, end_date=end_date
         )
         predictions.df = predictions.create_predictions(
             predictions.df, features=feature_set
@@ -272,3 +278,7 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"----- Predictions Update Failed -----")
         raise e
+
+
+if __name__ == "__main__":
+    main_predictions(current_date=False, start_date="2020-09-01", end_date="2023-09-01")
