@@ -451,5 +451,5 @@ private_app = init_private_dashboard(app)
 public_app = init_public_dashboard(app)
 
 if __name__ == "__main__":
-    pass
-    # app.run(debug=True)
+    # pass
+    app.run(debug=True)

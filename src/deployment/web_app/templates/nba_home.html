@@ -107,7 +107,7 @@
 
             <div class="col-7">
                 <h2 class="text-center">Account Balance</h2>
-                <img src='home_page_plot.png' alt="Bank Account Profit Loss" class='img-fluid' />
+                <img src='home_page_plot.png' alt="Betting Account Profit Loss" class='img-fluid' />
             </div>
         </div>
     </div>
@@ -150,7 +150,7 @@
                             data-bs-betLine="{{rec['bet_line']}}" data-bs-betAmount="{{rec['bet_amount']}}"
                             data-bs-betDirection="{{rec['bet_direction']}}" data-bs-betPrice="{{rec['bet_price']}}"
                             data-bs-betStatus="{{rec['bet_status']}}" data-bs-betProfitLoss="{{rec['bet_profit_loss']}}"
-                            data-bs-bankBalance="{{current_balance}}">
+                            data-bs-accountBalance="{{current_balance}}">
                             Bet Details
                         </button></td>
                     {% endif %}
@@ -223,8 +223,8 @@
                                     required>
                             </div>
                             <div class="mb-3">
-                                <input type="hidden" class="form-control" id="form-bankBalance-js" name="bankBalance"
-                                    required>
+                                <input type="hidden" class="form-control" id="form-accountBalance-js"
+                                    name="accountBalance" required>
                             </div>
                             <div class="mb-3">
                                 <label for="bet_status" class="form-label">Bet Status</label>
