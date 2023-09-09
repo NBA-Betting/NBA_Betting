@@ -1,14 +1,16 @@
-import sys
+import os
 from datetime import datetime
 
 import pytz
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 
-sys.path.append("../../")
-from passkeys import RDS_ENDPOINT, RDS_PASSWORD
+load_dotenv()
+RDS_ENDPOINT = os.getenv("RDS_ENDPOINT")
+RDS_PASSWORD = os.getenv("RDS_PASSWORD")
 
 
-class BankAccount:
+class BettingAccount:
     def __init__(self, connection):
         self.connection = connection
         self.balance = self.load_balance()
@@ -33,8 +35,8 @@ class BankAccount:
         self.save_balance()
 
     def load_balance(self):
-        stmt = """SELECT balance FROM bank_account
-                  WHERE datetime = (SELECT MAX(datetime) FROM bank_account)
+        stmt = """SELECT balance FROM betting_account
+                  WHERE datetime = (SELECT MAX(datetime) FROM betting_account)
                ;"""
 
         return self.connection.execute(stmt).fetchone()[0]
@@ -43,11 +45,11 @@ class BankAccount:
         current_datetime = datetime.now(pytz.timezone("America/Denver")).strftime(
             "%Y-%m-%d %H:%M:%S"
         )
-        stmt = "INSERT INTO bank_account (datetime, balance) VALUES (%s, %s);"
+        stmt = "INSERT INTO betting_account (datetime, balance) VALUES (%s, %s);"
         self.connection.execute(stmt, (current_datetime, float(self.balance)))
 
 
-def update_bank_account_balance():
+def update_betting_account_balance():
     username = "postgres"
     password = RDS_PASSWORD
     endpoint = RDS_ENDPOINT
@@ -59,10 +61,10 @@ def update_bank_account_balance():
     )
 
     with engine.connect() as connection:
-        bank = BankAccount(connection)
-        bank.save_balance()
+        betting_account = BettingAccount(connection)
+        betting_account.save_balance()
 
 
 if __name__ == "__main__":
     pass
-    # update_bank_account_balance()
+    # update_betting_account_balance()

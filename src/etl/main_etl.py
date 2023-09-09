@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 from datetime import datetime
@@ -5,17 +6,22 @@ from datetime import datetime
 import pandas as pd
 import pytz
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, inspect
-from sqlalchemy.engine import reflection
+from sqlalchemy import create_engine
 
-sys.path.append("../")
+from .feature_creation import FeatureCreationPostMerge, FeatureCreationPreMerge
+
+here = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.join(here, "../.."))
+
 import config
 
 load_dotenv()
 RDS_ENDPOINT = os.getenv("RDS_ENDPOINT")
 RDS_PASSWORD = os.getenv("RDS_PASSWORD")
 
-pd.set_option("display.max_columns", None)
+pd.set_option("display.max_columns", 200)
+pd.set_option("display.max_rows", None)
+pd.set_option("display.width", None)
 
 
 class ETLPipeline:
@@ -32,7 +38,8 @@ class ETLPipeline:
         self.config = config
         self.start_date = start_date
         self.game_data = self.load_game_data()
-        self.features_data = None
+        self.features_data = {}
+        self.combined_features = None
 
     # DATA LOADING
 
@@ -44,9 +51,9 @@ class ETLPipeline:
         if start_date is None:
             start_date = self.start_date
 
-        query = (
-            f"SELECT {columns} FROM {table_name} WHERE {date_column} >= '{start_date}';"
-        )
+        todays_date = datetime.now(pytz.timezone("America/Denver")).strftime("%Y-%m-%d")
+
+        query = f"SELECT {columns} FROM {table_name} WHERE {date_column} >= '{start_date}' AND {date_column} <= '{todays_date}';"
         with self.database_engine.connect() as connection:
             return pd.read_sql_query(query, connection, parse_dates=[date_column])
 
@@ -61,7 +68,7 @@ class ETLPipeline:
             "away_score",
         ]
         try:
-            game_data = self.load_table("game_data", "game_datetime", features)
+            game_data = self.load_table("games", "game_datetime", features)
             print("\n+++ Game Data Loaded", game_data.shape)
             return game_data
         except Exception as e:
@@ -73,7 +80,10 @@ class ETLPipeline:
         for table_name in table_names:
             try:
                 date_column = self.config.FEATURE_TABLE_INFO[table_name]["date_column"]
-                columns = self.config.FEATURE_TABLE_INFO[table_name]["columns_to_use"]
+                columns = (
+                    self.config.FEATURE_TABLE_INFO[table_name]["info_columns"]
+                    + self.config.FEATURE_TABLE_INFO[table_name]["feature_columns"]
+                )
                 features_data[table_name] = self.load_table(
                     table_name, date_column, columns
                 )
@@ -106,7 +116,194 @@ class ETLPipeline:
             self.prepare_table(table, table_name)
         print("\n+++ All Tables Prepared")
 
-    # ENSURE GAME ID
+    def feature_creation_pre_merge(self):
+        self.features_data = FeatureCreationPreMerge(
+            self.features_data
+        ).full_feature_creation()
+        print("\n+++ Feature Creation Pre-Merge Complete")
+        print("Updated Tables:")
+        for k, v in self.features_data.items():
+            print(k, v.shape)
+
+    def merge_features_data(self):
+        self.combined_features = self._merge_game_to_538_team(
+            self.game_data, self.features_data["team_fivethirtyeight_games"]
+        )
+        self.combined_features = self._merge_game_to_nbastats_team(
+            self.combined_features,
+            {
+                "team_nbastats_general_traditional": self.features_data[
+                    "team_nbastats_general_traditional"
+                ],
+                "team_nbastats_general_advanced": self.features_data[
+                    "team_nbastats_general_advanced"
+                ],
+                "team_nbastats_general_fourfactors": self.features_data[
+                    "team_nbastats_general_fourfactors"
+                ],
+                "team_nbastats_general_opponent": self.features_data[
+                    "team_nbastats_general_opponent"
+                ],
+            },
+        )
+        print("\n+++ Features Data Merged with Game Data")
+        print("Combined Data Shape:", self.combined_features.shape)
+
+    def feature_creation_post_merge(self):
+        self.combined_features = FeatureCreationPostMerge(
+            self.combined_features
+        ).full_feature_creation()
+        print("\n+++ Feature Creation Post-Merge Complete")
+        print("Updated Combined Features Shape:", self.combined_features.shape)
+
+    def clean_and_save_combined_features(self):
+        self.combined_features, info = self.check_duplicates(
+            self.combined_features, "game_id", filter=False
+        )
+        if info["num_duplicate_keys"] > 0:
+            raise Exception("\n*** Duplicate Game IDs Found Before Saving")
+
+        self.combined_features, info = self.downcast_data_types(
+            self.combined_features, downcast_floats=True
+        )
+        print("\n+++ Data Types Downcasted")
+        print("Total Savings:", info["Savings"])
+
+        print(self.combined_features.info())
+
+        self._save_as_jsonb(self.combined_features)
+        print("\n+++ Combined Features Saved to JSONB Table")
+
+    def _save_as_jsonb(self, df):
+        try:
+            # Convert datetime to string format
+            df["game_datetime"] = df["game_datetime"].dt.strftime("%Y-%m-%d %H:%M:%S")
+
+            # Constructing the data column
+            df["data"] = df.apply(
+                lambda row: {
+                    key: (value if pd.notna(value) else None)
+                    for key, value in row.items()
+                    if key != "game_id"
+                },
+                axis=1,
+            )
+
+            # Convert the 'data' column directly to JSON string
+            df["data"] = df["data"].apply(json.dumps)
+
+            # Filter to keep only 'game_id' and 'data' columns
+            df = df[["game_id", "data"]]
+
+            # Save to temporary table
+            df.to_sql(
+                "temp_table", self.database_engine, if_exists="replace", index=False
+            )
+
+            with self.database_engine.begin() as connection:
+                query = """
+                    INSERT INTO all_features_json (game_id, data)
+                    SELECT game_id, data::jsonb FROM temp_table
+                    ON CONFLICT (game_id) 
+                    DO UPDATE
+                    SET data = excluded.data
+                """
+
+                result = connection.execute(query)
+
+                # Optional: Check the number of rows affected
+                # print(f"{result.rowcount} rows affected.")
+
+                drop_query = "DROP TABLE temp_table;"
+                connection.execute(drop_query)
+        except Exception as e:
+            print("\n*** Error Saving Combined Features as JSONB")
+            raise e
+
+    def _merge_game_to_538_team(self, game, five38_team):
+        # Convert datetime to date for merging
+        game["game_date"] = game["game_datetime"].dt.date
+        five38_team["date"] = five38_team["date"].dt.date
+
+        try:
+            game_538 = game.merge(
+                five38_team,
+                left_on=["game_date", "home_team", "away_team"],
+                right_on=["date", "team1", "team2"],
+                how="left",
+                suffixes=("_game", "_538team"),
+                indicator="_merge_game_538team",
+                validate="1:1",
+            )
+        except ValueError as e:
+            raise ValueError(f"Merge failed: {str(e)}")
+
+        # Optionally, validate the merge (uncomment if needed)
+        # if game_538["_merge_game_538team"].eq("left_only").any():
+        #     print("Some game records don't have matching 538 team records.")
+
+        # Drop unnecessary columns
+        game_538.drop(
+            columns=["date", "game_date", "team1", "team2", "_merge_game_538team"],
+            inplace=True,
+        )
+
+        return game_538
+
+    # Performance Warning - Fragmented Dataframe
+    # Low concern on small dataframes
+    def _merge_game_to_nbastats_team(self, game, nbastats_team_dfs):
+        combo_df = game.copy()
+        combo_df["game_date"] = combo_df["game_datetime"].dt.date.astype("str")
+
+        for table_name, table in nbastats_team_dfs.items():
+            df = table.copy()
+            df["merge_date"] = (df["to_date"].dt.date - pd.DateOffset(days=1)).astype(
+                "str"
+            )
+
+            for team in ["home", "away"]:
+                for game_set in ["all", "l2w"]:
+                    sub_df = df.loc[df.games == game_set].copy()
+                    sub_df.columns = [
+                        f"{col}_{team}_{game_set}_{table_name.split('_')[-1]}"
+                        if col
+                        not in [
+                            "team_name",
+                            "to_date",
+                            "merge_date",
+                            "season",
+                            "season_type",
+                            "games",
+                        ]
+                        else col
+                        for col in sub_df.columns
+                    ]
+
+                    combo_df = combo_df.merge(
+                        sub_df,
+                        left_on=["game_date", f"{team}_team"],
+                        right_on=["merge_date", "team_name"],
+                        how="left",
+                        suffixes=("", f"_{table_name}_{team}_{game_set}"),
+                        validate="1:1",
+                    )
+
+                    combo_df.drop(
+                        columns=[
+                            "to_date",
+                            "merge_date",
+                            "team_name",
+                            "games",
+                            f"season_{table_name}_{team}_{game_set}",
+                            f"season_type_{table_name}_{team}_{game_set}",
+                        ],
+                        inplace=True,
+                    )
+        combo_df = combo_df.copy()
+        combo_df.drop(columns=["game_date"], inplace=True)
+
+        return combo_df
 
     def _standardize_teams_in_dataframe(self, df, table_name):
         possible_team_columns = [
@@ -115,6 +312,8 @@ class ETLPipeline:
             "team",
             "opponent",
             "team_name",
+            "team1",
+            "team2",
         ]
         try:
             columns_to_standardize = [
@@ -132,7 +331,7 @@ class ETLPipeline:
                 )
                 if info["rows_removed"] > 0:
                     print(
-                        f"***{info['rows_removed']} Rows Removed from {table_name} due to Unknow Team Names: {info['not_found']}"
+                        f"***{info['rows_removed']} Rows Removed from {table_name} due to Unknown Team Names: {info['not_found']}"
                     )
                     # raise Exception("Unknown Team Names")
         except Exception as e:
@@ -158,10 +357,14 @@ class ETLPipeline:
         return df
 
     @staticmethod
-    def standardize_team_names(df, columns, mapping, filter=False):
+    def standardize_team_names(df, columns, mapping, filter=False, print_details=False):
+        # Step 1: Create a copy of the relevant columns
+        original_values = df[columns].copy()
+
+        # Replace team names in the DataFrame with the standardized names from the mapping
         df[columns] = df[columns].replace(mapping)
 
-        info = {"not_found": [], "rows_removed": 0}
+        info = {"not_found": [], "rows_removed": 0, "rows_updated": 0}
 
         # Find team names that are in the DataFrame but not in the mapping
         for column in columns:
@@ -171,6 +374,10 @@ class ETLPipeline:
                     info["not_found"].append(team)
 
         info["not_found"] = list(set(info["not_found"]))
+
+        # Step 2: Compare original values to updated values to find the number of rows updated
+        for column in columns:
+            info["rows_updated"] += (original_values[column] != df[column]).sum()
 
         # Store the initial number of rows
         initial_rows = df.shape[0]
@@ -183,10 +390,19 @@ class ETLPipeline:
             # Calculate the number of rows removed
             info["rows_removed"] = initial_rows - df.shape[0]
 
-        return df, info
+        if print_details:
+            print(f"Columns: {columns}")
+            print(f"Initial Rows: {initial_rows}")
+            print(f"Rows Updated: {info['rows_updated']}")
+            print(f"Rows Removed: {info['rows_removed']}")
+            print(f"Final Rows: {df.shape[0]}")
+
+            return df
+        else:
+            return df, info
 
     @staticmethod
-    def check_duplicates(df, primary_key, filter=False):
+    def check_duplicates(df, primary_key, filter=False, print_details=False):
         # if primary_key is a single string, make it a list
         if isinstance(primary_key, str):
             primary_key = [primary_key]
@@ -213,10 +429,17 @@ class ETLPipeline:
             "num_non_perfect_duplicates": num_non_perfect_duplicates,
         }
 
-        return df, info
+        if print_details:
+            print(f"Primary Key: {primary_key}")
+            print(f"Number of Duplicate Keys: {num_duplicate_keys}")
+            print(f"Number of Perfect Duplicates: {num_perfect_duplicates}")
+            print(f"Number of Non-Perfect Duplicates: {num_non_perfect_duplicates}")
+            return df
+        else:
+            return df, info
 
     @staticmethod
-    def downcast_data_types(df, downcast_floats=True):
+    def downcast_data_types(df, downcast_floats=True, print_details=False):
         info = {}
         mem_used_before = round(df.memory_usage(deep=True).sum() / 1024**2, 2)
         info["Before"] = {
@@ -240,18 +463,62 @@ class ETLPipeline:
         savings = round(mem_used_before - mem_used_after, 2)
         savings_pct = round((savings / mem_used_before) * 100)
         info["Savings"] = f"{savings} MB ({savings_pct}%)"
-        return df, info
+
+        if print_details:
+            print(f"Memory Usage Before (MB): {mem_used_before}")
+            print(f"Memory Usage After (MB): {mem_used_after}")
+            print(f"Savings (MB): {savings} ({savings_pct}%)")
+            return df
+        else:
+            return df, info
+
+    @staticmethod
+    def get_merge_statistics(merged_df, indicator_column="_merge"):
+        # Total number of records in the merged dataframe
+        total_records = len(merged_df)
+
+        # Number of records from df1 only, df2 only, and both
+        records_df1_only = len(merged_df[merged_df[indicator_column] == "left_only"])
+        records_df2_only = len(merged_df[merged_df[indicator_column] == "right_only"])
+        records_both = len(merged_df[merged_df[indicator_column] == "both"])
+
+        # Calculate the percentages
+        percentage_df1_only = records_df1_only / total_records * 100
+        percentage_df2_only = records_df2_only / total_records * 100
+        percentage_both = records_both / total_records * 100
+
+        print(f"Total number of records: {total_records}")
+        print(
+            f"Number of records from df1 only: {records_df1_only} ({percentage_df1_only:.2f}%)"
+        )
+        print(
+            f"Number of records from df2 only: {records_df2_only} ({percentage_df2_only:.2f}%)"
+        )
+        print(
+            f"Number of records present in both df1 and df2: {records_both} ({percentage_both:.2f}%)"
+        )
 
 
 if __name__ == "__main__":
-    start_date = "2020-09-01"
+    start_date = "2010-09-01"
     ETL = ETLPipeline(start_date)
 
     ETL.load_features_data(
         [
-            "ibd_nba_stats_boxscores_traditional",
-            "ibd_nba_stats_player_general_traditional",
+            "team_fivethirtyeight_games",
+            "team_nbastats_general_traditional",
+            "team_nbastats_general_advanced",
+            "team_nbastats_general_fourfactors",
+            "team_nbastats_general_opponent",
         ]
     )
 
     ETL.prepare_all_tables()
+
+    ETL.feature_creation_pre_merge()
+
+    ETL.merge_features_data()
+
+    ETL.feature_creation_post_merge()
+
+    ETL.clean_and_save_combined_features()
