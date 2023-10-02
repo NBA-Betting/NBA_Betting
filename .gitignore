@@ -6,11 +6,13 @@ nba_venv
 models/
 all_data.csv
 
-# Tensorboard and PyCaret Logs
+# Tensorboard, PyCaret, AutoKeras
 tensorboard_logs/
 mlruns/
 0/
 catboost_info/
+structured_data_regressor
+structured_data_classifier
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,12 +1,14 @@
 import datetime
 import os
 
+import autokeras as ak
 import pandas as pd
 import pytz
 from dotenv import load_dotenv
 from pycaret import classification as pyc_cls
 from pycaret import regression as pyc_reg
 from sqlalchemy import create_engine
+from tensorflow.keras.models import load_model
 
 load_dotenv()
 RDS_ENDPOINT = os.getenv("RDS_ENDPOINT")
@@ -36,8 +38,8 @@ class Predictions:
         self.prediction_df = None
         self.ml_cls_model_1 = None
         self.ml_reg_model_1 = None
-        self.dl_cls_model = None
-        self.dl_reg_model = None
+        self.dl_cls_model_1 = None
+        self.dl_reg_model_1 = None
 
     def load_data(self, current_date=True, start_date=None, end_date=None):
         """Load data from database based on date filters."""
@@ -85,11 +87,24 @@ class Predictions:
         else:
             raise ValueError("Invalid date parameters.")
 
-    def load_models(self, ml_cls_model_1_path=None, ml_reg_model_1_path=None):
+    def load_models(
+        self,
+        ml_cls_model_1_path=None,
+        ml_reg_model_1_path=None,
+        dl_cls_model_1_path=None,
+        dl_reg_model_1_path=None,
+    ):
         """Load machine learning models."""
         try:
             self.ml_cls_model_1 = pyc_cls.load_model(ml_cls_model_1_path)
             self.ml_reg_model_1 = pyc_reg.load_model(ml_reg_model_1_path)
+            self.dl_cls_model_1 = load_model(
+                dl_cls_model_1_path, custom_objects=ak.CUSTOM_OBJECTS
+            )
+            self.dl_reg_model_1 = load_model(
+                dl_reg_model_1_path, custom_objects=ak.CUSTOM_OBJECTS
+            )
+
         except Exception as e:
             print(f"An error occurred while loading models: {e}")
 
@@ -117,11 +132,16 @@ class Predictions:
         ml_reg_predictions_1 = pyc_reg.predict_model(
             self.ml_reg_model_1, data=selected_features
         )
+        dl_cls_predictions_1 = self.dl_cls_model_1.predict(selected_features)
+        dl_reg_predictions_1 = self.dl_reg_model_1.predict(selected_features)
 
         # Add the predictions to the DataFrame
         new_df["ml_reg_pred_1"] = ml_reg_predictions_1["prediction_label"]
         new_df["ml_cls_pred_1"] = ml_cls_predictions_1["prediction_label"]
         new_df["ml_cls_prob_1"] = ml_cls_predictions_1["prediction_score"]
+
+        new_df["dl_reg_pred_1"] = dl_reg_predictions_1
+        new_df["dl_cls_prob_1"] = dl_cls_predictions_1
 
         # Remove the temporary feature columns used for prediction
         new_df.drop(features, axis=1, inplace=True)
@@ -142,6 +162,8 @@ class Predictions:
                 "ml_reg_pred_1": self.df["ml_reg_pred_1"],
                 "ml_cls_pred_1": self.df["ml_cls_pred_1"],
                 "ml_cls_prob_1": self.df["ml_cls_prob_1"],
+                "dl_reg_pred_1": self.df["dl_reg_pred_1"],
+                "dl_cls_prob_1": self.df["dl_cls_prob_1"],
             }
         )
 
@@ -156,9 +178,10 @@ class Predictions:
     def _game_rating_hv(self, x):
         # Components
         ml_cls_rating_hv = x["ml_cls_rating_hv"]
+        dl_cls_rating_hv = x["dl_cls_rating_hv"]
 
         # Weighted Average
-        return (ml_cls_rating_hv * 1) / 1
+        return ((ml_cls_rating_hv * 1) + (dl_cls_rating_hv * 1)) / 2
 
     def _prediction_direction(self, x):
         if x["game_rating_hv"] > 0.5:
@@ -185,6 +208,7 @@ class Predictions:
         self.prediction_df["ml_cls_rating_hv"] = self.prediction_df.apply(
             self._ml_cls_rating_hv, axis=1
         )
+        self.prediction_df["dl_cls_rating_hv"] = self.prediction_df["dl_cls_prob_1"]
         # Cumulative prediction
         self.prediction_df["game_rating_hv"] = self.prediction_df.apply(
             self._game_rating_hv, axis=1
@@ -215,11 +239,15 @@ def main_predictions(current_date, start_date, end_date):
     ml_cls_model_path = (
         NBA_BETTING_BASE_DIR + "/models/AutoML/pycaret_cls_lr_2023_09_06_00_22_00"
     )
-    dl_cls_model_path = None
+    dl_cls_model_path = (
+        NBA_BETTING_BASE_DIR + "/models/AutoDL/autokeras_cls_dl_2023_09_20_09_21_56"
+    )
     ml_reg_model_path = (
         NBA_BETTING_BASE_DIR + "/models/AutoML/pycaret_reg_linreg_2023_09_06_00_28_16"
     )
-    dl_reg_model_path = None
+    dl_reg_model_path = (
+        NBA_BETTING_BASE_DIR + "/models/AutoDL/autokeras_reg_dl_2023_09_20_09_20_15"
+    )
 
     feature_set = [
         "open_line",
@@ -259,6 +287,8 @@ def main_predictions(current_date, start_date, end_date):
         predictions.load_models(
             ml_cls_model_1_path=ml_cls_model_path,
             ml_reg_model_1_path=ml_reg_model_path,
+            dl_cls_model_1_path=dl_cls_model_path,
+            dl_reg_model_1_path=dl_reg_model_path,
         )
         predictions.load_data(
             current_date=current_date, start_date=start_date, end_date=end_date
@@ -281,4 +311,4 @@ def main_predictions(current_date, start_date, end_date):
 
 
 if __name__ == "__main__":
-    main_predictions(current_date=False, start_date="2020-09-01", end_date="2023-09-01")
+    main_predictions(current_date=False, start_date="2010-09-01", end_date="2023-09-01")

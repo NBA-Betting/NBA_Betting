@@ -140,12 +140,12 @@ class ModelSetup:
         training_df = df[
             (df["game_date_part"] >= training_start_date)
             & (df["game_date_part"] <= training_end_date)
-        ]
+        ].copy()
 
         testing_df = df[
             (df["game_date_part"] >= testing_start_date)
             & (df["game_date_part"] <= testing_end_date)
-        ]
+        ].copy()
 
         # Remove the temporary 'game_date_part' column
         df.drop("game_date_part", axis=1, inplace=True)
@@ -216,14 +216,14 @@ class ModelSetup:
 
         elif problem_type == "reg":
             # Independent Baseline: MAE based on Vegas miss
-            training_df["actual_score_diff_hv"] = (
+            training_df.loc[:, "actual_score_diff_hv"] = (
                 training_df["home_score"] - training_df["away_score"]
             )
-            testing_df["actual_score_diff_hv"] = (
+            testing_df.loc[:, "actual_score_diff_hv"] = (
                 testing_df["home_score"] - testing_df["away_score"]
             )
-            training_df["vegas_open_hv"] = -training_df["open_line"]
-            testing_df["vegas_open_hv"] = -testing_df["open_line"]
+            training_df.loc[:, "vegas_open_hv"] = -training_df["open_line"]
+            testing_df.loc[:, "vegas_open_hv"] = -testing_df["open_line"]
 
             ind_baseline_train = mean_absolute_error(
                 training_df["actual_score_diff_hv"], training_df["vegas_open_hv"]

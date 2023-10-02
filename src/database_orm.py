@@ -38,6 +38,7 @@ class PredictionsTable(Base):
     open_line_hv = Column(Float)
     prediction_line_hv = Column(Float)
     ml_cls_rating_hv = Column(Float)
+    dl_cls_rating_hv = Column(Float)
     game_rating_hv = Column(Float)
     prediction_direction = Column(String)
     directional_game_rating = Column(Float)

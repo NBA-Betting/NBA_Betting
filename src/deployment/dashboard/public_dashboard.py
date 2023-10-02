@@ -218,6 +218,7 @@ def get_dashboard_data(connection):
             p.directional_game_rating,
             p.prediction_direction,
             p.ml_reg_pred_1,
+            p.dl_reg_pred_1,
             b.bet_status,
             b.bet_amount,
             b.bet_line,
@@ -253,7 +254,7 @@ def get_dashboard_data(connection):
     df["rec_bet_win_loss"] = df.apply(calc_rec_bet_win_loss, axis=1)
     df["vegas_error"] = abs(df["game_result"] - -df["open_line"])
     df["ml_error"] = abs(df["game_result"] - df["ml_reg_pred_1"])
-    # df["dl_error"] = abs(df["game_result"] - df["dl_reg_prediction"])
+    df["dl_error"] = abs(df["game_result"] - df["dl_reg_pred_1"])
     df["bet_profit_loss"] = df["bet_profit_loss"].fillna(0)
 
     return df
@@ -413,7 +414,7 @@ def create_spread_error_chart(df):
     spread_error_y = [
         df["vegas_error"].mean(),
         df["ml_error"].mean(),
-        # df["dl_error"].mean(),
+        df["dl_error"].mean(),
     ]
 
     spread_error_chart = go.Figure(
@@ -475,7 +476,7 @@ def update_spread_error_chart(full_df, start_date, end_date):
     spread_error_means = [
         spread_error_df["vegas_error"].mean(),
         spread_error_df["ml_error"].mean(),
-        # spread_error_df["dl_error"].mean(),
+        spread_error_df["dl_error"].mean(),
     ]
 
     # Create bar chart using plotly.graph_objs
