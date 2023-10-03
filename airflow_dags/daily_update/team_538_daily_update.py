@@ -18,6 +18,7 @@ default_args = {
     "retries": 1,
     "retry_delay": timedelta(minutes=5),
     "start_date": pendulum.datetime(2023, 5, 1),
+    "email": ["jeffjohannsen7@gmail.com"],
     "email_on_failure": True,
     "email_on_retry": True,
 }
