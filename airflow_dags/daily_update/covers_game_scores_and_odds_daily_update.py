@@ -7,7 +7,7 @@ from airflow.operators.bash import BashOperator
 from dotenv import load_dotenv
 
 load_dotenv()
-NBA_BETTING_BASE_DIR = os.getenv("NBABETTING_BASE_DIR")
+NBA_BETTING_BASE_DIR = os.getenv("NBA_BETTING_BASE_DIR")
 
 # Define the DAG
 dag = DAG(
