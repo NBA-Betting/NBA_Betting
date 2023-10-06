@@ -116,7 +116,7 @@ class Predictions:
 
         # Select only the relevant features
         selected_features = data_df[features]
-        
+
         # Add the line to the selected features
         if line_source == "open":
             selected_features["line"] = df["open_line_copy"]
@@ -311,7 +311,8 @@ def main_predictions(current_date, start_date, end_date):
     except Exception as e:
         print(f"----- Predictions Update Failed -----")
         raise e
-    
+
+
 def on_demand_predictions(current_date, start_date=None, end_date=None):
     ml_cls_model_path = (
         NBA_BETTING_BASE_DIR + "/models/AutoML/pycaret_cls_lr_2023_09_06_00_22_00"
@@ -389,3 +390,4 @@ def on_demand_predictions(current_date, start_date=None, end_date=None):
 if __name__ == "__main__":
     # main_predictions(current_date=False, start_date="2010-09-01", end_date="2023-09-01")
     # on_demand_predictions(current_date=True)
+    pass
