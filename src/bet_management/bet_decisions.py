@@ -108,7 +108,7 @@ class Predictions:
         except Exception as e:
             print(f"An error occurred while loading models: {e}")
 
-    def create_predictions(self, df, features):
+    def create_predictions(self, df, features, line_source):
         """Create predictions using loaded models and return a new DataFrame."""
 
         # Flatten the 'data' column to extract features
@@ -116,6 +116,12 @@ class Predictions:
 
         # Select only the relevant features
         selected_features = data_df[features]
+        
+        # Add the line to the selected features
+        if line_source == "open":
+            selected_features["line"] = df["open_line_copy"]
+        elif line_source == "current":
+            selected_features["line"] = df[f"{self.line_source}_home_line"]
 
         # Remove rows where any of the selected features is null
         non_null_indices = selected_features.dropna().index
@@ -149,7 +155,6 @@ class Predictions:
         return new_df
 
     def set_up_table(self):
-        # ! Need to update this if using a line that is not the open line
         self.prediction_df = pd.DataFrame(
             {
                 "game_id": self.df["game_id"],
@@ -157,8 +162,7 @@ class Predictions:
                     pytz.timezone(self.TIME_ZONE)
                 ),
                 "open_line_hv": 0 - self.df["open_line_copy"],
-                "prediction_line_hv": 0 - self.df["open_line_copy"],
-                # "prediction_line_hv": 0 - self.df[f"{self.line_source}_home_line"],
+                "prediction_line_hv": 0 - self.df[f"{self.line_source}_home_line"],
                 "ml_reg_pred_1": self.df["ml_reg_pred_1"],
                 "ml_cls_pred_1": self.df["ml_cls_pred_1"],
                 "ml_cls_prob_1": self.df["ml_cls_prob_1"],
@@ -250,7 +254,6 @@ def main_predictions(current_date, start_date, end_date):
     )
 
     feature_set = [
-        "open_line",
         "rest_diff_hv",
         "day_of_season",
         "last_5_hv",
@@ -294,7 +297,80 @@ def main_predictions(current_date, start_date, end_date):
             current_date=current_date, start_date=start_date, end_date=end_date
         )
         predictions.df = predictions.create_predictions(
-            predictions.df, features=feature_set
+            predictions.df, features=feature_set, line_source="open"
+        )
+        predictions.set_up_table()
+        predictions.game_ratings()
+
+        print(predictions.prediction_df.info())
+        print(predictions.prediction_df.head(10))
+
+        predictions.save_records()
+
+        print("----- Predictions Update Successful -----")
+    except Exception as e:
+        print(f"----- Predictions Update Failed -----")
+        raise e
+    
+def on_demand_predictions(current_date, start_date=None, end_date=None):
+    ml_cls_model_path = (
+        NBA_BETTING_BASE_DIR + "/models/AutoML/pycaret_cls_lr_2023_09_06_00_22_00"
+    )
+    dl_cls_model_path = (
+        NBA_BETTING_BASE_DIR + "/models/AutoDL/autokeras_cls_dl_2023_09_20_09_21_56"
+    )
+    ml_reg_model_path = (
+        NBA_BETTING_BASE_DIR + "/models/AutoML/pycaret_reg_linreg_2023_09_06_00_28_16"
+    )
+    dl_reg_model_path = (
+        NBA_BETTING_BASE_DIR + "/models/AutoDL/autokeras_reg_dl_2023_09_20_09_20_15"
+    )
+
+    feature_set = [
+        "rest_diff_hv",
+        "day_of_season",
+        "last_5_hv",
+        "538_prob1",
+        "elo_prob1",
+        "streak_hv",
+        "point_diff_last_5_hv",
+        "point_diff_hv",
+        "win_pct_hv",
+        "plus_minus_home_l2w_traditional",
+        "net_rating_home_l2w_advanced",
+        "plus_minus_home_l2w_opponent",
+        "plus_minus_zscore_home_l2w_traditional",
+        "net_rating_zscore_home_l2w_advanced",
+        "plus_minus_zscore_home_l2w_opponent",
+        "e_net_rating_home_l2w_advanced",
+        "e_net_rating_zscore_home_l2w_advanced",
+        "plus_minus_percentile_home_l2w_opponent",
+        "plus_minus_percentile_home_l2w_traditional",
+        "net_rating_percentile_home_l2w_advanced",
+        "plus_minus_away_l2w_traditional",
+        "plus_minus_away_l2w_opponent",
+        "w_pct_zscore_home_l2w_traditional",
+        "e_net_rating_percentile_home_l2w_advanced",
+        "e_net_rating_away_l2w_advanced",
+        "pie_percentile_home_l2w_advanced",
+        "e_net_rating_zscore_away_l2w_advanced",
+        "net_rating_zscore_away_l2w_advanced",
+        "pie_home_l2w_advanced",
+    ]
+
+    try:
+        predictions = Predictions()
+        predictions.load_models(
+            ml_cls_model_1_path=ml_cls_model_path,
+            ml_reg_model_1_path=ml_reg_model_path,
+            dl_cls_model_1_path=dl_cls_model_path,
+            dl_reg_model_1_path=dl_reg_model_path,
+        )
+        predictions.load_data(
+            current_date=current_date, start_date=start_date, end_date=end_date
+        )
+        predictions.df = predictions.create_predictions(
+            predictions.df, features=feature_set, line_source="current"
         )
         predictions.set_up_table()
         predictions.game_ratings()
@@ -311,4 +387,5 @@ def main_predictions(current_date, start_date, end_date):
 
 
 if __name__ == "__main__":
-    main_predictions(current_date=False, start_date="2010-09-01", end_date="2023-09-01")
+    # main_predictions(current_date=False, start_date="2010-09-01", end_date="2023-09-01")
+    # on_demand_predictions(current_date=True)

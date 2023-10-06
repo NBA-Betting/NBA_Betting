@@ -22,12 +22,34 @@ from matplotlib.figure import Figure
 from sqlalchemy import create_engine, text
 from werkzeug.security import check_password_hash, generate_password_hash
 
+here = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.join(here, "../.."))
+from bet_management.bet_decisions import on_demand_predictions
+from data_sources.game.odds_api import update_game_data
+
 load_dotenv()
 RDS_ENDPOINT = os.getenv("RDS_ENDPOINT")
 RDS_PASSWORD = os.getenv("RDS_PASSWORD")
 WEB_APP_SECRET_KEY = os.getenv("WEB_APP_SECRET_KEY")
+ODDS_API_KEY = os.getenv("ODDS_API_KEY")
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+
+# ----- ON DEMAND UPDATE -----
+def on_demand_update():
+    # Load Current Lines
+    try:
+        update_game_data()
+    except Exception as e:
+        print(e)
+        raise Exception("Error updating game data")
+    # Create Predictions
+    try:
+        on_demand_predictions(current_date=True)
+    except Exception as e:
+        print(e)
+        raise Exception("Error creating predictions")
 
 
 # ----- UTILITY FUNCTIONS -----
@@ -310,6 +332,9 @@ def create_app():
 
     @app.route("/", methods=["POST", "GET"])
     def home_table():
+        if current_user.is_authenticated:
+            on_demand_update()
+
         data = nba_data_inbound()
         if request.method == "POST":
             bet_datetime = datetime.datetime.now(
@@ -378,6 +403,8 @@ def create_app():
                     },
                 )
 
+            if current_user.is_authenticated:
+                on_demand_update()
             data = nba_data_inbound()
             return render_template("nba_home.html", **data)
 
