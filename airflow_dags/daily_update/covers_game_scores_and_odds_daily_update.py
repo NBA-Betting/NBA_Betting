@@ -4,6 +4,10 @@ from datetime import timedelta
 import pendulum
 from airflow import DAG
 from airflow.operators.bash import BashOperator
+from dotenv import load_dotenv
+
+load_dotenv()
+NBA_BETTING_BASE_DIR = os.getenv("NBABETTING_BASE_DIR")
 
 # Define the DAG
 dag = DAG(
@@ -22,11 +26,7 @@ dag = DAG(
     catchup=False,
 )
 
-
-if os.environ.get("ENVIRONMENT") == "EC2":
-    command = f"cd /home/ubuntu/NBA_Betting/src/data_sources/game && scrapy crawl game_covers_historic_scores_and_odds_spider -a dates=daily_update -a save_data=True -a view_data=True"
-else:
-    command = f"cd ~/Documents/NBA_Betting/src/data_sources/game && scrapy crawl game_covers_historic_scores_and_odds_spider -a dates=daily_update -a save_data=True -a view_data=True"
+command = f"cd {NBA_BETTING_BASE_DIR}/src/data_sources/game && scrapy crawl game_covers_historic_scores_and_odds_spider -a dates=daily_update -a save_data=True -a view_data=True"
 
 BashOperator(
     task_id=f"run_covers_game_scores_and_odds_spider",
