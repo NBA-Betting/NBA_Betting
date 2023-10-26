@@ -529,9 +529,9 @@ NBA_IMPORTANT_DATES = {
         "postseason_end_date": "2023-06-12",
     },
     "2023-2024": {  # Estimated
-        "reg_season_start_date": "2023-10-17",
-        "reg_season_end_date": "2024-04-10",
-        "postseason_start_date": "2024-04-13",
+        "reg_season_start_date": "2023-10-24",
+        "reg_season_end_date": "2024-04-14",
+        "postseason_start_date": "2024-04-16",
         "postseason_end_date": "2024-06-16",
     },
 }

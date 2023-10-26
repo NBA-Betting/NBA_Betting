@@ -15,9 +15,13 @@ RDS_PASSWORD = os.environ.get("RDS_PASSWORD")
 ZYTE_API_KEY = os.environ.get("ZYTE_API_KEY")
 
 
+from datetime import datetime
+
+
 def find_season_information(date_str):
     date_obj = datetime.strptime(date_str, "%Y-%m-%d")
 
+    # Iterate over each season
     for season, info in NBA_IMPORTANT_DATES.items():
         reg_season_start_date = datetime.strptime(
             info["reg_season_start_date"], "%Y-%m-%d"
@@ -28,29 +32,31 @@ def find_season_information(date_str):
         )
         postseason_end_date = datetime.strptime(info["postseason_end_date"], "%Y-%m-%d")
 
-        year1, year2 = season.split("-")
-        season_info = {
-            "date": date_str,
-            "season": season,
-            "year1": year1,
-            "year2": year2,
-            "reg_season_start_date": info["reg_season_start_date"],
-            "reg_season_end_date": info["reg_season_end_date"],
-            "postseason_start_date": info["postseason_start_date"],
-            "postseason_end_date": info["postseason_end_date"],
-        }
+        # Check if date_obj falls within this season's regular or postseason
+        if reg_season_start_date <= date_obj <= postseason_end_date:
+            season_info = {
+                "date": date_str,
+                "season": season,
+                "year1": season.split("-")[0],  # Getting the first part of the season
+                "year2": season.split("-")[1],  # Getting the second part of the season
+                "reg_season_start_date": info["reg_season_start_date"],
+                "reg_season_end_date": info["reg_season_end_date"],
+                "postseason_start_date": info["postseason_start_date"],
+                "postseason_end_date": info["postseason_end_date"],
+            }
 
-        if reg_season_start_date <= date_obj <= reg_season_end_date:
-            season_info["season_type"] = "Regular Season"
-            return season_info
-        elif postseason_start_date <= date_obj <= postseason_end_date:
-            season_info["season_type"] = "Playoffs"
-            return season_info
-        else:
-            season_info["season_type"] = "Unknown"
+            # Determine whether it's the regular season or playoffs
+            if reg_season_start_date <= date_obj <= reg_season_end_date:
+                season_info["season_type"] = "Regular Season"
+            elif postseason_start_date <= date_obj <= postseason_end_date:
+                season_info["season_type"] = "Playoffs"
+            else:
+                season_info["season_type"] = "Other"
+
             return season_info
 
-    raise ValueError(f"Could not find season information for: {date_str}.")
+    # If no matching season is found, raise an error
+    raise ValueError(f"Could not find season information for date: {date_str}.")
 
 
 def determine_season_type(date, important_dates):
