@@ -4,6 +4,7 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
+import pytz
 import requests
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
@@ -33,6 +34,20 @@ class OddsAPI:
             f"postgresql+psycopg2://postgres:{password}@{endpoint}/nba_betting"
         )
 
+    @staticmethod
+    def convert_timezone(original_time):
+        # Original timezone (UTC)
+        original_timezone = pytz.timezone("UTC")
+        # Target timezone (America/Denver)
+        target_timezone = pytz.timezone("America/Denver")
+        # Process
+        localized_time = original_timezone.localize(
+            original_time
+        )  # Associate the given time with its time zone
+        target_time = localized_time.astimezone(target_timezone)
+
+        return target_time
+
     def fetch_odds_data(self):
         params = {
             "apiKey": self.api_key,
@@ -48,17 +63,16 @@ class OddsAPI:
         current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         for game in data:
             game_data = {}
+            utc_time = datetime.strptime(game["commence_time"], "%Y-%m-%dT%H:%M:%SZ")
+            mountain_time = self.convert_timezone(utc_time)
+
             game_data["game_id"] = (
-                datetime.strptime(game["commence_time"], "%Y-%m-%dT%H:%M:%SZ").strftime(
-                    "%Y%m%d"
-                )
+                mountain_time.strftime("%Y%m%d")
                 + team_name_mapper(game["home_team"])
                 + team_name_mapper(game["away_team"])
             )
 
-            game_data["game_datetime"] = datetime.strptime(
-                game["commence_time"], "%Y-%m-%dT%H:%M:%SZ"
-            ).strftime("%Y-%m-%d %H:%M:%S")
+            game_data["game_datetime"] = mountain_time.strftime("%Y-%m-%d %H:%M:%S")
             game_data["home_team"] = team_name_mapper(game["home_team"])
             game_data["away_team"] = team_name_mapper(game["away_team"])
 
@@ -119,17 +133,18 @@ class OddsAPI:
         for game in data:
             game_data = {}
 
+            original_time = datetime.strptime(
+                game["commence_time"], "%Y-%m-%dT%H:%M:%SZ"
+            )
+            mountain_time = self.convert_timezone(original_time)
+
             game_data["game_id"] = (
-                datetime.strptime(game["commence_time"], "%Y-%m-%dT%H:%M:%SZ").strftime(
-                    "%Y%m%d"
-                )
+                mountain_time.strftime("%Y%m%d")
                 + team_name_mapper(game["home_team"])
                 + team_name_mapper(game["away_team"])
             )
 
-            game_data["game_datetime"] = datetime.strptime(
-                game["commence_time"], "%Y-%m-%dT%H:%M:%SZ"
-            ).strftime("%Y-%m-%d %H:%M:%S")
+            game_data["game_datetime"] = mountain_time.strftime("%Y-%m-%d %H:%M:%S")
 
             game_data["home_team"] = team_name_mapper(game["home_team"])
             game_data["away_team"] = team_name_mapper(game["away_team"])
@@ -138,21 +153,21 @@ class OddsAPI:
             game_data["game_completed"] = game["completed"]
 
             # Add home_score and away_score columns
-            if (
-                game["scores"]
-                and "home_score" in game["scores"]
-                and "away_score" in game["scores"]
-            ):
-                game_data["home_score"] = game["scores"]["home_score"]
-                game_data["away_score"] = game["scores"]["away_score"]
+            if game["scores"]:
+                game_data["home_score"] = game["scores"][0]["score"]
+                game_data["away_score"] = game["scores"][1]["score"]
             else:
                 game_data["home_score"] = None
                 game_data["away_score"] = None
 
             if game["last_update"]:
-                game_data["scores_last_update"] = datetime.strptime(
+                original_time = datetime.strptime(
                     game["last_update"], "%Y-%m-%dT%H:%M:%SZ"
-                ).strftime("%Y-%m-%d %H:%M:%S")
+                )
+                mountain_time = self.convert_timezone(original_time)
+                game_data["scores_last_update"] = mountain_time.strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
             else:
                 game_data["scores_last_update"] = None
 
@@ -336,9 +351,10 @@ def update_game_data(past_games):
     scores_data = odds_api.fetch_scores_data(get_past_games=past_games)
     processed_scores_data = odds_api.process_scores_data(scores_data)
     merged_data = odds_api.merge_data(processed_odds_data, processed_scores_data)
-    # print(merged_data)
+    # print(merged_data.info())
     odds_api.update_database(merged_data)
 
 
 if __name__ == "__main__":
+    # update_game_data(past_games=True)
     pass

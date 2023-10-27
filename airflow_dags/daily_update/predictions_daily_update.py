@@ -14,7 +14,7 @@ from src.bet_management.bet_decisions import main_predictions
 # Define default arguments
 default_args = {
     "owner": "Jeff",
-    "retries": 1,
+    "retries": 0,
     "retry_delay": timedelta(minutes=5),
     "start_date": pendulum.datetime(2023, 5, 1),
     "email": ["jeffjohannsen7@gmail.com"],
