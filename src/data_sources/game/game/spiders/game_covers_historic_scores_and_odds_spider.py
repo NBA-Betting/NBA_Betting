@@ -3,6 +3,7 @@ import sys
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
+import pytz
 import scrapy
 from dotenv import load_dotenv
 
@@ -37,8 +38,14 @@ class GameCoversHistoricScoresAndOddsSpider(BaseSpider):
             raise TypeError(f"dates_input should be str, but got {type(dates_input)}")
 
         if dates_input == "daily_update":
-            todays_date = datetime.now().strftime("%Y-%m-%d")
-            yesterdays_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+            # Define the timezone
+            denver_tz = pytz.timezone("America/Denver")
+            # Get 'now' for the Denver timezone
+            denver_now = datetime.now(denver_tz)
+            # Get today's date
+            todays_date = denver_now.strftime("%Y-%m-%d")
+            # Calculate yesterday's date by subtracting a day
+            yesterdays_date = (denver_now - timedelta(days=1)).strftime("%Y-%m-%d")
             return [todays_date, yesterdays_date]
 
         # Check if input is a season or multiple seasons
@@ -86,11 +93,11 @@ class GameCoversHistoricScoresAndOddsSpider(BaseSpider):
 
             # Scrape the data using the data-* attributes
             loader.add_css("game_datetime", "::attr(data-game-date)")
-            loader.add_css("home_score", "::attr(data-home-score)")
-            loader.add_css("away_score", "::attr(data-away-score)")
             loader.add_css("home_team", "::attr(data-home-team-shortname-search)")
             loader.add_css("away_team", "::attr(data-away-team-shortname-search)")
             loader.add_css("open_line", "::attr(data-game-odd)")
+            loader.add_css("home_score", "::attr(data-home-score)")
+            loader.add_css("away_score", "::attr(data-away-score)")
 
             yield loader.load_item()
 

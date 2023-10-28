@@ -111,6 +111,9 @@ def create_app():
         # ----- LOAD DATA -----
         current_datetime = datetime.datetime.now(pytz.timezone("America/Denver"))
         todays_datetime = current_datetime.strftime("%Y-%m-%d")
+        tomorrows_datetime = (current_datetime + datetime.timedelta(days=1)).strftime(
+            "%Y-%m-%d"
+        )
         yesterdays_datetime = (current_datetime - datetime.timedelta(days=1)).strftime(
             "%Y-%m-%d"
         )
@@ -218,7 +221,7 @@ def create_app():
                 FULL OUTER JOIN bets ON games.game_id = bets.game_id
                 FULL OUTER JOIN LatestPredictions ON games.game_id = LatestPredictions.game_id
                 WHERE (LatestPredictions.rn = 1 OR LatestPredictions.rn IS NULL)
-                AND games.game_datetime <= :todays_datetime
+                AND games.game_datetime < :tomorrows_datetime
                 AND games.game_datetime >= :start_date
                 ORDER BY games.game_datetime DESC, LatestPredictions.directional_game_rating DESC
                 LIMIT 100;
@@ -228,7 +231,7 @@ def create_app():
             start_date = "2022-09-01"
             game_table = connection.execute(
                 game_table_query,
-                {"todays_datetime": todays_datetime, "start_date": start_date},
+                {"tomorrows_datetime": tomorrows_datetime, "start_date": start_date},
             ).fetchall()
 
         # ----- FORMAT DATA -----

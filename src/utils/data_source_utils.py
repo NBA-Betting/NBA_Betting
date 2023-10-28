@@ -183,12 +183,13 @@ class BasePipeline:
         self.view_data = spider.view_data
 
         self.nba_data = []
-        self.total_items = 0
+        self.scraped_items = 0
+        self.saved_items = 0
         self.errors = spider.errors
 
     def process_item(self, item, spider):
         """
-        This method is called for each item that is scraped. It cleans organizes, and verifies
+        This method is called for each item that is scraped. It cleans, organizes, and verifies
         the item before appending it to the list of scraped data.
 
         Args:
@@ -198,16 +199,24 @@ class BasePipeline:
         Returns:
             dict: The processed item.
         """
+        # Increment the count of total items processed.
+        # This should happen whether or not the item is successfully processed or saved.
+        self.scraped_items += 1
+
         try:
             # Processing logic here
             self.nba_data.append(item)
+
+            # Check if the processed items have reached a certain batch size and if saving data is enabled
+            if self.save_data and (len(self.nba_data) % 1000 == 0):
+                self.save_to_database()  # Save the batch to the database
+
         except Exception as e:
+            # If an error occurs during processing, log the error along with the associated item.
             self.errors["processing"].append([e, item])
 
-        if (
-            len(self.nba_data) % 1000 == 0
-        ):  # If the length of self.nba_data is a multiple of 1000
-            self.save_to_database()  # Save to the database
+        # Return the item dict, which is useful for potential chaining of item pipelines or debugging.
+        return item
 
     def process_dataset(self):
         """
@@ -243,7 +252,7 @@ class BasePipeline:
                 integrity_error_count = len(rows) - (final_count - initial_count)
                 self.errors["saving"]["integrity_error_count"] += integrity_error_count
 
-                self.total_items += len(rows)
+                self.saved_items += len(rows) - integrity_error_count
                 self.nba_data = []  # Empty the list after saving the data
             except IntegrityError as ie:
                 print(f"Integrity Error: Unable to insert data. Details: {str(ie)}")
@@ -259,7 +268,7 @@ class BasePipeline:
             finally:
                 integrity_error_pct = round(
                     self.errors["saving"]["integrity_error_count"]
-                    / self.total_items
+                    / self.scraped_items
                     * 100,
                     2,
                 )
@@ -270,7 +279,7 @@ class BasePipeline:
                 )
 
                 print(f"Inserted {len(rows) - integrity_error_count} rows successfully.")
-                print(f"Total items inserted: {self.total_items}")
+                print(f"Total items inserted: {self.saved_items}")
                 print(
                     f"Total integrity errors: {self.errors['saving']['integrity_error_count']} {integrity_error_pct}%"
                 )
@@ -282,11 +291,11 @@ class BasePipeline:
         and the total number of items scraped.
         """
         pd.set_option("display.max_columns", 100)
+        # print(self.nba_data)
         df = pd.DataFrame(self.nba_data)
         print("Sample of scraped data:")
         print(df.head(20))
         print(df.info())
-        print("Number of items scraped:", len(self.nba_data))
 
     def close_spider(self, spider):
         """
@@ -314,14 +323,19 @@ class BasePipeline:
         print(">>>>> Processing errors:")
         for error in self.errors["processing"]:
             print(error)
-        print(">>>>> Saving errors:")
-        for error in self.errors["saving"]["other"]:
-            print(error)
 
-        integrity_error_pct = round(
-            self.errors["saving"]["integrity_error_count"] / self.total_items * 100,
-            2,
-        )
+        integrity_error_pct = 0
+        if spider.save_data:
+            print(">>>>> Saving errors:")
+            for error in self.errors["saving"]["other"]:
+                print(error)
+            integrity_error_pct = round(
+                self.errors["saving"]["integrity_error_count"]
+                / self.scraped_items
+                * 100,
+                2,
+            )
+
         non_integrity_error_count = (
             len(self.errors["saving"]["other"])
             + len(self.errors["processing"])
@@ -330,11 +344,11 @@ class BasePipeline:
 
         print("\nOverall Results")
         print("===============")
-        print("Total items scraped:", self.total_items)
+        print("Total items scraped:", self.scraped_items)
         print(
             f"Total integrity errors: {self.errors['saving']['integrity_error_count']} {integrity_error_pct}%"
         )
-        print(f"Total other errors: {non_integrity_error_count}")
+        print(f"Total other errors: {non_integrity_error_count}\n")
 
 
 def convert_season_to_long(season):

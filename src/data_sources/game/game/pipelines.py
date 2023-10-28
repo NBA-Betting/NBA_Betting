@@ -30,6 +30,7 @@ class CoversHistoricScoresAndOddsPipeline(BasePipeline):
         Returns:
             dict: The processed item.
         """
+        self.scraped_items += 1
         try:
             # Convert the game_datetime to the desired YYYYMMDD format for creating game_id.
             game_date = datetime.strptime(
@@ -96,7 +97,7 @@ class CoversHistoricScoresAndOddsPipeline(BasePipeline):
 
                 session.commit()  # Commit all changes after processing all rows
 
-                self.total_items += len(rows)
+                self.saved_items += len(rows)
 
             except Exception as e:
                 print(
@@ -113,7 +114,7 @@ class CoversHistoricScoresAndOddsPipeline(BasePipeline):
                 )
 
                 print(f"Processed {len(rows)} rows successfully.")
-                print(f"Total items processed: {self.total_items}")
+                print(f"Total items processed: {self.scraped_items}")
                 print(f"Total other errors: {non_integrity_error_count}")
 
         self.nba_data = []  # Empty the list after saving the data

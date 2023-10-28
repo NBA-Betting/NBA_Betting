@@ -60,7 +60,9 @@ class OddsAPI:
 
     def process_odds_data(self, data):
         data_list = []
-        current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        current_datetime = datetime.now(tz=pytz.timezone("America/Denver")).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
         for game in data:
             game_data = {}
             utc_time = datetime.strptime(game["commence_time"], "%Y-%m-%dT%H:%M:%SZ")
