@@ -1,6 +1,9 @@
+import json
 import os
 import warnings
+from datetime import datetime
 
+import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score, mean_absolute_error
 
@@ -173,10 +176,10 @@ class ModelSetup:
                 "problem_type": problem_type,
                 "target": target,
                 "features": features,
-                "training_start_date": training_start_date,
-                "training_end_date": training_end_date,
-                "testing_start_date": testing_start_date,
-                "testing_end_date": testing_end_date,
+                "training_start_date": training_start_date.strftime("%Y-%m-%d"),
+                "training_end_date": training_end_date.strftime("%Y-%m-%d"),
+                "testing_start_date": testing_start_date.strftime("%Y-%m-%d"),
+                "testing_end_date": testing_end_date.strftime("%Y-%m-%d"),
                 "training_df_shape": training_df.shape,
                 "testing_df_shape": testing_df.shape,
                 "ind_baseline_train": ind_baseline_train,
@@ -429,24 +432,30 @@ def calculate_roi(df, actual_column, pred_column, pred_prob=None):
     return result
 
 
+def default_serializer(obj):
+    """JSON serializer for objects not serializable by default json code"""
+    if isinstance(obj, (pd.Timestamp, datetime)):
+        return obj.isoformat()  # for datetime objects
+    elif isinstance(obj, (np.float32, np.float64)):
+        return float(obj)  # convert NumPy float32 to Python native float
+    elif isinstance(obj, np.integer):
+        return int(obj)  # convert NumPy integer to Python native int
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()  # convert NumPy array to Python list
+    # Add any other types as needed here
+    raise TypeError(f"Type {type(obj)} not serializable")
+
+
 def save_model_report(model_report, file_path="../models/model_reports.json"):
     # Check if the file exists
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"The file {file_path} does not exist.")
 
-    # Read the existing JSON file into a DataFrame
-    try:
-        existing_reports_df = pd.read_json(file_path, lines=True)
-    except ValueError:  # Handling the case where the file is empty
-        existing_reports_df = pd.DataFrame()
+    # Convert the model_report dictionary to a JSON string
+    new_report_json = json.dumps(model_report, default=default_serializer)
 
-    # Convert the model_report dictionary to a DataFrame
-    new_report_df = pd.DataFrame([model_report])
-
-    # Append the new report to the existing reports
-    updated_reports_df = existing_reports_df.append(new_report_df, ignore_index=True)
-
-    # Write the updated DataFrame back to the JSON file
-    updated_reports_df.to_json(
-        file_path, date_format="iso", orient="records", lines=True
-    )
+    # Append the new report to the file with a newline character for 'lines' demarcation
+    with open(file_path, "a") as file:  # 'a' indicates append mode
+        file.write(
+            new_report_json + "\n"
+        )  # append a newline character to separate records

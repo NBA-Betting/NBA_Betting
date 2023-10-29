@@ -7,8 +7,9 @@ import numpy as np
 import pandas as pd
 import pytz
 from dotenv import load_dotenv
-from feature_creation import FeatureCreationPostMerge, FeatureCreationPreMerge
 from sqlalchemy import create_engine
+
+from .feature_creation import FeatureCreationPostMerge, FeatureCreationPreMerge
 
 here = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(here, "../.."))
