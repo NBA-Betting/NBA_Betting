@@ -39,7 +39,6 @@ def run_etl_daily_update():
 
     ETL.load_features_data(
         [
-            "team_fivethirtyeight_games",
             "team_nbastats_general_traditional",
             "team_nbastats_general_advanced",
             "team_nbastats_general_fourfactors",

@@ -32,10 +32,6 @@ class FeatureCreationPreMerge:
         return self.updated_features_tables
 
     # FEATURE CREATION METHODS
-
-    def _create_features_team_fivethirtyeight_games(self, df):
-        return df
-
     def _create_features_team_nbastats_general_traditional(self, df):
         table_info = FEATURE_TABLE_INFO["team_nbastats_general_traditional"]
         return self._zscore_and_percentiles(
@@ -99,9 +95,6 @@ class FeatureCreationPostMerge:
         self.updated_combined_features = self._calculate_team_performance_metrics(
             self.updated_combined_features
         )
-        self.updated_combined_features = self._condense_538_features(
-            self.updated_combined_features
-        )
         self.updated_combined_features = self._encode_home_team(
             self.updated_combined_features
         )
@@ -111,18 +104,18 @@ class FeatureCreationPostMerge:
 
         return self.updated_combined_features
 
-    def _condense_538_features(self, df):
-        df["538_prob1"] = df.apply(
-            lambda row: row["raptor_prob1"]
-            if pd.notna(row["raptor_prob1"])
-            else (
-                row["carm_elo_prob1"]
-                if pd.notna(row["carm_elo_prob1"])
-                else row["elo_prob1"]
-            ),
-            axis=1,
-        )
-        return df
+    # def _condense_538_features(self, df):
+    #     df["538_prob1"] = df.apply(
+    #         lambda row: row["raptor_prob1"]
+    #         if pd.notna(row["raptor_prob1"])
+    #         else (
+    #             row["carm_elo_prob1"]
+    #             if pd.notna(row["carm_elo_prob1"])
+    #             else row["elo_prob1"]
+    #         ),
+    #         axis=1,
+    #     )
+    #     return df
 
     def _add_day_of_season(self, df):
         def calculate_day_of_season(x):
@@ -215,8 +208,8 @@ class FeatureCreationPostMerge:
 
         # initializing new columns
         metrics_columns = [
-            "home_team_last_5",
-            "away_team_last_5",
+            "home_team_last_5_games_result",
+            "away_team_last_5_games_result",
             "home_team_streak",
             "away_team_streak",
             "home_team_win_pct",

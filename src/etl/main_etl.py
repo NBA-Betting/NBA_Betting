@@ -3,12 +3,12 @@ import os
 import sys
 from datetime import datetime
 
+import numpy as np
 import pandas as pd
 import pytz
 from dotenv import load_dotenv
+from feature_creation import FeatureCreationPostMerge, FeatureCreationPreMerge
 from sqlalchemy import create_engine
-
-from .feature_creation import FeatureCreationPostMerge, FeatureCreationPreMerge
 
 here = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(here, "../.."))
@@ -126,11 +126,8 @@ class ETLPipeline:
             print(k, v.shape)
 
     def merge_features_data(self):
-        self.combined_features = self._merge_game_to_538_team(
-            self.game_data, self.features_data["team_fivethirtyeight_games"]
-        )
         self.combined_features = self._merge_game_to_nbastats_team(
-            self.combined_features,
+            self.game_data,
             {
                 "team_nbastats_general_traditional": self.features_data[
                     "team_nbastats_general_traditional"
@@ -169,7 +166,7 @@ class ETLPipeline:
         print("\n+++ Data Types Downcasted")
         print("Total Savings:", info["Savings"])
 
-        print(self.combined_features.info())
+        print(self.combined_features.info(verbose=True, null_counts=True, max_cols=1000))
 
         self._save_as_jsonb(self.combined_features)
         print("\n+++ Combined Features Saved to JSONB Table")
@@ -220,35 +217,35 @@ class ETLPipeline:
             print("\n*** Error Saving Combined Features as JSONB")
             raise e
 
-    def _merge_game_to_538_team(self, game, five38_team):
-        # Convert datetime to date for merging
-        game["game_date"] = game["game_datetime"].dt.date
-        five38_team["date"] = five38_team["date"].dt.date
+    # def _merge_game_to_538_team(self, game, five38_team):
+    #     # Convert datetime to date for merging
+    #     game["game_date"] = game["game_datetime"].dt.date
+    #     five38_team["date"] = five38_team["date"].dt.date
 
-        try:
-            game_538 = game.merge(
-                five38_team,
-                left_on=["game_date", "home_team", "away_team"],
-                right_on=["date", "team1", "team2"],
-                how="left",
-                suffixes=("_game", "_538team"),
-                indicator="_merge_game_538team",
-                validate="1:1",
-            )
-        except ValueError as e:
-            raise ValueError(f"Merge failed: {str(e)}")
+    #     try:
+    #         game_538 = game.merge(
+    #             five38_team,
+    #             left_on=["game_date", "home_team", "away_team"],
+    #             right_on=["date", "team1", "team2"],
+    #             how="left",
+    #             suffixes=("_game", "_538team"),
+    #             indicator="_merge_game_538team",
+    #             validate="1:1",
+    #         )
+    #     except ValueError as e:
+    #         raise ValueError(f"Merge failed: {str(e)}")
 
-        # Optionally, validate the merge (uncomment if needed)
-        # if game_538["_merge_game_538team"].eq("left_only").any():
-        #     print("Some game records don't have matching 538 team records.")
+    #     # Optionally, validate the merge (uncomment if needed)
+    #     # if game_538["_merge_game_538team"].eq("left_only").any():
+    #     #     print("Some game records don't have matching 538 team records.")
 
-        # Drop unnecessary columns
-        game_538.drop(
-            columns=["date", "game_date", "team1", "team2", "_merge_game_538team"],
-            inplace=True,
-        )
+    #     # Drop unnecessary columns
+    #     game_538.drop(
+    #         columns=["date", "game_date", "team1", "team2", "_merge_game_538team"],
+    #         inplace=True,
+    #     )
 
-        return game_538
+    #     return game_538
 
     # Performance Warning - Fragmented Dataframe
     # Low concern on small dataframes
@@ -289,17 +286,22 @@ class ETLPipeline:
                         validate="1:1",
                     )
 
-                    combo_df.drop(
-                        columns=[
-                            "to_date",
-                            "merge_date",
-                            "team_name",
-                            "games",
-                            f"season_{table_name}_{team}_{game_set}",
-                            f"season_type_{table_name}_{team}_{game_set}",
-                        ],
-                        inplace=True,
-                    )
+                    columns_to_drop = [
+                        "to_date",
+                        "merge_date",
+                        "team_name",
+                        "games",
+                        f"season_{table_name}_{team}_{game_set}",
+                        f"season_type_{table_name}_{team}_{game_set}",
+                    ]
+
+                    # Check and drop only the columns that exist in the DataFrame
+                    columns_to_drop = [
+                        col for col in columns_to_drop if col in combo_df.columns
+                    ]
+                    # Now, safely drop the columns
+                    combo_df.drop(columns=columns_to_drop, inplace=True)
+
         combo_df = combo_df.copy()
         combo_df.drop(columns=["game_date"], inplace=True)
 
@@ -440,6 +442,11 @@ class ETLPipeline:
 
     @staticmethod
     def downcast_data_types(df, downcast_floats=True, print_details=False):
+        # Function to convert 'None' to 'NaN'
+        def none_to_nan(x):
+            return x.apply(lambda elem: np.nan if elem is None else elem)
+
+        # Information about memory usage
         info = {}
         mem_used_before = round(df.memory_usage(deep=True).sum() / 1024**2, 2)
         info["Before"] = {
@@ -448,11 +455,17 @@ class ETLPipeline:
                 df.memory_usage(deep=True).groupby([df.dtypes]).sum() / 1024**2, 2
             ),
         }
+
+        # Convert 'None' to 'NaN' across the entire DataFrame
+        df = df.apply(none_to_nan)
+
+        # Downcasting floats if required
         if downcast_floats:
             float_cols = df.select_dtypes(include=["float"]).columns
             df[float_cols] = df[float_cols].apply(
                 lambda x: pd.to_numeric(x, downcast="float")
             )
+
         mem_used_after = round(df.memory_usage(deep=True).sum() / 1024**2, 2)
         info["After"] = {
             "Total (MB)": mem_used_after,
@@ -460,15 +473,18 @@ class ETLPipeline:
                 df.memory_usage(deep=True).groupby([df.dtypes]).sum() / 1024**2, 2
             ),
         }
+
         savings = round(mem_used_before - mem_used_after, 2)
-        savings_pct = round((savings / mem_used_before) * 100)
+        savings_pct = round(
+            (savings / mem_used_before) * 100, 2
+        )  # Add precision for percentage
         info["Savings"] = f"{savings} MB ({savings_pct}%)"
 
         if print_details:
             print(f"Memory Usage Before (MB): {mem_used_before}")
             print(f"Memory Usage After (MB): {mem_used_after}")
             print(f"Savings (MB): {savings} ({savings_pct}%)")
-            return df
+            return df  # Consistency in return type
         else:
             return df, info
 
@@ -500,12 +516,11 @@ class ETLPipeline:
 
 
 if __name__ == "__main__":
-    start_date = "2010-09-01"
+    start_date = "2020-09-01"
     ETL = ETLPipeline(start_date)
 
     ETL.load_features_data(
         [
-            "team_fivethirtyeight_games",
             "team_nbastats_general_traditional",
             "team_nbastats_general_advanced",
             "team_nbastats_general_fourfactors",
