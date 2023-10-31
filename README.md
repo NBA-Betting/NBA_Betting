@@ -83,9 +83,6 @@ There is a possibility for improvement over the vegas lines for NBA games. The a
 
 # Web App and Dashboard
 
-### Link >>> [http://nba-betting.us/](http://nba-betting.us/)  
-** Publically available data is for example only. It does not reflect actual predictions or bet recommendations at this time.
-
 <img src='images/web_app.png' alt='Home Page' width=1200 height=600/>
 <img src='images/dashboard.png' alt='Dashboard' width=1200 height=600/>
 
