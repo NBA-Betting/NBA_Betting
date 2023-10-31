@@ -2,7 +2,7 @@ FEATURE_TABLE_INFO = {
     "team_fivethirtyeight_games": {
         "primary_key": ["date", "team1", "team2"],
         "date_column": "date",
-        "info_columns": ["date", "season", "season_type", "team1", "team2"],
+        "info_columns": ["date", "team1", "team2"],
         "feature_columns": [
             "elo1_pre",
             "elo2_pre",
@@ -21,13 +21,13 @@ FEATURE_TABLE_INFO = {
     "team_nbastats_general_traditional": {
         "primary_key": ["team_name", "to_date", "games"],
         "date_column": "to_date",
-        "info_columns": ["team_name", "to_date", "games", "season", "season_type"],
+        "info_columns": ["team_name", "to_date", "games"],
         "feature_columns": ["gp", "w", "l", "w_pct", "min", "pts", "plus_minus"],
     },
     "team_nbastats_general_advanced": {
         "primary_key": ["team_name", "to_date", "games"],
         "date_column": "to_date",
-        "info_columns": ["team_name", "to_date", "games", "season", "season_type"],
+        "info_columns": ["team_name", "to_date", "games"],
         "feature_columns": [
             "off_rating",
             "e_off_rating",
@@ -54,7 +54,7 @@ FEATURE_TABLE_INFO = {
     "team_nbastats_general_fourfactors": {
         "primary_key": ["team_name", "to_date", "games"],
         "date_column": "to_date",
-        "info_columns": ["team_name", "to_date", "games", "season", "season_type"],
+        "info_columns": ["team_name", "to_date", "games"],
         "feature_columns": [
             "efg_pct",
             "fta_rate",
@@ -69,7 +69,7 @@ FEATURE_TABLE_INFO = {
     "team_nbastats_general_opponent": {
         "primary_key": ["team_name", "to_date", "games"],
         "date_column": "to_date",
-        "info_columns": ["team_name", "to_date", "games", "season", "season_type"],
+        "info_columns": ["team_name", "to_date", "games"],
         "feature_columns": [
             "opp_fgm",
             "opp_fga",

@@ -20,10 +20,9 @@ pd.set_option("display.max_columns", 100)
 
 
 class Predictions:
-    TIME_ZONE = "America/Denver"
-
     def __init__(
         self,
+        line_type,
         line_source="fanduel",
         RDS_ENDPOINT=RDS_ENDPOINT,
         RDS_PASSWORD=RDS_PASSWORD,
@@ -33,6 +32,7 @@ class Predictions:
         self.database_engine = create_engine(
             f"postgresql://postgres:{RDS_PASSWORD}@{RDS_ENDPOINT}/nba_betting"
         )
+        self.line_type = line_type
         self.line_source = line_source
         self.df = None
         self.prediction_df = None
@@ -108,7 +108,7 @@ class Predictions:
         except Exception as e:
             print(f"An error occurred while loading models: {e}")
 
-    def create_predictions(self, df, features, line_source):
+    def create_predictions(self, df, features):
         """Create predictions using loaded models and return a new DataFrame."""
 
         # Flatten the 'data' column to extract features
@@ -118,10 +118,12 @@ class Predictions:
         selected_features = data_df[features]
 
         # Add the line to the selected features
-        if line_source == "open":
-            selected_features["line"] = df["open_line_copy"]
-        elif line_source == "current":
-            selected_features["line"] = df[f"{self.line_source}_home_line"]
+        if self.line_type == "open":
+            line_data = df["open_line_copy"]
+        elif self.line_type == "current":
+            line_data = df[f"{self.line_source}_home_line"]
+
+        selected_features.insert(0, "open_line", line_data)
 
         # Remove rows where any of the selected features is null
         non_null_indices = selected_features.dropna().index
@@ -155,14 +157,24 @@ class Predictions:
         return new_df
 
     def set_up_table(self):
+        # Get the current time in 'America/Denver' timezone
+        denver_time = datetime.datetime.now(pytz.timezone("America/Denver"))
+
+        # Remove the timezone information and microseconds
+        naive_denver_time = denver_time.replace(tzinfo=None, microsecond=0)
+
+        if self.line_type == "open":
+            prediction_line_hv = 0 - self.df["open_line_copy"]
+        elif self.line_type == "current":
+            prediction_line_hv = 0 - self.df[f"{self.line_source}_home_line"]
+
+        # Setting up your DataFrame
         self.prediction_df = pd.DataFrame(
             {
                 "game_id": self.df["game_id"],
-                "prediction_datetime": datetime.datetime.now(
-                    pytz.timezone(self.TIME_ZONE)
-                ),
+                "prediction_datetime": naive_denver_time,
                 "open_line_hv": 0 - self.df["open_line_copy"],
-                "prediction_line_hv": 0 - self.df[f"{self.line_source}_home_line"],
+                "prediction_line_hv": prediction_line_hv,
                 "ml_reg_pred_1": self.df["ml_reg_pred_1"],
                 "ml_cls_pred_1": self.df["ml_cls_pred_1"],
                 "ml_cls_prob_1": self.df["ml_cls_prob_1"],
@@ -239,54 +251,51 @@ class Predictions:
             print(f"An error occurred while saving records: {e}")
 
 
-def main_predictions(current_date, start_date, end_date):
+def main_predictions(current_date, start_date, end_date, line_type="open"):
     ml_cls_model_path = (
-        NBA_BETTING_BASE_DIR + "/models/AutoML/pycaret_cls_lr_2023_09_06_00_22_00"
+        NBA_BETTING_BASE_DIR + "/models/AutoML/pycaret_cls_nb_2023_10_30_06_26_58"
     )
     dl_cls_model_path = (
-        NBA_BETTING_BASE_DIR + "/models/AutoDL/autokeras_cls_dl_2023_09_20_09_21_56"
+        NBA_BETTING_BASE_DIR + "/models/AutoDL/autokeras_cls_dl_2023_10_30_06_36_54"
     )
     ml_reg_model_path = (
-        NBA_BETTING_BASE_DIR + "/models/AutoML/pycaret_reg_linreg_2023_09_06_00_28_16"
+        NBA_BETTING_BASE_DIR + "/models/AutoML/pycaret_reg_lasso_2023_10_30_06_31_04"
     )
     dl_reg_model_path = (
-        NBA_BETTING_BASE_DIR + "/models/AutoDL/autokeras_reg_dl_2023_09_20_09_20_15"
+        NBA_BETTING_BASE_DIR + "/models/AutoDL/autokeras_reg_dl_2023_10_30_06_40_04"
     )
 
     feature_set = [
         "rest_diff_hv",
         "day_of_season",
         "last_5_hv",
-        "538_prob1",
-        "elo_prob1",
         "streak_hv",
         "point_diff_last_5_hv",
         "point_diff_hv",
         "win_pct_hv",
-        "plus_minus_home_l2w_traditional",
-        "net_rating_home_l2w_advanced",
-        "plus_minus_home_l2w_opponent",
-        "plus_minus_zscore_home_l2w_traditional",
+        "pie_percentile_away_all_advanced",
+        "home_team_avg_point_diff",
+        "net_rating_away_all_advanced",
+        "net_rating_home_all_advanced",
+        "plus_minus_home_all_traditional",
+        "e_net_rating_zscore_away_all_advanced",
+        "net_rating_zscore_away_all_advanced",
+        "plus_minus_away_all_opponent",
+        "away_team_avg_point_diff",
+        "plus_minus_away_all_traditional",
+        "pie_zscore_away_all_advanced",
+        "e_net_rating_away_all_advanced",
+        "plus_minus_percentile_away_all_traditional",
         "net_rating_zscore_home_l2w_advanced",
-        "plus_minus_zscore_home_l2w_opponent",
-        "e_net_rating_home_l2w_advanced",
-        "e_net_rating_zscore_home_l2w_advanced",
-        "plus_minus_percentile_home_l2w_opponent",
-        "plus_minus_percentile_home_l2w_traditional",
-        "net_rating_percentile_home_l2w_advanced",
-        "plus_minus_away_l2w_traditional",
-        "plus_minus_away_l2w_opponent",
-        "w_pct_zscore_home_l2w_traditional",
-        "e_net_rating_percentile_home_l2w_advanced",
-        "e_net_rating_away_l2w_advanced",
-        "pie_percentile_home_l2w_advanced",
-        "e_net_rating_zscore_away_l2w_advanced",
-        "net_rating_zscore_away_l2w_advanced",
-        "pie_home_l2w_advanced",
+        "e_net_rating_home_all_advanced",
+        "w_zscore_away_all_traditional",
+        "pie_away_all_advanced",
+        "w_pct_zscore_away_all_traditional",
+        "e_net_rating_percentile_away_l2w_advanced",
     ]
 
     try:
-        predictions = Predictions()
+        predictions = Predictions(line_type=line_type)
         predictions.load_models(
             ml_cls_model_1_path=ml_cls_model_path,
             ml_reg_model_1_path=ml_reg_model_path,
@@ -297,13 +306,13 @@ def main_predictions(current_date, start_date, end_date):
             current_date=current_date, start_date=start_date, end_date=end_date
         )
         predictions.df = predictions.create_predictions(
-            predictions.df, features=feature_set, line_source="open"
+            predictions.df, features=feature_set
         )
         predictions.set_up_table()
         predictions.game_ratings()
 
         print(predictions.prediction_df.info())
-        print(predictions.prediction_df.head(10))
+        print(predictions.prediction_df.sort_values("game_id", ascending=False).head(10))
 
         predictions.save_records()
 
@@ -313,54 +322,53 @@ def main_predictions(current_date, start_date, end_date):
         raise e
 
 
-def on_demand_predictions(current_date, start_date=None, end_date=None):
+def on_demand_predictions(
+    current_date, start_date=None, end_date=None, line_type="current"
+):
     ml_cls_model_path = (
-        NBA_BETTING_BASE_DIR + "/models/AutoML/pycaret_cls_lr_2023_09_06_00_22_00"
+        NBA_BETTING_BASE_DIR + "/models/AutoML/pycaret_cls_nb_2023_10_30_06_26_58"
     )
     dl_cls_model_path = (
-        NBA_BETTING_BASE_DIR + "/models/AutoDL/autokeras_cls_dl_2023_09_20_09_21_56"
+        NBA_BETTING_BASE_DIR + "/models/AutoDL/autokeras_cls_dl_2023_10_30_06_36_54"
     )
     ml_reg_model_path = (
-        NBA_BETTING_BASE_DIR + "/models/AutoML/pycaret_reg_linreg_2023_09_06_00_28_16"
+        NBA_BETTING_BASE_DIR + "/models/AutoML/pycaret_reg_lasso_2023_10_30_06_31_04"
     )
     dl_reg_model_path = (
-        NBA_BETTING_BASE_DIR + "/models/AutoDL/autokeras_reg_dl_2023_09_20_09_20_15"
+        NBA_BETTING_BASE_DIR + "/models/AutoDL/autokeras_reg_dl_2023_10_30_06_40_04"
     )
 
     feature_set = [
         "rest_diff_hv",
         "day_of_season",
         "last_5_hv",
-        "538_prob1",
-        "elo_prob1",
         "streak_hv",
         "point_diff_last_5_hv",
         "point_diff_hv",
         "win_pct_hv",
-        "plus_minus_home_l2w_traditional",
-        "net_rating_home_l2w_advanced",
-        "plus_minus_home_l2w_opponent",
-        "plus_minus_zscore_home_l2w_traditional",
+        "pie_percentile_away_all_advanced",
+        "home_team_avg_point_diff",
+        "net_rating_away_all_advanced",
+        "net_rating_home_all_advanced",
+        "plus_minus_home_all_traditional",
+        "e_net_rating_zscore_away_all_advanced",
+        "net_rating_zscore_away_all_advanced",
+        "plus_minus_away_all_opponent",
+        "away_team_avg_point_diff",
+        "plus_minus_away_all_traditional",
+        "pie_zscore_away_all_advanced",
+        "e_net_rating_away_all_advanced",
+        "plus_minus_percentile_away_all_traditional",
         "net_rating_zscore_home_l2w_advanced",
-        "plus_minus_zscore_home_l2w_opponent",
-        "e_net_rating_home_l2w_advanced",
-        "e_net_rating_zscore_home_l2w_advanced",
-        "plus_minus_percentile_home_l2w_opponent",
-        "plus_minus_percentile_home_l2w_traditional",
-        "net_rating_percentile_home_l2w_advanced",
-        "plus_minus_away_l2w_traditional",
-        "plus_minus_away_l2w_opponent",
-        "w_pct_zscore_home_l2w_traditional",
-        "e_net_rating_percentile_home_l2w_advanced",
-        "e_net_rating_away_l2w_advanced",
-        "pie_percentile_home_l2w_advanced",
-        "e_net_rating_zscore_away_l2w_advanced",
-        "net_rating_zscore_away_l2w_advanced",
-        "pie_home_l2w_advanced",
+        "e_net_rating_home_all_advanced",
+        "w_zscore_away_all_traditional",
+        "pie_away_all_advanced",
+        "w_pct_zscore_away_all_traditional",
+        "e_net_rating_percentile_away_l2w_advanced",
     ]
 
     try:
-        predictions = Predictions()
+        predictions = Predictions(line_type=line_type)
         predictions.load_models(
             ml_cls_model_1_path=ml_cls_model_path,
             ml_reg_model_1_path=ml_reg_model_path,
@@ -371,15 +379,15 @@ def on_demand_predictions(current_date, start_date=None, end_date=None):
             current_date=current_date, start_date=start_date, end_date=end_date
         )
         predictions.df = predictions.create_predictions(
-            predictions.df, features=feature_set, line_source="current"
+            predictions.df, features=feature_set
         )
         predictions.set_up_table()
         predictions.game_ratings()
 
         print(predictions.prediction_df.info())
-        print(predictions.prediction_df.head(10))
+        print(predictions.prediction_df.sort_values("game_id", ascending=False).head(10))
 
-        predictions.save_records()
+        # predictions.save_records()
 
         print("----- Predictions Update Successful -----")
     except Exception as e:
@@ -388,6 +396,8 @@ def on_demand_predictions(current_date, start_date=None, end_date=None):
 
 
 if __name__ == "__main__":
-    # main_predictions(current_date=False, start_date="2010-09-01", end_date="2023-09-01")
-    # on_demand_predictions(current_date=True)
+    # main_predictions(current_date=False, start_date="2020-09-01", end_date="2023-10-29")
+    # on_demand_predictions(
+    #     current_date=False, start_date="2023-09-01", end_date="2023-10-29"
+    # )
     pass

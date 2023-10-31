@@ -63,7 +63,7 @@ class FeatureCreationPreMerge:
             mean = s.mean()
             std = s.std(ddof=ddof)
             if std == 0:
-                return pd.Series([None] * len(s), index=s.index)
+                return pd.Series([np.nan] * len(s), index=s.index)
             return (s - mean) / std
 
         def safe_percentile(s):
@@ -84,11 +84,15 @@ class FeatureCreationPreMerge:
 
 class FeatureCreationPostMerge:
     def __init__(self, combined_features):
-        self.combined_features = combined_features
         self.updated_combined_features = combined_features.copy()
 
     def full_feature_creation(self):
-        self.updated_combined_features = self._add_day_of_season(self.combined_features)
+        self.updated_combined_features = self._add_season_timeframe_info(
+            self.updated_combined_features
+        )
+        self.updated_combined_features = self._add_day_of_season(
+            self.updated_combined_features
+        )
         self.updated_combined_features = self._calculate_days_since_last_game(
             self.updated_combined_features
         )
@@ -102,35 +106,31 @@ class FeatureCreationPostMerge:
             self.updated_combined_features
         )
 
+        self.updated_combined_features = self.updated_combined_features.drop(
+            columns=["reg_season_start_date"]
+        )
+
         return self.updated_combined_features
 
-    # def _condense_538_features(self, df):
-    #     df["538_prob1"] = df.apply(
-    #         lambda row: row["raptor_prob1"]
-    #         if pd.notna(row["raptor_prob1"])
-    #         else (
-    #             row["carm_elo_prob1"]
-    #             if pd.notna(row["carm_elo_prob1"])
-    #             else row["elo_prob1"]
-    #         ),
-    #         axis=1,
-    #     )
-    #     return df
+    def _add_season_timeframe_info(self, df):
+        # Convert the 'game_datetime' to a string format and apply 'find_season_information'
+        season_info_series = (
+            df["game_datetime"].dt.strftime("%Y-%m-%d").apply(find_season_information)
+        )
+
+        # Extract relevant info from the dictionaries and add as new columns
+        df["season"] = season_info_series.apply(lambda x: x["season"])
+        df["season_type"] = season_info_series.apply(lambda x: x["season_type"])
+        df["reg_season_start_date"] = season_info_series.apply(
+            lambda x: x["reg_season_start_date"]
+        )
+        df["reg_season_start_date"] = pd.to_datetime(df["reg_season_start_date"])
+        return df
 
     def _add_day_of_season(self, df):
-        def calculate_day_of_season(x):
-            try:
-                start_date = datetime.strptime(
-                    find_season_information(x.strftime("%Y-%m-%d"))[
-                        "reg_season_start_date"
-                    ],
-                    "%Y-%m-%d",
-                )
-                return (x - start_date).days
-            except:
-                return None
-
-        df["day_of_season"] = df["game_datetime"].apply(calculate_day_of_season)
+        df["day_of_season"] = (
+            df["game_datetime"] - df["reg_season_start_date"]
+        ).dt.days + 1
         return df
 
     def _encode_home_team(self, df):
@@ -199,11 +199,10 @@ class FeatureCreationPostMerge:
         df["rest_diff_hv"] = (
             df["days_since_last_game_home"] - df["days_since_last_game_away"]
         )
-
         return df
 
-    def _calculate_team_performance_metrics(self, df):
-        df = df.copy()
+    def _calculate_team_performance_metrics(self, inbound_df):
+        df = inbound_df.copy()
         df.sort_values(["season", "game_datetime"], inplace=True)
 
         # initializing new columns
@@ -224,8 +223,9 @@ class FeatureCreationPostMerge:
 
         # Loop through each season
         # Metrics reset at the beginning of each season
+        # print(df.info(verbose=True, max_cols=1000, show_counts=True))
         for season in df["season"].unique():
-            season_df = df[df["season"] == season].copy()
+            season_df = df.loc[df["season"] == season].copy()
 
             # Loop through each team
             # Metrics are calculated for each team
@@ -238,17 +238,30 @@ class FeatureCreationPostMerge:
                 team_df = season_df[mask].copy()
                 team_df["team"] = team
 
-                # Calculate if the team won the game
-                team_df["is_win"] = (
-                    (team_df["home_team"] == team)
-                    & (team_df["home_score"] > team_df["away_score"])
-                ) | (
-                    (team_df["away_team"] == team)
-                    & (team_df["away_score"] > team_df["home_score"])
-                )
+                # Calculate the win/loss performance of the team in each game
+                conditions = [
+                    (~team_df["game_completed"]),
+                    (
+                        (team_df["home_team"] == team)
+                        & (team_df["home_score"] > team_df["away_score"])
+                    ),
+                    (
+                        (team_df["away_team"] == team)
+                        & (team_df["away_score"] > team_df["home_score"])
+                    ),
+                    (
+                        (team_df["home_team"] == team)
+                        & (team_df["home_score"] < team_df["away_score"])
+                    ),
+                    (
+                        (team_df["away_team"] == team)
+                        & (team_df["away_score"] < team_df["home_score"])
+                    ),
+                ]
 
-                # Convert win/loss to +1/-1 representation
-                team_df["performance"] = team_df["is_win"].replace({True: 1, False: -1})
+                choices = [0, 1, 1, -1, -1]
+
+                team_df["performance"] = np.select(conditions, choices, default=np.nan)
 
                 # Calculate the results of the last 5 games (excluding current game),
                 # with a value even if there are fewer than 5 previous games.
@@ -274,6 +287,12 @@ class FeatureCreationPostMerge:
 
                     # Update the streak based on the game outcome
                     performance = row["performance"]
+
+                    if (
+                        performance == 0
+                    ):  # If game is in progress, skip updating the streak
+                        continue
+
                     if current_streak == 0:
                         current_streak = performance
                     elif np.sign(current_streak) == np.sign(performance):
@@ -312,13 +331,15 @@ class FeatureCreationPostMerge:
                     "avg_point_diff",
                     "avg_point_diff_last_5",
                 ]
+
                 for col in update_cols:
-                    df.loc[
-                        mask & (df["home_team"] == team), f"home_team_{col}"
-                    ] = team_df[col]
-                    df.loc[
-                        mask & (df["away_team"] == team), f"away_team_{col}"
-                    ] = team_df[col]
+                    # For home team
+                    home_mask = (df["home_team"] == team) & mask
+                    df.loc[home_mask, f"home_team_{col}"] = team_df.loc[home_mask, col]
+
+                    # For away team
+                    away_mask = (df["away_team"] == team) & mask
+                    df.loc[away_mask, f"away_team_{col}"] = team_df.loc[away_mask, col]
 
         # Compute the "home view" metrics
         df["last_5_hv"] = (

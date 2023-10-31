@@ -46,7 +46,10 @@ class GameCoversHistoricScoresAndOddsSpider(BaseSpider):
             todays_date = denver_now.strftime("%Y-%m-%d")
             # Calculate yesterday's date by subtracting a day
             yesterdays_date = (denver_now - timedelta(days=1)).strftime("%Y-%m-%d")
-            return [todays_date, yesterdays_date]
+            # Calculate tomorrow's date by adding a day
+            tomorrows_date = (denver_now + timedelta(days=1)).strftime("%Y-%m-%d")
+
+            return [todays_date, yesterdays_date, tomorrows_date]
 
         # Check if input is a season or multiple seasons
         if "-" not in dates_input:

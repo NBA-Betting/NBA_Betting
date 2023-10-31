@@ -5,6 +5,7 @@ nba_venv
 .env
 models/
 all_data.csv
+data/
 
 # Tensorboard, PyCaret, AutoKeras
 tensorboard_logs/

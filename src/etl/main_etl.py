@@ -1,7 +1,7 @@
 import json
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import numpy as np
 import pandas as pd
@@ -52,9 +52,10 @@ class ETLPipeline:
         if start_date is None:
             start_date = self.start_date
 
-        todays_date = datetime.now(pytz.timezone("America/Denver")).strftime("%Y-%m-%d")
+        todays_date = datetime.now(pytz.timezone("America/Denver")).date()
+        tomorrows_date = todays_date + timedelta(days=1)
 
-        query = f"SELECT {columns} FROM {table_name} WHERE {date_column} >= '{start_date}' AND {date_column} <= '{todays_date}';"
+        query = f"SELECT {columns} FROM {table_name} WHERE {date_column} >= '{start_date}' AND {date_column} < '{tomorrows_date}';"
         with self.database_engine.connect() as connection:
             return pd.read_sql_query(query, connection, parse_dates=[date_column])
 
@@ -67,6 +68,7 @@ class ETLPipeline:
             "open_line",
             "home_score",
             "away_score",
+            "game_completed",
         ]
         try:
             game_data = self.load_table("games", "game_datetime", features)
@@ -167,7 +169,7 @@ class ETLPipeline:
         print("\n+++ Data Types Downcasted")
         print("Total Savings:", info["Savings"])
 
-        print(self.combined_features.info(verbose=True, null_counts=True, max_cols=1000))
+        # print(self.combined_features.info(verbose=True, null_counts=True, max_cols=1000))
 
         self._save_as_jsonb(self.combined_features)
         print("\n+++ Combined Features Saved to JSONB Table")
@@ -218,67 +220,39 @@ class ETLPipeline:
             print("\n*** Error Saving Combined Features as JSONB")
             raise e
 
-    # def _merge_game_to_538_team(self, game, five38_team):
-    #     # Convert datetime to date for merging
-    #     game["game_date"] = game["game_datetime"].dt.date
-    #     five38_team["date"] = five38_team["date"].dt.date
-
-    #     try:
-    #         game_538 = game.merge(
-    #             five38_team,
-    #             left_on=["game_date", "home_team", "away_team"],
-    #             right_on=["date", "team1", "team2"],
-    #             how="left",
-    #             suffixes=("_game", "_538team"),
-    #             indicator="_merge_game_538team",
-    #             validate="1:1",
-    #         )
-    #     except ValueError as e:
-    #         raise ValueError(f"Merge failed: {str(e)}")
-
-    #     # Optionally, validate the merge (uncomment if needed)
-    #     # if game_538["_merge_game_538team"].eq("left_only").any():
-    #     #     print("Some game records don't have matching 538 team records.")
-
-    #     # Drop unnecessary columns
-    #     game_538.drop(
-    #         columns=["date", "game_date", "team1", "team2", "_merge_game_538team"],
-    #         inplace=True,
-    #     )
-
-    #     return game_538
-
-    # Performance Warning - Fragmented Dataframe
-    # Low concern on small dataframes
     def _merge_game_to_nbastats_team(self, game, nbastats_team_dfs):
-        combo_df = game.copy()
-        combo_df["game_date"] = combo_df["game_datetime"].dt.date.astype("str")
+        # Create a copy of the game DataFrame to avoid modifying the original
+        features_df = game.copy()
+        # Create game_date string column for merging
+        features_df["game_date"] = features_df["game_datetime"].dt.date.astype("str")
+        # Creating a merge_date column within each nbastats_team_df
+        for table_name, table in nbastats_team_dfs.items():
+            table["merge_date"] = (
+                table["to_date"].dt.date + pd.DateOffset(days=1)
+            ).astype("str")
 
         for table_name, table in nbastats_team_dfs.items():
-            df = table.copy()
-            df["merge_date"] = (df["to_date"].dt.date - pd.DateOffset(days=1)).astype(
-                "str"
-            )
-
             for team in ["home", "away"]:
                 for game_set in ["all", "l2w"]:
-                    sub_df = df.loc[df.games == game_set].copy()
+                    sub_df = table.loc[table.games == game_set].copy()
+
+                    # Rename columns to avoid duplicate column names
+                    table_suffix = table_name.split("_")[-1]
+                    columns_to_not_rename = [
+                        "team_name",
+                        "to_date",
+                        "merge_date",
+                        "games",
+                    ]
                     sub_df.columns = [
-                        f"{col}_{team}_{game_set}_{table_name.split('_')[-1]}"
-                        if col
-                        not in [
-                            "team_name",
-                            "to_date",
-                            "merge_date",
-                            "season",
-                            "season_type",
-                            "games",
-                        ]
+                        f"{col}_{team}_{game_set}_{table_suffix}"
+                        if col not in columns_to_not_rename
                         else col
                         for col in sub_df.columns
                     ]
 
-                    combo_df = combo_df.merge(
+                    # Merge the sub_df to the combo_df
+                    features_df = features_df.merge(
                         sub_df,
                         left_on=["game_date", f"{team}_team"],
                         right_on=["merge_date", "team_name"],
@@ -287,26 +261,24 @@ class ETLPipeline:
                         validate="1:1",
                     )
 
+                    # Drop the columns that were used for merging
                     columns_to_drop = [
                         "to_date",
                         "merge_date",
                         "team_name",
                         "games",
-                        f"season_{table_name}_{team}_{game_set}",
-                        f"season_type_{table_name}_{team}_{game_set}",
                     ]
 
                     # Check and drop only the columns that exist in the DataFrame
                     columns_to_drop = [
-                        col for col in columns_to_drop if col in combo_df.columns
+                        col for col in columns_to_drop if col in features_df.columns
                     ]
                     # Now, safely drop the columns
-                    combo_df.drop(columns=columns_to_drop, inplace=True)
+                    features_df = features_df.drop(columns=columns_to_drop)
 
-        combo_df = combo_df.copy()
-        combo_df.drop(columns=["game_date"], inplace=True)
+        features_df = features_df.drop(columns=["game_date"])
 
-        return combo_df
+        return features_df
 
     def _standardize_teams_in_dataframe(self, df, table_name):
         possible_team_columns = [

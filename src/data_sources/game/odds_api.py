@@ -358,5 +358,5 @@ def update_game_data(past_games):
 
 
 if __name__ == "__main__":
-    # update_game_data(past_games=True)
-    pass
+    update_game_data(past_games=True)
+    # pass
