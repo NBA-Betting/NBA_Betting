@@ -144,3 +144,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Github Pages Related
+docs/_site/
+docs/.bundle/
+docs/vendor/
+docs/Gemfile.lock
+docs/Gemfile

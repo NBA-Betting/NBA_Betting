@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Begin Jekyll SEO tag v2.8.0 -->
+    <title>NBA Betting | Using data analytics and machine learning to create a betting system for the 2023/2024 NBA
+        season.</title>
+    <meta name="generator" content="Jekyll v3.9.3" />
+    <meta property="og:title" content="NBA Betting" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="description"
+        content="Using data analytics and machine learning to create a betting system for the 2023/2024 NBA season." />
+    <meta property="og:description"
+        content="Using data analytics and machine learning to create a betting system for the 2023/2024 NBA season." />
+    <link rel="canonical" href="http://localhost:4000/" />
+    <meta property="og:url" content="http://localhost:4000/" />
+    <meta property="og:site_name" content="NBA_Betting" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary" />
+    <meta property="twitter:title" content="NBA_Betting" />
+    <script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","description":"Using data analytics and machine learning to create a betting system for the 2023/2024 NBA season.","headline":"NBA_Betting","name":"NBA_Betting","url":"http://localhost:4000/"}</script>
+    <!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/assets/css/style.css?v=529ede768e757f811c9e356fb341f4864d0efefa">
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+    <!-- Setup Google Analytics -->
+
+
+
+    <!-- You can set your favicon here -->
+    <!-- link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" -->
+
+    <!-- end custom head snippets -->
+
+</head>
+
+<body>
+    <div class="container-lg px-3 my-5 markdown-body">
+
+        <h1><a href="http://localhost:4000/">NBA Betting</a></h1>
+
+
+        <p><img src="/images/header-nba.jpg" alt="NBA" width="1400" height="400" /></p>
+
+        <h2 id="table-of-contents">Table of Contents</h2>
+        <ul>
+            <li><a href="#Introduction">Introduction</a></li>
+            <li><a href="#Data-Engineering">Data Engineering</a></li>
+            <li><a href="#Exploratory-Data-Analysis">Exploratory Data Analysis</a></li>
+            <li><a href="#AutoML">AutoML</a></li>
+            <li><a href="#Bet-Decisions">Bet Decisions</a></li>
+            <li><a href="#Web-App-and-Dashboard">Web App and Dashboard</a></li>
+        </ul>
+
+        <p><br /><br /></p>
+
+        <h1 id="introduction">Introduction</h1>
+
+        <h2 id="goal">Goal</h2>
+
+        <p>Create a <strong>Profitable</strong> and <strong>Comprehensive</strong> System for Predicting the
+            <strong>Outcomes</strong> of NBA Games.
+        </p>
+
+        <h2 id="motivation">Motivation</h2>
+
+        <p>NBA betting sits at an intersection of my interests, knowledge, skills, and goals which makes it a project
+            that is both beneficial and exciting for me. A lucky combination!</p>
+        <ul>
+            <li>NBA - Huge fan of professional basketball. Especially since 2015. Main focus is on the analytical and
+                financial aspects of the league.</li>
+            <li>Data Science - Past Education and Current Career Focus.</li>
+            <li>Sports Stats - Lifelong interest starting with baseball and moving into other sports.</li>
+            <li>Investing - Education in Finance - Sportsbetting as an investment option.</li>
+        </ul>
+
+        <h2 id="plan">Plan</h2>
+
+        <h3 id="how-to-predict-a-nba-game-result">How to predict a NBA game result?</h3>
+        <ol>
+            <li><strong>Team Prediction Framework</strong> - Combination of ML/DL and traditional algorithms used to
+                predict the performance of teams as a whole.</li>
+            <li><strong>Player Prediction Framework</strong> - Combination of ML/DL and Traditional Algorithms used to
+                predict the performance of individual players.</li>
+            <li><strong>Player Interaction and Synergy Framework</strong> - Focused on understanding and predicting the
+                performance of players in various combinations on and off the court.
+                Example: How does Steph Curry perform when Draymond Green is on the court vs off the court?</li>
+            <li><strong>Game Prediction Framework</strong> - Betting market data and other misc predictors of game
+                outcomes.</li>
+            <li><strong>Prediction Framework Integration</strong> - Combining the 4 prediction frameworks into a single
+                bet management system.</li>
+        </ol>
+
+        <h3 id="data-point-examples">Data Point Examples</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th> </th>
+                    <th> </th>
+                    <th> </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>All in One Team and Player Advanced Stats&lt;ul&gt;&lt;li&gt;RAPTOR -
+                        FiveThirtyEight&lt;/li&gt;&lt;li&gt;DARKO - The Athletic&lt;/li&gt;&lt;li&gt;LEBRON - BBall
+                        Index&lt;/li&gt;&lt;li&gt;EPM - Dunks and Threes&lt;/li&gt;&lt;/ul&gt;</td>
+                    <td>Long-Run Team Quality and Opponent Quality&lt;ul&gt;&lt;li&gt;Traditional Box Score
+                        Stats&lt;/li&gt;&lt;li&gt;Advanced Stats&lt;/li&gt;&lt;li&gt;Elo
+                        Ratings&lt;/li&gt;&lt;li&gt;Power Rankings&lt;/li&gt;&lt;/ul&gt;</td>
+                    <td>Recent Team Performance&lt;ul&gt;&lt;li&gt;Last 3, 5, 10, 20 Days&lt;/li&gt;&lt;li&gt;Game
+                        Results&lt;/li&gt;&lt;li&gt;Traditional Stats&lt;/li&gt;&lt;li&gt;Advanced
+                        Stats&lt;/li&gt;&lt;ul&gt;</td>
+                </tr>
+                <tr>
+                    <td>Injuries, Rest, Fatigue&lt;ul&gt;&lt;li&gt;Estimated Performance % for Players - Injury % and
+                        Fatigue %&lt;/li&gt;&lt;li&gt;Schedule Effects - Back2Backs, 3 Games in 4
+                        Nights&lt;/li&gt;&lt;/ul&gt;</td>
+                    <td>Game Location&lt;ul&gt;&lt;li&gt;Home vs. Road Adjustment&lt;/li&gt;&lt;li&gt;Altitude Effects
+                        for Denver and Utah&lt;/li&gt;&lt;/ul&gt;</td>
+                    <td>Seasonal Effects&lt;ul&gt;&lt;li&gt;Tanking for Draft Position&lt;/li&gt;&lt;li&gt;Playoff Seed
+                        Positioning&lt;/li&gt;&lt;/ul&gt;</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><br /><br /></p>
+
+        <h1 id="data-engineering">Data Engineering</h1>
+
+        <h2 id="data-acquisition-and-storage">Data Acquisition and Storage</h2>
+
+        <p><img src="/images/data_engineering_flowchart_1.png" alt="Data Acquisition and Storage" width="1200"
+                height="600" /></p>
+
+        <h2 id="etl">ETL</h2>
+
+        <p><img src="images/data_engineering_flowchart_2.png" alt="ETL" width="1200" height="500" /></p>
+
+        <p><br /><br /></p>
+
+        <h1 id="exploratory-data-analysis">Exploratory Data Analysis</h1>
+
+        <h2 id="average-vegas-point-spread-error-per-game-over-time">Average Vegas Point Spread Error Per Game Over Time
+        </h2>
+
+        <p>There is a possibility for improvement over the vegas lines for NBA games. The average miss for the vegas
+            line vs the actual game result is over 9 points since 2010!</p>
+
+        <p><img src="images/vegas_miss_abs.png" alt="Average Point Spread Error Per Game Over Time" width="1200"
+                height="600" /></p>
+
+        <p><br /><br /></p>
+
+        <h1 id="automl">AutoML</h1>
+
+        <p><img src="images/automl_logos.png" alt="AutoML Logos" width="1200" /></p>
+
+        <p><img src="images/cls_model_accuracy.png" alt="Classification Model Accuracy" width="1200" /></p>
+
+        <p><br /><br /></p>
+
+        <h1 id="bet-decisions">Bet Decisions</h1>
+
+        <p><img src="images/bet_decisions.png" alt="Bet Decisions" width="1200" height="600" /></p>
+
+        <p><br /><br /></p>
+
+        <h1 id="web-app-and-dashboard">Web App and Dashboard</h1>
+
+        <p><img src="images/web_app.png" alt="Home Page" width="1200" height="600" />
+            <img src="images/dashboard.png" alt="Dashboard" width="1200" height="600" />
+        </p>
+
+
+
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js"
+        integrity="sha256-lZaRhKri35AyJSypXXs4o6OPFTbTmUoltBbDCbdzegg=" crossorigin="anonymous"></script>
+    <script>anchors.add();</script>
+</body>
+
+</html>
