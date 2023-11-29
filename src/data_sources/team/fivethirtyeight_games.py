@@ -12,8 +12,8 @@ sys.path.append(os.path.join(here, "../.."))
 from database_orm import FivethirtyeightGamesTable
 
 load_dotenv()
-RDS_ENDPOINT = os.getenv("RDS_ENDPOINT")
-RDS_PASSWORD = os.getenv("RDS_PASSWORD")
+DB_ENDPOINT = os.getenv("DB_ENDPOINT")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 
 def update_all_data_538(engine):
@@ -42,53 +42,53 @@ def update_all_data_538(engine):
     # keep only the records that are not marked as duplicates
     df = df[~duplicates]
 
-    # with Session(engine) as session:
-    #     # delete existing data
-    #     session.query(FivethirtyeightGamesTable).delete()
+    with Session(engine) as session:
+        # delete existing data
+        session.query(FivethirtyeightGamesTable).delete()
 
-    #     # add new data
-    #     for index, row in df.iterrows():
-    #         game = FivethirtyeightGamesTable(
-    #             date=row["date"],
-    #             season=row["season"],
-    #             neutral=row["neutral"],
-    #             season_type=row["season_type"],
-    #             team1=row["team1"],
-    #             team2=row["team2"],
-    #             elo1_pre=row["elo1_pre"],
-    #             elo2_pre=row["elo2_pre"],
-    #             elo_prob1=row["elo_prob1"],
-    #             elo_prob2=row["elo_prob2"],
-    #             elo1_post=row["elo1_post"],
-    #             elo2_post=row["elo2_post"],
-    #             carm_elo1_pre=row["carm-elo1_pre"],
-    #             carm_elo2_pre=row["carm-elo2_pre"],
-    #             carm_elo_prob1=row["carm-elo_prob1"],
-    #             carm_elo_prob2=row["carm-elo_prob2"],
-    #             carm_elo1_post=row["carm-elo1_post"],
-    #             carm_elo2_post=row["carm-elo2_post"],
-    #             raptor1_pre=row["raptor1_pre"],
-    #             raptor2_pre=row["raptor2_pre"],
-    #             raptor_prob1=row["raptor_prob1"],
-    #             raptor_prob2=row["raptor_prob2"],
-    #             score1=row["score1"],
-    #             score2=row["score2"],
-    #             quality=row["quality"],
-    #             importance=row["importance"],
-    #             total_rating=row["total_rating"],
-    #         )
-    #         session.add(game)
-    #     session.commit()
+        # add new data
+        for index, row in df.iterrows():
+            game = FivethirtyeightGamesTable(
+                date=row["date"],
+                season=row["season"],
+                neutral=row["neutral"],
+                season_type=row["season_type"],
+                team1=row["team1"],
+                team2=row["team2"],
+                elo1_pre=row["elo1_pre"],
+                elo2_pre=row["elo2_pre"],
+                elo_prob1=row["elo_prob1"],
+                elo_prob2=row["elo_prob2"],
+                elo1_post=row["elo1_post"],
+                elo2_post=row["elo2_post"],
+                carm_elo1_pre=row["carm-elo1_pre"],
+                carm_elo2_pre=row["carm-elo2_pre"],
+                carm_elo_prob1=row["carm-elo_prob1"],
+                carm_elo_prob2=row["carm-elo_prob2"],
+                carm_elo1_post=row["carm-elo1_post"],
+                carm_elo2_post=row["carm-elo2_post"],
+                raptor1_pre=row["raptor1_pre"],
+                raptor2_pre=row["raptor2_pre"],
+                raptor_prob1=row["raptor_prob1"],
+                raptor_prob2=row["raptor_prob2"],
+                score1=row["score1"],
+                score2=row["score2"],
+                quality=row["quality"],
+                importance=row["importance"],
+                total_rating=row["total_rating"],
+            )
+            session.add(game)
+        session.commit()
 
-    print(df.info())
-    print(df.sort_values("date", ascending=False).head(10))
+    # print(df.info())
+    # print(df.sort_values("date", ascending=False).head(10))
 
 
 if __name__ == "__main__":
     try:
         username = "postgres"
-        password = RDS_PASSWORD
-        endpoint = RDS_ENDPOINT
+        password = DB_PASSWORD
+        endpoint = DB_ENDPOINT
         database = "nba_betting"
         engine = create_engine(
             f"postgresql+psycopg2://{username}:{password}@{endpoint}/{database}"

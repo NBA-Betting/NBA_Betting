@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 
 load_dotenv()
-RDS_ENDPOINT = os.getenv("RDS_ENDPOINT")
-RDS_PASSWORD = os.getenv("RDS_PASSWORD")
+DB_ENDPOINT = os.getenv("DB_ENDPOINT")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 
 # ----- Dashboard Creation -----
@@ -32,7 +32,7 @@ def init_public_dashboard(server):
     # Loading Data
 
     engine = create_engine(
-        f"postgresql+psycopg2://postgres:{RDS_PASSWORD}@{RDS_ENDPOINT}/nba_betting"
+        f"postgresql+psycopg2://postgres:{DB_PASSWORD}@{DB_ENDPOINT}/nba_betting"
     )
     with engine.connect() as connection:
         df = get_dashboard_data(connection)
@@ -263,7 +263,9 @@ def get_dashboard_data(connection):
 # ----- Chart Creation -----
 def create_original_charts(df):
     today = datetime.datetime.now(pytz.timezone("America/Denver"))
-    season_start = datetime.datetime(2022, 10, 1, tzinfo=pytz.timezone("America/Denver"))
+    season_start = datetime.datetime(
+        2022, 10, 1, tzinfo=pytz.timezone("America/Denver")
+    )
 
     date_mask = (
         df["game_date"].apply(

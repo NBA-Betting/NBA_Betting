@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 NBA_BETTING_BASE_DIR = os.getenv("NBA_BETTING_BASE_DIR")
+EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
 
 # Define the DAG
 dag = DAG(
@@ -17,7 +18,7 @@ dag = DAG(
         "retries": 0,
         "retry_delay": timedelta(minutes=5),
         "start_date": pendulum.datetime(2023, 5, 1),
-        "email": ["jeffjohannsen7@gmail.com"],
+        "email": [EMAIL_ADDRESS],
         "email_on_failure": True,
         "email_on_retry": True,
     },

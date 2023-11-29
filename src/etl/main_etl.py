@@ -17,8 +17,8 @@ sys.path.append(os.path.join(here, "../.."))
 import config
 
 load_dotenv()
-RDS_ENDPOINT = os.getenv("RDS_ENDPOINT")
-RDS_PASSWORD = os.getenv("RDS_PASSWORD")
+DB_ENDPOINT = os.getenv("DB_ENDPOINT")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 pd.set_option("display.max_columns", 200)
 pd.set_option("display.max_rows", None)
@@ -29,12 +29,12 @@ class ETLPipeline:
     def __init__(
         self,
         start_date,
-        RDS_ENDPOINT=RDS_ENDPOINT,
-        RDS_PASSWORD=RDS_PASSWORD,
+        DB_ENDPOINT=DB_ENDPOINT,
+        DB_PASSWORD=DB_PASSWORD,
         config=config,
     ):
         self.database_engine = create_engine(
-            f"postgresql://postgres:{RDS_PASSWORD}@{RDS_ENDPOINT}/nba_betting"
+            f"postgresql://postgres:{DB_PASSWORD}@{DB_ENDPOINT}/nba_betting"
         )
         self.config = config
         self.start_date = start_date
@@ -44,7 +44,9 @@ class ETLPipeline:
 
     # DATA LOADING
 
-    def load_table(self, table_name, date_column, columns_to_load=None, start_date=None):
+    def load_table(
+        self, table_name, date_column, columns_to_load=None, start_date=None
+    ):
         if columns_to_load is None:
             columns = "*"
         else:

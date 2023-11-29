@@ -11,8 +11,8 @@ from sqlalchemy import create_engine
 from tensorflow.keras.models import load_model
 
 load_dotenv()
-RDS_ENDPOINT = os.getenv("RDS_ENDPOINT")
-RDS_PASSWORD = os.getenv("RDS_PASSWORD")
+DB_ENDPOINT = os.getenv("DB_ENDPOINT")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
 NBA_BETTING_BASE_DIR = os.getenv("NBA_BETTING_BASE_DIR")
 
 pd.set_option("display.width", 200)
@@ -24,13 +24,13 @@ class Predictions:
         self,
         line_type,
         line_source="fanduel",
-        RDS_ENDPOINT=RDS_ENDPOINT,
-        RDS_PASSWORD=RDS_PASSWORD,
+        DB_ENDPOINT=DB_ENDPOINT,
+        DB_PASSWORD=DB_PASSWORD,
     ):
         """Initialize Game_Record with a database engine."""
 
         self.database_engine = create_engine(
-            f"postgresql://postgres:{RDS_PASSWORD}@{RDS_ENDPOINT}/nba_betting"
+            f"postgresql://postgres:{DB_PASSWORD}@{DB_ENDPOINT}/nba_betting"
         )
         self.line_type = line_type
         self.line_source = line_source
@@ -312,7 +312,9 @@ def main_predictions(current_date, start_date, end_date, line_type="open"):
         predictions.game_ratings()
 
         print(predictions.prediction_df.info())
-        print(predictions.prediction_df.sort_values("game_id", ascending=False).head(10))
+        print(
+            predictions.prediction_df.sort_values("game_id", ascending=False).head(10)
+        )
 
         predictions.save_records()
 
@@ -385,7 +387,9 @@ def on_demand_predictions(
         predictions.game_ratings()
 
         print(predictions.prediction_df.info())
-        print(predictions.prediction_df.sort_values("game_id", ascending=False).head(10))
+        print(
+            predictions.prediction_df.sort_values("game_id", ascending=False).head(10)
+        )
 
         # predictions.save_records()
 

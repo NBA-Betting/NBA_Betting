@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 
 load_dotenv()
-RDS_ENDPOINT = os.getenv("RDS_ENDPOINT")
-RDS_PASSWORD = os.getenv("RDS_PASSWORD")
+DB_ENDPOINT = os.getenv("DB_ENDPOINT")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 
 class BettingAccount:
@@ -51,8 +51,8 @@ class BettingAccount:
 
 def update_betting_account_balance():
     username = "postgres"
-    password = RDS_PASSWORD
-    endpoint = RDS_ENDPOINT
+    password = DB_PASSWORD
+    endpoint = DB_ENDPOINT
     database = "nba_betting"
     port = "5432"
 

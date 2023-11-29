@@ -10,8 +10,8 @@ sys.path.append(os.path.join(here, "../.."))
 from config import NBA_IMPORTANT_DATES
 
 load_dotenv()
-RDS_ENDPOINT = os.environ.get("RDS_ENDPOINT")
-RDS_PASSWORD = os.environ.get("RDS_PASSWORD")
+DB_ENDPOINT = os.environ.get("DB_ENDPOINT")
+DB_PASSWORD = os.environ.get("DB_PASSWORD")
 ZYTE_API_KEY = os.environ.get("ZYTE_API_KEY")
 
 
@@ -71,7 +71,9 @@ def determine_season_type(date, important_dates):
         post_end_date = pd.to_datetime(dates["postseason_end_date"])
 
         if reg_start_date <= date <= reg_end_date:
-            month_of_season = (date.to_period("M") - reg_start_date.to_period("M")).n + 1
+            month_of_season = (
+                date.to_period("M") - reg_start_date.to_period("M")
+            ).n + 1
             week_of_season = (
                 date.to_period("W-SUN") - reg_start_date.to_period("W-SUN")
             ).n + 1

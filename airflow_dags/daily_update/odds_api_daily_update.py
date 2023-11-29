@@ -5,11 +5,15 @@ from datetime import timedelta
 import pendulum
 from airflow import DAG
 from airflow.decorators import task
+from dotenv import load_dotenv
 
 here = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(here, "../../"))
 
 from src.data_sources.game.odds_api import update_game_data
+
+load_dotenv()
+EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
 
 # Define the DAG
 dag = DAG(
@@ -19,7 +23,7 @@ dag = DAG(
         "retries": 0,
         "retry_delay": timedelta(minutes=5),
         "start_date": pendulum.datetime(2023, 5, 1),
-        "email": ["jeffjohannsen7@gmail.com"],
+        "email": [EMAIL_ADDRESS],
         "email_on_failure": True,
         "email_on_retry": True,
     },

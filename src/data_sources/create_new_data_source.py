@@ -1,3 +1,18 @@
+"""
+Used to streamline the process of adding a new data source to the project. Aims to automate part of the process by:
+    1. Adding a new table to database_orm.py
+    2. Creating the new table in the database
+    3. Adding a new Scrapy Item class to items.py
+    4. Adding a new Scrapy Item Loader class to item_loaders.py
+    5. Adding a new Scrapy Pipeline class to pipelines.py
+    6. Adding a new Scrapy Spider to spiders.py
+    
+I created this when I thought I would be adding a lot of new data sources to the project. I am now steering away from 
+collecting the data myself and reccommend using a paid source.  
+Also, if you are trying to learn Scrapy and similar concepts/frameworks, I recommend doing this process manually
+and avoiding this file.
+"""
+
 import json
 import os
 import subprocess
@@ -40,7 +55,9 @@ def user_verification(items_to_verify):
     print()
     for item in items_to_verify:
         print(f"Please check {item}.")
-        user_confirmation = input("If it has been set up properly, please enter 'yes': ")
+        user_confirmation = input(
+            "If it has been set up properly, please enter 'yes': "
+        )
 
         if user_confirmation.lower() not in ["yes", "y"]:
             print(f"{item}: Setup not confirmed. Please check and try again.")

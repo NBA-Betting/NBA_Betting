@@ -1,3 +1,4 @@
+# Import necessary modules
 import os
 import sys
 from datetime import timedelta
@@ -5,10 +6,22 @@ from datetime import timedelta
 import pendulum
 from airflow import DAG
 from airflow.decorators import task
+from dotenv import load_dotenv
 
+# Get the current directory
 here = os.path.dirname(os.path.realpath(__file__))
+
+# Add the parent directory to the sys path
 sys.path.append(os.path.join(here, "../../"))
+
+# Import the function to update the betting account balance
 from src.bet_management.financials import update_betting_account_balance
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Get the email address from the environment variables
+EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
 
 # Define the DAG
 dag = DAG(
@@ -18,12 +31,12 @@ dag = DAG(
         "retries": 0,
         "retry_delay": timedelta(minutes=5),
         "start_date": pendulum.datetime(2023, 5, 1),
-        "email": ["jeffjohannsen7@gmail.com"],
+        "email": [EMAIL_ADDRESS],
         "email_on_failure": True,
         "email_on_retry": True,
     },
     description="A DAG to update betting account balance daily",
-    schedule="0 6 * * *",  # 12am MT
+    schedule="0 6 * * *",  # Run at 12am MT
     catchup=False,
 )
 

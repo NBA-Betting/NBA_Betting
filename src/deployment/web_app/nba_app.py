@@ -28,8 +28,8 @@ from bet_management.bet_decisions import on_demand_predictions
 from data_sources.game.odds_api import update_game_data
 
 load_dotenv()
-RDS_ENDPOINT = os.getenv("RDS_ENDPOINT")
-RDS_PASSWORD = os.getenv("RDS_PASSWORD")
+DB_ENDPOINT = os.getenv("DB_ENDPOINT")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
 WEB_APP_SECRET_KEY = os.getenv("WEB_APP_SECRET_KEY")
 ODDS_API_KEY = os.getenv("ODDS_API_KEY")
 
@@ -55,7 +55,7 @@ def on_demand_update():
 # ----- UTILITY FUNCTIONS -----
 def get_db_connection():
     engine = create_engine(
-        f"postgresql+psycopg2://postgres:{RDS_PASSWORD}@{RDS_ENDPOINT}/nba_betting"
+        f"postgresql+psycopg2://postgres:{DB_PASSWORD}@{DB_ENDPOINT}/nba_betting"
     )
     return engine.connect()
 
@@ -100,7 +100,7 @@ def create_app():
     @login_manager.user_loader
     def load_user(user_id):
         admin_username = "jeff"
-        admin_password = os.getenv("RDS_PASSWORD")
+        admin_password = os.getenv("DB_PASSWORD")
         if user_id == admin_username:
             return User(
                 id=admin_username, username=admin_username, password=admin_password

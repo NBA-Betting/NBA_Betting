@@ -18,8 +18,8 @@ sys.path.append(os.path.join(here, "../.."))
 import config
 
 load_dotenv()
-RDS_ENDPOINT = os.environ.get("RDS_ENDPOINT")
-RDS_PASSWORD = os.environ.get("RDS_PASSWORD")
+DB_ENDPOINT = os.environ.get("DB_ENDPOINT")
+DB_PASSWORD = os.environ.get("DB_PASSWORD")
 ZYTE_API_KEY = os.environ.get("ZYTE_API_KEY")
 
 
@@ -166,7 +166,7 @@ class BasePipeline:
     """
 
     engine = create_engine(
-        f"postgresql://postgres:{RDS_PASSWORD}@{RDS_ENDPOINT}/nba_betting"
+        f"postgresql://postgres:{DB_PASSWORD}@{DB_ENDPOINT}/nba_betting"
     )
     ITEM_CLASS = None
 
@@ -278,7 +278,9 @@ class BasePipeline:
                     + len(self.errors["find_season_information"])
                 )
 
-                print(f"Inserted {len(rows) - integrity_error_count} rows successfully.")
+                print(
+                    f"Inserted {len(rows) - integrity_error_count} rows successfully."
+                )
                 print(f"Total items inserted: {self.saved_items}")
                 print(
                     f"Total integrity errors: {self.errors['saving']['integrity_error_count']} {integrity_error_pct}%"

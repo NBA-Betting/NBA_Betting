@@ -1,3 +1,4 @@
+# Import necessary modules
 import os
 
 from dotenv import load_dotenv
@@ -15,65 +16,109 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import declarative_base
 
+# Load environment variables from .env file
 load_dotenv()
-RDS_ENDPOINT = os.environ.get("RDS_ENDPOINT")
-RDS_PASSWORD = os.environ.get("RDS_PASSWORD")
 
+# Get database endpoint and password from environment variables
+DB_ENDPOINT = os.environ.get("DB_ENDPOINT")
+DB_PASSWORD = os.environ.get("DB_PASSWORD")
 
+# Create a base class for declarative models
 Base = declarative_base()
 
 
+# Define the BettingAccountTable model
+class BettingAccountTable(Base):
+    __tablename__ = "betting_account"
+    __table_args__ = (PrimaryKeyConstraint("datetime"),)
+    datetime = Column(DateTime)  # Date and time of the account balance
+    balance = Column(Float)  # Current account balance
+
+
+# Define the BetsTable model
+class BetsTable(Base):
+    __tablename__ = "bets"
+    __table_args__ = (PrimaryKeyConstraint("game_id", "bet_datetime"),)
+    game_id = Column(String)  # Unique identifier for the game
+    bet_datetime = Column(DateTime)  # Date and time of the bet
+    bet_status = Column(String)  # Status of the bet (e.g., open, settled)
+    bet_amount = Column(Float)  # Amount of the bet
+    bet_price = Column(Integer)  # Price of the bet
+    bet_location = Column(String)  # Location of the bet
+    bet_profit_loss = Column(Float)  # Profit or loss of the bet
+    bet_direction = Column(String)  # Direction of the bet (e.g., buy, sell)
+    bet_line = Column(Float)  # Line of the bet
+
+
+# Define the AllFeaturesJSONTable model
 class AllFeaturesJSONTable(Base):
     __tablename__ = "all_features_json"
     __table_args__ = (PrimaryKeyConstraint("game_id"),)
-    game_id = Column(String)
-    data = Column(JSONB)
+    game_id = Column(String)  # Unique identifier for the game
+    data = Column(JSONB)  # JSON data containing all features
 
 
+# Define the PredictionsTable model
 class PredictionsTable(Base):
     __tablename__ = "predictions"
     __table_args__ = (PrimaryKeyConstraint("game_id", "prediction_datetime"),)
-    game_id = Column(String)
-    prediction_datetime = Column(DateTime)
-    open_line_hv = Column(Float)
-    prediction_line_hv = Column(Float)
-    ml_cls_rating_hv = Column(Float)
-    dl_cls_rating_hv = Column(Float)
-    game_rating_hv = Column(Float)
-    prediction_direction = Column(String)
-    directional_game_rating = Column(Float)
-    ml_reg_pred_1 = Column(Float)
-    ml_reg_pred_2 = Column(Float)
-    ml_cls_pred_1 = Column(Float)
-    ml_cls_pred_2 = Column(Float)
-    ml_cls_prob_1 = Column(Float)
-    ml_cls_prob_2 = Column(Float)
-    dl_reg_pred_1 = Column(Float)
-    dl_reg_pred_2 = Column(Float)
-    dl_cls_pred_1 = Column(Float)
-    dl_cls_pred_2 = Column(Float)
-    dl_cls_prob_1 = Column(Float)
-    dl_cls_prob_2 = Column(Float)
+    game_id = Column(String)  # Unique identifier for the game
+    prediction_datetime = Column(DateTime)  # Date and time of the prediction
+    open_line_hv = Column(Float)  # Opening line for home vs. visitor
+    prediction_line_hv = Column(Float)  # Predicted line for home vs. visitor
+    ml_cls_rating_hv = Column(
+        Float
+    )  # Machine learning classification rating for home vs. visitor
+    dl_cls_rating_hv = Column(
+        Float
+    )  # Deep learning classification rating for home vs. visitor
+    game_rating_hv = Column(Float)  # Game rating for home vs. visitor
+    prediction_direction = Column(String)  # Predicted direction of the game
+    directional_game_rating = Column(Float)  # Directional game rating
+    ml_reg_pred_1 = Column(Float)  # Machine learning regression prediction 1
+    ml_reg_pred_2 = Column(Float)  # Machine learning regression prediction 2
+    ml_cls_pred_1 = Column(Float)  # Machine learning classification prediction 1
+    ml_cls_pred_2 = Column(Float)  # Machine learning classification prediction 2
+    ml_cls_prob_1 = Column(Float)  # Machine learning classification probability 1
+    ml_cls_prob_2 = Column(Float)  # Machine learning classification probability 2
+    dl_reg_pred_1 = Column(Float)  # Deep learning regression prediction 1
+    dl_reg_pred_2 = Column(Float)  # Deep learning regression prediction 2
+    dl_cls_pred_1 = Column(Float)  # Deep learning classification prediction 1
+    dl_cls_pred_2 = Column(Float)  # Deep learning classification prediction 2
+    dl_cls_prob_1 = Column(Float)  # Deep learning classification probability 1
+    dl_cls_prob_2 = Column(Float)  # Deep learning classification probability 2
 
 
+# Define the GamesTable model
 class GamesTable(Base):
     __tablename__ = "games"
     __table_args__ = (PrimaryKeyConstraint("game_id"),)
+    game_id = Column(String)  # Unique identifier for the game
+    game_datetime = Column(DateTime)  # Date and time of the game
+    home_team = Column(String)  # Home team
+    away_team = Column(String)  # Away team
+    open_line = Column(Float)  # Opening line
+    home_score = Column(Integer)  # Home team score
+    away_score = Column(Integer)  # Away team score
+    game_completed = Column(Boolean)  # Flag indicating if the game is completed
+    scores_last_update = Column(DateTime)  # Date and time of the last score update
+    odds_last_update = Column(DateTime)  # Date and time of the last odds update
 
-    game_id = Column(String)
-    game_datetime = Column(DateTime)
-    home_team = Column(String)
-    away_team = Column(String)
-    open_line = Column(Float)
-    home_score = Column(Integer)
-    away_score = Column(Integer)
-    game_completed = Column(Boolean)
-    scores_last_update = Column(DateTime)
-    odds_last_update = Column(DateTime)
 
-
+# Define the LinesTable model
 class LinesTable(Base):
     __tablename__ = "lines"
+    # Add comments for each column
+    game_id = Column(String)  # Unique identifier for the game
+    game_datetime = Column(DateTime)  # Date and time of the game
+    home_team = Column(String)  # Home team
+    away_team = Column(String)  # Away team
+    open_line = Column(Float)  # Opening line
+    home_score = Column(Integer)  # Home team score
+    away_score = Column(Integer)  # Away team score
+    game_completed = Column(Boolean)  # Flag indicating if the game is completed
+    scores_last_update = Column(DateTime)  # Date and time of the last score update
+    odds_last_update = Column(DateTime)  # Date and time of the last odds update
     __table_args__ = (PrimaryKeyConstraint("game_id", "line_datetime"),)
 
     game_id = Column(String)
@@ -371,6 +416,6 @@ class FivethirtyeightGamesTable(Base):
 if __name__ == "__main__":
     # Creates all database tables defined above that haven't been created yet.
     engine = create_engine(
-        f"postgresql://postgres:{RDS_PASSWORD}@{RDS_ENDPOINT}/nba_betting"
+        f"postgresql://postgres:{DB_PASSWORD}@{DB_ENDPOINT}/nba_betting"
     )
     Base.metadata.create_all(engine)

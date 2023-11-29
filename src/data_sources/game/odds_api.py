@@ -1,3 +1,13 @@
+"""
+This module contains the OddsAPI class and methods for fetching and processing 
+NBA odds and scores data from The Odds API. It converts the data into pandas 
+DataFrames, merges odds and scores data, and updates the database with new 
+information. It also includes the update_game_data function which instantiates 
+the OddsAPI class, fetches, processes, and updates the NBA betting database 
+with the latest odds and scores. This module is intended to be run as a script 
+to periodically update the database with the latest NBA betting odds and scores.
+"""
+
 import os
 import sys
 from datetime import datetime
@@ -18,8 +28,8 @@ from database_orm import GamesTable, LinesTable
 
 load_dotenv()
 ODDS_API_KEY = os.getenv("ODDS_API_KEY")
-RDS_ENDPOINT = os.getenv("RDS_ENDPOINT")
-RDS_PASSWORD = os.getenv("RDS_PASSWORD")
+DB_ENDPOINT = os.getenv("DB_ENDPOINT")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 pd.set_option("display.max_columns", 100)
 
@@ -347,7 +357,7 @@ class OddsAPI:
 
 
 def update_game_data(past_games):
-    odds_api = OddsAPI(ODDS_API_KEY, RDS_ENDPOINT, RDS_PASSWORD)
+    odds_api = OddsAPI(ODDS_API_KEY, DB_ENDPOINT, DB_PASSWORD)
     odds_data = odds_api.fetch_odds_data()
     processed_odds_data = odds_api.process_odds_data(odds_data)
     scores_data = odds_api.fetch_scores_data(get_past_games=past_games)
