@@ -30,6 +30,8 @@ from data_sources.game.odds_api import update_game_data
 load_dotenv()
 DB_ENDPOINT = os.getenv("DB_ENDPOINT")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
+WEB_APP_USERNAME = os.getenv("WEB_APP_USERNAME")
+WEB_APP_PASSWORD = os.getenv("WEB_APP_PASSWORD")
 WEB_APP_SECRET_KEY = os.getenv("WEB_APP_SECRET_KEY")
 ODDS_API_KEY = os.getenv("ODDS_API_KEY")
 
@@ -99,8 +101,8 @@ def create_app():
 
     @login_manager.user_loader
     def load_user(user_id):
-        admin_username = "jeff"
-        admin_password = os.getenv("DB_PASSWORD")
+        admin_username = WEB_APP_USERNAME
+        admin_password = WEB_APP_PASSWORD
         if user_id == admin_username:
             return User(
                 id=admin_username, username=admin_username, password=admin_password
@@ -249,6 +251,7 @@ def create_app():
         money_in_play = round(money_in_play)
 
         records_df = pd.DataFrame(game_table)
+        records_df["game_datetime"] = pd.to_datetime(records_df["game_datetime"])
 
         records_df["game_result"] = records_df.apply(
             lambda row: int(row["home_score"] - row["away_score"])
@@ -335,8 +338,9 @@ def create_app():
 
     @app.route("/", methods=["POST", "GET"])
     def home_table():
-        if current_user.is_authenticated:
-            on_demand_update()
+        # On demand update is turned off unless live data source is available.
+        # if current_user.is_authenticated:
+        #     on_demand_update()
 
         data = nba_data_inbound()
         if request.method == "POST":
@@ -406,8 +410,9 @@ def create_app():
                     },
                 )
 
-            if current_user.is_authenticated:
-                on_demand_update()
+            # On demand update is turned off unless live data source is available.
+            # if current_user.is_authenticated:
+            #     on_demand_update()
             data = nba_data_inbound()
             return render_template("nba_home.html", **data)
 
@@ -440,7 +445,7 @@ def create_app():
                                     balance
                                 FROM (SELECT *,
                                         row_number()
-                                        OVER (PARTITION BY date_trunc('day', datetime)
+                                        OVER (PARTITION BY date_trunc('day', datetime::timestamp)
                                             ORDER BY datetime DESC) r
                                         FROM betting_account) T
                                 WHERE T.r=1;"""
@@ -481,5 +486,5 @@ private_app = init_private_dashboard(app)
 public_app = init_public_dashboard(app)
 
 if __name__ == "__main__":
-    pass
-    # app.run(debug=True)
+    # pass
+    app.run(debug=True)
