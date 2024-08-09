@@ -1,6 +1,9 @@
-<img src='images/nba_header.png' alt='NBA' width=1400 height=400/>
+<img src='images/nba_betting_header_15x6.png' alt='NBA Betting Header'/>
 
 # NBA Betting
+
+> [!IMPORTANT]
+> This project is no longer being actively maintained. Please visit my new project, [NBA AI](https://github.com/NBA-Betting/NBA_AI) for a more streamlined and updated version of this project.
 
 ## Table of Contents
 - [Introduction](#introduction)
@@ -101,10 +104,8 @@ Initially, the approach involved using web scraping tools like Scrapy to gather 
 
 ![Data Sourcing and Storage](/images/data_engineering_flowchart_1.png)
 
-- [Link to Data Files](https://drive.google.com/drive/folders/1twr0yOIUKER9BcU7zan1Dv2X6PE6LMHr?usp=sharing) - Accessible CSV files on Google Drive.
-- [NBAstuffer](https://www.nbastuffer.com/) and [BigDataBall](https://www.bigdataball.com/) - Future paid data sources for the project.
-- [src/database_orm.py](https://github.com/NBA-Betting/NBA_Betting/tree/main/src/database_orm.py) - Database setup code.
-- [src/data_sources](https://github.com/NBA-Betting/NBA_Betting/tree/main/src/data_sources) - Code for data collection.
+- [Database ORM](https://github.com/NBA-Betting/NBA_Betting/tree/main/src/database_orm.py) - Code repository for the database object-relational mapping.
+- [Data Collection](https://github.com/NBA-Betting/NBA_Betting/tree/main/src/data_sources) - Code repository for data collection.
 
 ## Data Prep and Feature Engineering: The Core of Predictive Analytics
 ![ETL Process](images/data_engineering_flowchart_2.png)
@@ -120,7 +121,7 @@ Important considerations in this phase include:
 - The all_features_json table primarily serves to integrate an extensive, evolving feature list into a relational database framework. It is usually converted into a DataFrame using pandas for further processing.
 - A key challenge is avoiding data leakage during merging and feature engineering. It’s crucial to meticulously manage the dates for data merging (e.g., using the previous day's data for a game) and to accurately calculate rolling features based on the correct historical games.
 
-[Repository link for Data Prep and Feature Engineering code](https://github.com/NBA-Betting/NBA_Betting/tree/main/src/etl)
+[Data Prep and Feature Engineering](https://github.com/NBA-Betting/NBA_Betting/tree/main/src/etl) - Code repository for Data Prep and Feature Engineering.
 
 # Exploratory Data Analysis
 
@@ -163,8 +164,7 @@ The journey towards a custom model architecture initially centered around a trad
 - **Advanced Modeling System:** Developing a system that is not only a learning tool but also potentially novel compared to the methods used by odds setters.
 - **Minimal Human Decisions:** Reducing the reliance on human decision-making to minimize errors and the limitations of individual expertise.
 
-#### Overview - Coming Soon!
-![Custom Model Overview](images/custom_model_overview.png)
+#### Go check out this new approach in my project [NBA AI](https://github.com/NBA-Betting/NBA_AI).
 
 # Bet Decisions
 This crucial segment of the project involves the strategic application of model predictions in real-world betting scenarios. The process begins with the integration of predictive outputs from our models with supplementary data that was not directly factored into the model. This additional data can include current trends, team news, player conditions, and other relevant information that might influence game outcomes. The aim is to enhance the predictive power of our models by combining their statistical insights with real-time contextual data.
