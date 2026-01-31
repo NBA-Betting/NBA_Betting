@@ -1,0 +1,136 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nba-betting"
+version = "0.1.0"
+description = "NBA game prediction and betting analytics system"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Jeff"}
+]
+keywords = ["nba", "basketball", "betting", "machine-learning", "sports-analytics"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# Core dependencies - minimal set for the project to function
+dependencies = [
+    "numpy>=1.23.0",
+    "pandas>=2.0.0",  # pandas 2.x required for modern SQLAlchemy compatibility
+    "scikit-learn>=1.2.0",
+    "sqlalchemy>=2.0.0",  # SQLAlchemy 2.0+ required for pandas 2.x compatibility
+    # SQLite is built into Python - no driver needed
+    "python-dotenv>=1.0.0",
+    "pytz>=2022.7",
+    "requests>=2.28.0",
+    "nba_api>=1.4.0",  # For NBA.com stats fetching
+    "scrapy>=2.8.0",  # For Covers.com scraping (core data collection)
+]
+
+[project.optional-dependencies]
+# Additional scraping utilities (optional)
+scraping = [
+    "beautifulsoup4>=4.12.0",
+]
+
+# Machine learning / AutoML dependencies
+ml = [
+    "autogluon.tabular>=1.2.0",  # SOTA AutoML for tabular data (includes LightGBM, XGBoost, CatBoost)
+]
+
+# Web application dependencies
+web = [
+    "flask>=2.2.0",
+    "dash>=2.11.0",
+    "dash-bootstrap-components>=1.4.0",
+    "gunicorn>=20.1.0",
+    "plotly>=5.15.0",
+    "matplotlib>=3.7.0",
+]
+
+# Development dependencies
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "ipython>=8.0.0",
+    "jupyter>=1.0.0",
+    # Visualization for EDA notebooks
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0",
+]
+
+# Install everything
+all = [
+    "nba-betting[scraping,ml,web,dev]",
+]
+
+[project.urls]
+Homepage = "https://github.com/NBA-Betting/NBA_Betting"
+Repository = "https://github.com/NBA-Betting/NBA_Betting"
+Documentation = "https://github.com/NBA-Betting/NBA_Betting#readme"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.json", "*.yaml", "*.yml"]
+
+# Black formatter configuration
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+    | \.venv
+    | nba_venv
+    | __pycache__
+    | notebooks
+    | docs
+)/
+'''
+
+# Ruff linter configuration
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+exclude = [
+    ".git",
+    ".venv",
+    "nba_venv",
+    "__pycache__",
+    "notebooks",
+    "docs",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+]
+
+# Pytest configuration
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
