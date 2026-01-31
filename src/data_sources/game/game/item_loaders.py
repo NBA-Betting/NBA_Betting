@@ -4,18 +4,24 @@ from scrapy.loader import ItemLoader
 from .items import CoversHistoricScoresAndOddsItem
 
 
-def handle_none_to_int(value):
-    # Check if the list is empty, which would indicate a missing value.
-    if not value or value[0] is None or value[0] == "":
+def convert_to_int(value):
+    """Convert a single value to int, handling None and empty strings."""
+    if value is None or value == "":
         return None
-    # If there's a value, convert it to an integer.
-    return int(value[0])
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return None
 
 
-def handle_none_to_float(value):
-    if not value or value[0] is None or value[0] == "":
+def convert_to_float(value):
+    """Convert a single value to float, handling None and empty strings."""
+    if value is None or value == "":
         return None
-    return float(value[0])
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return None
 
 
 class CoversHistoricScoresAndOddsItemLoader(ItemLoader):
@@ -26,9 +32,9 @@ class CoversHistoricScoresAndOddsItemLoader(ItemLoader):
     game_datetime_in = MapCompose(str.strip)
     home_team_in = MapCompose(str.strip)
     away_team_in = MapCompose(str.strip)
-    home_score_in = handle_none_to_int
-    away_score_in = handle_none_to_int
-    open_line_in = handle_none_to_float
+    home_score_in = MapCompose(convert_to_int)
+    away_score_in = MapCompose(convert_to_int)
+    open_line_in = MapCompose(convert_to_float)
 
     def load_item(self):
         item = super().load_item()

@@ -1,15 +1,6 @@
-"""
-This module contains the OddsAPI class and methods for fetching and processing 
-NBA odds and scores data from The Odds API. It converts the data into pandas 
-DataFrames, merges odds and scores data, and updates the database with new 
-information. It also includes the update_game_data function which instantiates 
-the OddsAPI class, fetches, processes, and updates the NBA betting database 
-with the latest odds and scores. This module is intended to be run as a script 
-to periodically update the database with the latest NBA betting odds and scores.
-"""
+"""Fetches NBA odds and scores from The Odds API, updates games and lines tables."""
 
 import os
-import sys
 from datetime import datetime
 
 import numpy as np
@@ -17,48 +8,68 @@ import pandas as pd
 import pytz
 import requests
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import sessionmaker
 
-here = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(here, "../../.."))
-sys.path.append(os.path.join(here, "../.."))
-from config import team_name_mapper
-from database_orm import GamesTable, LinesTable
+from src.config import team_name_mapper
+from src.database import get_engine
+from src.database_orm import GamesTable, LinesTable
+from src.utils.timezone import APP_TIMEZONE, get_current_time
 
 load_dotenv()
 ODDS_API_KEY = os.getenv("ODDS_API_KEY")
-DB_ENDPOINT = os.getenv("DB_ENDPOINT")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 pd.set_option("display.max_columns", 100)
+
+# Sportsbooks to aggregate for consensus line calculation
+VALID_SPORTSBOOKS = [
+    "barstool",
+    "betonlineag",
+    "betmgm",
+    "betrivers",
+    "betus",
+    "bovada",
+    "draftkings",
+    "fanduel",
+    "lowvig",
+    "mybookieag",
+    "pointsbetus",
+    "superbook",
+    "twinspires",
+    "unibet_us",
+    "williamhill_us",
+    "wynnbet",
+]
 
 
 class OddsAPI:
     ODDS_URL = "https://api.the-odds-api.com/v4/sports/basketball_nba/odds/"
     SCORES_URL = "https://api.the-odds-api.com/v4/sports/basketball_nba/scores/"
 
-    def __init__(self, api_key, endpoint, password):
+    def __init__(self, api_key):
         self.api_key = api_key
-        self.database_engine = create_engine(
-            f"postgresql+psycopg2://postgres:{password}@{endpoint}/nba_betting"
-        )
+        self.database_engine = get_engine()
 
     @staticmethod
     def convert_timezone(original_time):
         # Original timezone (UTC)
         original_timezone = pytz.timezone("UTC")
-        # Target timezone (America/Denver)
-        target_timezone = pytz.timezone("America/Denver")
         # Process
         localized_time = original_timezone.localize(
             original_time
         )  # Associate the given time with its time zone
-        target_time = localized_time.astimezone(target_timezone)
+        target_time = localized_time.astimezone(APP_TIMEZONE)
 
         return target_time
 
     def fetch_odds_data(self):
+        if not self.api_key:
+            print("Warning: ODDS_API_KEY not set, skipping odds fetch")
+            return []
+
+        # NOTE: The Odds API only supports authentication via URL query parameters.
+        # This is their API design limitation - header auth is not supported.
+        # Be cautious with network logging tools as the API key will be visible in URLs.
         params = {
             "apiKey": self.api_key,
             "regions": "us",
@@ -66,17 +77,18 @@ class OddsAPI:
             "oddsFormat": "american",
         }
         response = requests.get(self.ODDS_URL, params=params)
-        return response.json() if response.status_code == 200 else []
+        if response.status_code != 200:
+            print(f"Odds API error: HTTP {response.status_code} - {response.text[:200]}")
+            return []
+        return response.json()
 
     def process_odds_data(self, data):
         data_list = []
-        current_datetime = datetime.now(tz=pytz.timezone("America/Denver")).strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+        current_datetime = get_current_time().replace(tzinfo=None)
         for game in data:
             game_data = {}
             utc_time = datetime.strptime(game["commence_time"], "%Y-%m-%dT%H:%M:%SZ")
-            mountain_time = self.convert_timezone(utc_time)
+            mountain_time = self.convert_timezone(utc_time).replace(tzinfo=None)
 
             game_data["game_id"] = (
                 mountain_time.strftime("%Y%m%d")
@@ -84,33 +96,14 @@ class OddsAPI:
                 + team_name_mapper(game["away_team"])
             )
 
-            game_data["game_datetime"] = mountain_time.strftime("%Y-%m-%d %H:%M:%S")
+            game_data["game_datetime"] = mountain_time  # Keep as datetime object
             game_data["home_team"] = team_name_mapper(game["home_team"])
             game_data["away_team"] = team_name_mapper(game["away_team"])
 
             # Extract line and price data for each sportsbook
-            valid_bookmakers = [
-                "barstool",
-                "betonlineag",
-                "betmgm",
-                "betrivers",
-                "betus",
-                "bovada",
-                "draftkings",
-                "fanduel",
-                "lowvig",
-                "mybookieag",
-                "pointsbetus",
-                "superbook",
-                "twinspires",
-                "unibet_us",
-                "williamhill_us",
-                "wynnbet",
-            ]
-
             for bookmaker in game["bookmakers"]:
                 prefix = bookmaker["key"]
-                if prefix in valid_bookmakers:
+                if prefix in VALID_SPORTSBOOKS:
                     for outcome in bookmaker["markets"][0][
                         "outcomes"
                     ]:  # Assuming 'spreads' is always the first in 'markets'
@@ -121,20 +114,28 @@ class OddsAPI:
                             game_data[f"{prefix}_away_line"] = outcome["point"]
                             game_data[f"{prefix}_away_line_price"] = outcome["price"]
 
-            game_data["odds_last_update"] = current_datetime
+            game_data["odds_last_update"] = current_datetime  # Already a datetime object
             data_list.append(game_data)
-            odds_df = pd.DataFrame(data_list)
 
+        odds_df = pd.DataFrame(data_list) if data_list else pd.DataFrame()
         return odds_df
 
     def fetch_scores_data(self, get_past_games=False):
+        if not self.api_key:
+            print("Warning: ODDS_API_KEY not set, skipping scores fetch")
+            return []
+
+        # API key in params required by The Odds API (no header auth supported)
         params = {
             "apiKey": self.api_key,
         }
         if get_past_games:
             params["daysFrom"] = 3
         response = requests.get(self.SCORES_URL, params=params)
-        return response.json() if response.status_code == 200 else []
+        if response.status_code != 200:
+            print(f"Scores API error: HTTP {response.status_code} - {response.text[:200]}")
+            return []
+        return response.json()
 
     def process_scores_data(self, data):
         """
@@ -145,10 +146,8 @@ class OddsAPI:
         for game in data:
             game_data = {}
 
-            original_time = datetime.strptime(
-                game["commence_time"], "%Y-%m-%dT%H:%M:%SZ"
-            )
-            mountain_time = self.convert_timezone(original_time)
+            original_time = datetime.strptime(game["commence_time"], "%Y-%m-%dT%H:%M:%SZ")
+            mountain_time = self.convert_timezone(original_time).replace(tzinfo=None)
 
             game_data["game_id"] = (
                 mountain_time.strftime("%Y%m%d")
@@ -156,7 +155,7 @@ class OddsAPI:
                 + team_name_mapper(game["away_team"])
             )
 
-            game_data["game_datetime"] = mountain_time.strftime("%Y-%m-%d %H:%M:%S")
+            game_data["game_datetime"] = mountain_time  # Keep as datetime object
 
             game_data["home_team"] = team_name_mapper(game["home_team"])
             game_data["away_team"] = team_name_mapper(game["away_team"])
@@ -165,27 +164,28 @@ class OddsAPI:
             game_data["game_completed"] = game["completed"]
 
             # Add home_score and away_score columns
+            # Match scores by team name since API doesn't guarantee order
             if game["scores"]:
-                game_data["home_score"] = game["scores"][0]["score"]
-                game_data["away_score"] = game["scores"][1]["score"]
+                for score_entry in game["scores"]:
+                    if score_entry["name"] == game["home_team"]:
+                        game_data["home_score"] = int(score_entry["score"])
+                    else:
+                        game_data["away_score"] = int(score_entry["score"])
             else:
                 game_data["home_score"] = None
                 game_data["away_score"] = None
 
             if game["last_update"]:
-                original_time = datetime.strptime(
-                    game["last_update"], "%Y-%m-%dT%H:%M:%SZ"
-                )
-                mountain_time = self.convert_timezone(original_time)
-                game_data["scores_last_update"] = mountain_time.strftime(
-                    "%Y-%m-%d %H:%M:%S"
+                update_time = datetime.strptime(game["last_update"], "%Y-%m-%dT%H:%M:%SZ")
+                game_data["scores_last_update"] = self.convert_timezone(update_time).replace(
+                    tzinfo=None
                 )
             else:
                 game_data["scores_last_update"] = None
 
             data_list.append(game_data)
-            scores_df = pd.DataFrame(data_list)
 
+        scores_df = pd.DataFrame(data_list) if data_list else pd.DataFrame()
         return scores_df
 
     def merge_data(self, odds_df, scores_df):
@@ -199,171 +199,136 @@ class OddsAPI:
         self.update_lines_table(merged_df)
 
     def update_games_table(self, merged_df):
+        """
+        Update games table using upsert logic.
+
+        Odds API is a SECONDARY/enhancement source. Covers is primary for most fields.
+        Uses SQLite INSERT ... ON CONFLICT DO UPDATE for safe concurrent writes.
+
+        Fields updated on conflict (Odds API tracking fields only):
+        - odds_last_update: When we last fetched odds
+        - scores_last_update: When we last fetched scores
+
+        Fields NOT touched (preserved from Covers - the primary source):
+        - game_completed: Covers owns this (detected from postgamebox class)
+        - open_line: Covers owns this (historic opening lines)
+        - home_score, away_score: Covers owns these
+
+        Special handling for game_datetime:
+        - Odds API provides full datetime with actual game times
+        - Covers only has times for pregame boxes (upcoming games)
+        - Covers pipeline preserves Odds API times for completed games
+        """
+        table = GamesTable.__table__
         Session = sessionmaker(bind=self.database_engine)
+
         with Session() as session:
             for index, row in merged_df.iterrows():
-                # Query for existing game
-                game = (
-                    session.query(GamesTable)
-                    .filter(GamesTable.game_id == row["game_id"])
-                    .first()
-                )
+                # Build insert data (for new games not yet in Covers)
+                insert_data = {
+                    "game_id": row["game_id"],
+                    "game_datetime": row["game_datetime"],
+                    "home_team": row["home_team"],
+                    "away_team": row["away_team"],
+                }
 
-                # Columns to be added or updated in GamesTable
-                columns_to_include = [
-                    "game_id",
-                    "game_datetime",
-                    "home_team",
-                    "away_team",
+                # Add optional fields if present and not null
+                for col in [
                     "home_score",
                     "away_score",
                     "game_completed",
                     "scores_last_update",
                     "odds_last_update",
-                ]
+                ]:
+                    if col in row and not pd.isnull(row[col]):
+                        insert_data[col] = row[col]
 
-                # If game does not exist, add new record
-                if not game:
-                    # Create a new game dictionary using only the specified columns
-                    game_data = {
-                        col: row[col] for col in columns_to_include if col in row
-                    }
-                    new_game = GamesTable(**game_data)
-                    session.add(new_game)
+                # Build update dict for ON CONFLICT - only update tracking fields
+                # Covers owns: game_datetime, game_completed, open_line, scores
+                update_data = {}
 
-                # If game exists, update the specified columns
+                # Only update our tracking timestamps
+                if not pd.isnull(row.get("odds_last_update")):
+                    update_data["odds_last_update"] = row["odds_last_update"]
+                if not pd.isnull(row.get("scores_last_update")):
+                    update_data["scores_last_update"] = row["scores_last_update"]
+
+                # Execute upsert
+                stmt = sqlite_insert(table).values(insert_data)
+                if update_data:  # Only add ON CONFLICT if we have something to update
+                    stmt = stmt.on_conflict_do_update(index_elements=["game_id"], set_=update_data)
                 else:
-                    # Always update game_datetime
-                    setattr(game, "game_datetime", row["game_datetime"])
-
-                    # Update odds_last_update if not null
-                    if not pd.isnull(row["odds_last_update"]):
-                        setattr(game, "odds_last_update", row["odds_last_update"])
-
-                    # If scores_last_updated is not null, update score-related columns
-                    for col in [
-                        "scores_last_update",
-                        "game_completed",
-                        "home_score",
-                        "away_score",
-                    ]:
-                        if col in row and not pd.isnull(row[col]):
-                            setattr(game, col, row[col])
+                    stmt = stmt.on_conflict_do_nothing()
+                session.execute(stmt)
 
             session.commit()
 
     def update_lines_table(self, merged_df):
+        """
+        Update simplified lines table with consensus lines.
+
+        Calculates median line/price across all available sportsbooks.
+        Uses upsert: first fetch sets open_line, subsequent fetches update current_line.
+        """
+        table = LinesTable.__table__
         Session = sessionmaker(bind=self.database_engine)
+
         with Session() as session:
             for index, row in merged_df.iterrows():
-                # If odds_last_updated is not null, add a new record to LinesTable
-                if not pd.isnull(row["odds_last_update"]):
-                    line_data = {
-                        "game_id": row["game_id"],
-                        "line_datetime": row["odds_last_update"],
-                    }
-                    odds_columns = [
-                        # Barstool Sportsbook
-                        "barstool_home_line",
-                        "barstool_home_line_price",
-                        "barstool_away_line",
-                        "barstool_away_line_price",
-                        # BetOnline.ag
-                        "betonlineag_home_line",
-                        "betonlineag_home_line_price",
-                        "betonlineag_away_line",
-                        "betonlineag_away_line_price",
-                        # BetMGM
-                        "betmgm_home_line",
-                        "betmgm_home_line_price",
-                        "betmgm_away_line",
-                        "betmgm_away_line_price",
-                        # BetRivers
-                        "betrivers_home_line",
-                        "betrivers_home_line_price",
-                        "betrivers_away_line",
-                        "betrivers_away_line_price",
-                        # BetUS
-                        "betus_home_line",
-                        "betus_home_line_price",
-                        "betus_away_line",
-                        "betus_away_line_price",
-                        # Bovada
-                        "bovada_home_line",
-                        "bovada_home_line_price",
-                        "bovada_away_line",
-                        "bovada_away_line_price",
-                        # DraftKings
-                        "draftkings_home_line",
-                        "draftkings_home_line_price",
-                        "draftkings_away_line",
-                        "draftkings_away_line_price",
-                        # FanDuel
-                        "fanduel_home_line",
-                        "fanduel_home_line_price",
-                        "fanduel_away_line",
-                        "fanduel_away_line_price",
-                        # LowVig.ag
-                        "lowvig_home_line",
-                        "lowvig_home_line_price",
-                        "lowvig_away_line",
-                        "lowvig_away_line_price",
-                        # MyBookie.ag
-                        "mybookieag_home_line",
-                        "mybookieag_home_line_price",
-                        "mybookieag_away_line",
-                        "mybookieag_away_line_price",
-                        # PointsBet (US)
-                        "pointsbetus_home_line",
-                        "pointsbetus_home_line_price",
-                        "pointsbetus_away_line",
-                        "pointsbetus_away_line_price",
-                        # SuperBook
-                        "superbook_home_line",
-                        "superbook_home_line_price",
-                        "superbook_away_line",
-                        "superbook_away_line_price",
-                        # TwinSpires
-                        "twinspires_home_line",
-                        "twinspires_home_line_price",
-                        "twinspires_away_line",
-                        "twinspires_away_line_price",
-                        # Unibet
-                        "unibet_us_home_line",
-                        "unibet_us_home_line_price",
-                        "unibet_us_away_line",
-                        "unibet_us_away_line_price",
-                        # William Hill (Caesars)
-                        "williamhill_us_home_line",
-                        "williamhill_us_home_line_price",
-                        "williamhill_us_away_line",
-                        "williamhill_us_away_line_price",
-                        # WynnBET
-                        "wynnbet_home_line",
-                        "wynnbet_home_line_price",
-                        "wynnbet_away_line",
-                        "wynnbet_away_line_price",
-                    ]
-                    for col in odds_columns:
-                        if col in row and not pd.isnull(row[col]):
-                            line_data[col] = row[col]
-                        else:
-                            line_data[col] = None
+                if pd.isnull(row.get("odds_last_update")):
+                    continue
 
-                    new_line = LinesTable(**line_data)
-                    session.add(new_line)
+                # Collect all available lines and prices
+                home_lines = []
+                home_prices = []
+                for book in VALID_SPORTSBOOKS:
+                    line_col = f"{book}_home_line"
+                    price_col = f"{book}_home_line_price"
+                    if line_col in row and not pd.isnull(row[line_col]):
+                        home_lines.append(row[line_col])
+                    if price_col in row and not pd.isnull(row[price_col]):
+                        home_prices.append(row[price_col])
+
+                # Skip if no lines available
+                if not home_lines:
+                    continue
+
+                # Calculate consensus (median) line and price
+                consensus_line = float(np.median(home_lines))
+                consensus_price = float(np.median(home_prices)) if home_prices else -110.0
+
+                # Build upsert data
+                insert_data = {
+                    "game_id": row["game_id"],
+                    "open_line": consensus_line,
+                    "open_line_price": consensus_price,
+                    "current_line": consensus_line,
+                    "current_line_price": consensus_price,
+                    "line_last_update": row["odds_last_update"],
+                }
+
+                # On conflict: only update current_line (preserve open_line)
+                update_data = {
+                    "current_line": consensus_line,
+                    "current_line_price": consensus_price,
+                    "line_last_update": row["odds_last_update"],
+                }
+
+                stmt = sqlite_insert(table).values(insert_data)
+                stmt = stmt.on_conflict_do_update(index_elements=["game_id"], set_=update_data)
+                session.execute(stmt)
 
             session.commit()
 
 
-def update_game_data(past_games):
-    odds_api = OddsAPI(ODDS_API_KEY, DB_ENDPOINT, DB_PASSWORD)
+def update_game_data(past_games=False):
+    """Fetch and update NBA game data from The Odds API."""
+    odds_api = OddsAPI(ODDS_API_KEY)
     odds_data = odds_api.fetch_odds_data()
     processed_odds_data = odds_api.process_odds_data(odds_data)
     scores_data = odds_api.fetch_scores_data(get_past_games=past_games)
     processed_scores_data = odds_api.process_scores_data(scores_data)
     merged_data = odds_api.merge_data(processed_odds_data, processed_scores_data)
-    # print(merged_data.info())
     odds_api.update_database(merged_data)
 
 
