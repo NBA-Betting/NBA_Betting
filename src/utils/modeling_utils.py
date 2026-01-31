@@ -1,13 +1,12 @@
-import json
-import os
+"""Model training utilities: target creation, date selection, ROI calculation."""
+
 import warnings
-from datetime import datetime
 
 import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score, mean_absolute_error
 
-from config import NBA_IMPORTANT_DATES
+from src.config import NBA_IMPORTANT_DATES
 
 
 class ModelSetup:
@@ -58,9 +57,7 @@ class ModelSetup:
                     )
                 )
             else:
-                raise ValueError(
-                    'Invalid season_type. Must be "Reg", "Post", or "Both".'
-                )
+                raise ValueError('Invalid season_type. Must be "Reg", "Post", or "Both".')
 
         for season in testing_seasons:
             year_str = f"{season}-{season+1}"
@@ -89,9 +86,7 @@ class ModelSetup:
                     )
                 )
             else:
-                raise ValueError(
-                    'Invalid season_type. Must be "Reg", "Post", or "Both".'
-                )
+                raise ValueError('Invalid season_type. Must be "Reg", "Post", or "Both".')
 
         # Flatten the list of tuples into single tuple for training and testing
         training_start_date = min(date[0] for date in training_dates)
@@ -106,8 +101,29 @@ class ModelSetup:
 
     @staticmethod
     def create_datasets(
-        df, cls_or_reg, features, training_dates, testing_dates, create_report=False
+        df,
+        cls_or_reg,
+        features,
+        training_dates,
+        testing_dates,
+        create_report=False,
+        use_vegas_line=False,
     ):
+        """
+        Create training and testing datasets with proper date splits.
+
+        Args:
+            df: DataFrame with game data and features
+            cls_or_reg: "cls" for classification, "reg" for regression
+            features: List of feature column names
+            training_dates: Tuple of (start_date, end_date) for training
+            testing_dates: Tuple of (start_date, end_date) for testing
+            create_report: Whether to return a report dict
+            use_vegas_line: Whether to include vegas_open_hv as a feature
+
+        Returns:
+            training_df, testing_df, [report]
+        """
         # Problem Type
         if cls_or_reg.lower() == "cls":
             problem_type = "cls"
@@ -119,39 +135,30 @@ class ModelSetup:
             raise ValueError('cls_or_reg must be either "cls" or "reg"')
 
         # Convert date strings to Timestamps for easier comparison
-        training_start_date, training_end_date = [
-            pd.Timestamp(date) for date in training_dates
-        ]
-        testing_start_date, testing_end_date = [
-            pd.Timestamp(date) for date in testing_dates
-        ]
+        training_start_date, training_end_date = [pd.Timestamp(date) for date in training_dates]
+        testing_start_date, testing_end_date = [pd.Timestamp(date) for date in testing_dates]
 
         # Check for overlapping date ranges
-        if not (
-            training_end_date < testing_start_date
-            or testing_end_date < training_start_date
-        ):
+        if not (training_end_date < testing_start_date or testing_end_date < training_start_date):
             warnings.warn("Warning: Training and testing date ranges overlap.")
 
         # Extract YYYYMMDD part from game_id for date filtering
-        df["game_date_part"] = df["game_id"].str[:8].astype(int)
-
-        # Convert YYYYMMDD to Timestamp
-        df["game_date_part"] = pd.to_datetime(df["game_date_part"], format="%Y%m%d")
+        # Use a temporary column without mutating the original DataFrame
+        game_date_part = pd.to_datetime(df["game_id"].str[:8], format="%Y%m%d")
 
         # Dates for training and testing
         training_df = df[
-            (df["game_date_part"] >= training_start_date)
-            & (df["game_date_part"] <= training_end_date)
+            (game_date_part >= training_start_date) & (game_date_part <= training_end_date)
         ].copy()
 
         testing_df = df[
-            (df["game_date_part"] >= testing_start_date)
-            & (df["game_date_part"] <= testing_end_date)
+            (game_date_part >= testing_start_date) & (game_date_part <= testing_end_date)
         ].copy()
 
-        # Remove the temporary 'game_date_part' column
-        df.drop("game_date_part", axis=1, inplace=True)
+        # Create vegas_open_hv column (negated open_line for home-visitor perspective)
+        # This is needed for both regression baseline calculation and as an optional feature
+        training_df.loc[:, "vegas_open_hv"] = -training_df["open_line"]
+        testing_df.loc[:, "vegas_open_hv"] = -testing_df["open_line"]
 
         # Create Baselines
         (
@@ -162,9 +169,10 @@ class ModelSetup:
         ) = ModelSetup._create_baselines(training_df, testing_df, problem_type)
 
         # Feature Selection
-        if problem_type == "reg":
+        # Optionally include vegas line as a feature (for both cls and reg)
+        if use_vegas_line:
             columns = ["game_id", "vegas_open_hv", target] + features
-        elif problem_type == "cls":
+        else:
             columns = ["game_id", target] + features
         training_df = training_df[columns]
         testing_df = testing_df[columns]
@@ -219,21 +227,15 @@ class ModelSetup:
 
         elif problem_type == "reg":
             # Independent Baseline: MAE based on Vegas miss
-            training_df.loc[:, "actual_score_diff_hv"] = (
-                training_df["home_score"] - training_df["away_score"]
-            )
-            testing_df.loc[:, "actual_score_diff_hv"] = (
-                testing_df["home_score"] - testing_df["away_score"]
-            )
-            training_df.loc[:, "vegas_open_hv"] = -training_df["open_line"]
-            testing_df.loc[:, "vegas_open_hv"] = -testing_df["open_line"]
+            # Calculate actual score differential without modifying input DataFrames
+            actual_diff_train = training_df["home_score"] - training_df["away_score"]
+            actual_diff_test = testing_df["home_score"] - testing_df["away_score"]
+            # vegas_open_hv is already created in create_datasets before calling this method
 
             ind_baseline_train = mean_absolute_error(
-                training_df["actual_score_diff_hv"], training_df["vegas_open_hv"]
+                actual_diff_train, training_df["vegas_open_hv"]
             )
-            ind_baseline_test = mean_absolute_error(
-                testing_df["actual_score_diff_hv"], testing_df["vegas_open_hv"]
-            )
+            ind_baseline_test = mean_absolute_error(actual_diff_test, testing_df["vegas_open_hv"])
 
             # Dependent Baseline: Mean of Training Set
             dep_baseline_train_prediction = training_df["REG_TARGET"].mean()
@@ -255,38 +257,6 @@ class ModelSetup:
             dep_baseline_train,
             dep_baseline_test,
         )
-
-
-def evaluate_reg_model(df, vegas_column, actual_column, prediction_column, display=True):
-    df = df.copy()
-    # create prediction side column
-    df["pred_side"] = df.apply(
-        lambda row: "away" if row[prediction_column] < row[vegas_column] else "home",
-        axis=1,
-    )
-    # create actual side column
-    df["actual_side"] = df.apply(
-        lambda row: "away" if row[actual_column] < row[vegas_column] else "home", axis=1
-    )
-    # create which is closer column
-    df["closer_to_target"] = df.apply(
-        lambda row: abs(row[actual_column] - row[prediction_column])
-        < abs(row[actual_column] - row[vegas_column]),
-        axis=1,
-    )
-
-    closer_to_target_mean = df["closer_to_target"].mean()
-    accuracy = accuracy_score(df["actual_side"], df["pred_side"])
-
-    if display:
-        # print % of Trues in the which is closer column
-        closer_to_target_percent = closer_to_target_mean * 100
-        print(
-            f"Prediction is closer to target in {closer_to_target_percent:.2f}% of cases"
-        )
-        print(f"Accuracy: {accuracy:.4f}")
-
-    return accuracy, closer_to_target_mean, df
 
 
 def calculate_roi(df, actual_column, pred_column, pred_prob=None):
@@ -380,21 +350,26 @@ def calculate_roi(df, actual_column, pred_column, pred_prob=None):
             group_copy = group.copy()
 
             total_fraction = group_copy["bet_fraction"].sum()
+
+            # Skip groups where no bets meet Kelly criterion (all predictions < 50% confidence)
+            if total_fraction == 0:
+                continue
+
             group_copy["bet_fraction"] /= total_fraction
-            group_copy["bet_size"] = (
-                group_copy["bet_fraction"] * 100 * group_copy.shape[0]
-            )
+            group_copy["bet_size"] = group_copy["bet_fraction"] * 100 * group_copy.shape[0]
 
             group_copy["even_win_kelly"] = group_copy.apply(
-                lambda row: row["bet_size"]
-                if row[actual_column] == row[pred_column]
-                else -row["bet_size"],
+                lambda row: (
+                    row["bet_size"] if row[actual_column] == row[pred_column] else -row["bet_size"]
+                ),
                 axis=1,
             )
             group_copy["typical_win_kelly"] = group_copy.apply(
-                lambda row: 0.91 * row["bet_size"]
-                if row[actual_column] == row[pred_column]
-                else -row["bet_size"],
+                lambda row: (
+                    0.91 * row["bet_size"]
+                    if row[actual_column] == row[pred_column]
+                    else -row["bet_size"]
+                ),
                 axis=1,
             )
 
@@ -405,14 +380,17 @@ def calculate_roi(df, actual_column, pred_column, pred_prob=None):
             # Append the modified group to the list
             modified_groups.append(group_copy)
 
-        # Concatenate all modified groups back together
-        df_modified = pd.concat(modified_groups, ignore_index=True)
+        # Concatenate all modified groups back together (if any met Kelly criterion)
+        if modified_groups:
+            df_modified = pd.concat(modified_groups, ignore_index=True)
 
-        # Calculate average ROI using Kelly Criterion
-        average_roi_even_kelly = round(total_roi_even_kelly / df_modified.shape[0], 2)
-        average_roi_typical_kelly = round(
-            total_roi_typical_kelly / df_modified.shape[0], 2
-        )
+            # Calculate average ROI using Kelly Criterion
+            average_roi_even_kelly = round(total_roi_even_kelly / df_modified.shape[0], 2)
+            average_roi_typical_kelly = round(total_roi_typical_kelly / df_modified.shape[0], 2)
+        else:
+            # No bets met Kelly criterion threshold
+            average_roi_even_kelly = 0
+            average_roi_typical_kelly = 0
 
         new_rows_kelly = pd.DataFrame(
             {
@@ -430,32 +408,3 @@ def calculate_roi(df, actual_column, pred_column, pred_prob=None):
         result = pd.concat([result, new_rows_kelly], ignore_index=True)
 
     return result
-
-
-def default_serializer(obj):
-    """JSON serializer for objects not serializable by default json code"""
-    if isinstance(obj, (pd.Timestamp, datetime)):
-        return obj.isoformat()  # for datetime objects
-    elif isinstance(obj, (np.float32, np.float64)):
-        return float(obj)  # convert NumPy float32 to Python native float
-    elif isinstance(obj, np.integer):
-        return int(obj)  # convert NumPy integer to Python native int
-    elif isinstance(obj, np.ndarray):
-        return obj.tolist()  # convert NumPy array to Python list
-    # Add any other types as needed here
-    raise TypeError(f"Type {type(obj)} not serializable")
-
-
-def save_model_report(model_report, file_path="../models/model_reports.json"):
-    # Check if the file exists
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"The file {file_path} does not exist.")
-
-    # Convert the model_report dictionary to a JSON string
-    new_report_json = json.dumps(model_report, default=default_serializer)
-
-    # Append the new report to the file with a newline character for 'lines' demarcation
-    with open(file_path, "a") as file:  # 'a' indicates append mode
-        file.write(
-            new_report_json + "\n"
-        )  # append a newline character to separate records

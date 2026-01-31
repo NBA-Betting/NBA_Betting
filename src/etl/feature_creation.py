@@ -1,16 +1,12 @@
-import os
-import sys
+"""Feature engineering: z-scores, percentiles, rolling stats, differentials."""
+
 from datetime import datetime
 
 import numpy as np
 import pandas as pd
 
-here = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(here, "../.."))
-sys.path.append(os.path.join(here, ".."))
-
-from config import FEATURE_TABLE_INFO
-from utils.general_utils import find_season_information
+from src.config import FEATURE_TABLE_INFO
+from src.utils.general_utils import find_season_information
 
 
 class FeatureCreationPreMerge:
@@ -26,9 +22,7 @@ class FeatureCreationPreMerge:
                 print(f"No feature creation method for table: {table_name}")
                 continue
             else:
-                self.updated_features_tables[table_name] = method(
-                    self.features_tables[table_name]
-                )
+                self.updated_features_tables[table_name] = method(self.features_tables[table_name])
         return self.updated_features_tables
 
     # FEATURE CREATION METHODS
@@ -74,9 +68,7 @@ class FeatureCreationPreMerge:
                 df.groupby(date_col)[col].transform(safe_zscore).where(df[col].notnull())
             )
             df[col + "_percentile"] = (
-                df.groupby(date_col)[col]
-                .transform(safe_percentile)
-                .where(df[col].notnull())
+                df.groupby(date_col)[col].transform(safe_percentile).where(df[col].notnull())
             )
 
         return df
@@ -90,21 +82,15 @@ class FeatureCreationPostMerge:
         self.updated_combined_features = self._add_season_timeframe_info(
             self.updated_combined_features
         )
-        self.updated_combined_features = self._add_day_of_season(
-            self.updated_combined_features
-        )
+        self.updated_combined_features = self._add_day_of_season(self.updated_combined_features)
         self.updated_combined_features = self._calculate_days_since_last_game(
             self.updated_combined_features
         )
         self.updated_combined_features = self._calculate_team_performance_metrics(
             self.updated_combined_features
         )
-        self.updated_combined_features = self._encode_home_team(
-            self.updated_combined_features
-        )
-        self.updated_combined_features = self._encode_away_team(
-            self.updated_combined_features
-        )
+        self.updated_combined_features = self._encode_home_team(self.updated_combined_features)
+        self.updated_combined_features = self._encode_away_team(self.updated_combined_features)
 
         self.updated_combined_features = self.updated_combined_features.drop(
             columns=["reg_season_start_date"]
@@ -121,16 +107,12 @@ class FeatureCreationPostMerge:
         # Extract relevant info from the dictionaries and add as new columns
         df["season"] = season_info_series.apply(lambda x: x["season"])
         df["season_type"] = season_info_series.apply(lambda x: x["season_type"])
-        df["reg_season_start_date"] = season_info_series.apply(
-            lambda x: x["reg_season_start_date"]
-        )
+        df["reg_season_start_date"] = season_info_series.apply(lambda x: x["reg_season_start_date"])
         df["reg_season_start_date"] = pd.to_datetime(df["reg_season_start_date"])
         return df
 
     def _add_day_of_season(self, df):
-        df["day_of_season"] = (
-            df["game_datetime"] - df["reg_season_start_date"]
-        ).dt.days + 1
+        df["day_of_season"] = (df["game_datetime"] - df["reg_season_start_date"]).dt.days + 1
         return df
 
     def _encode_home_team(self, df):
@@ -145,12 +127,8 @@ class FeatureCreationPostMerge:
 
     def _calculate_days_since_last_game(self, df):
         # Create two copies of the dataframe, one for home games, one for away games
-        home_df = df[["game_datetime", "season", "home_team"]].rename(
-            columns={"home_team": "team"}
-        )
-        away_df = df[["game_datetime", "season", "away_team"]].rename(
-            columns={"away_team": "team"}
-        )
+        home_df = df[["game_datetime", "season", "home_team"]].rename(columns={"home_team": "team"})
+        away_df = df[["game_datetime", "season", "away_team"]].rename(columns={"away_team": "team"})
 
         # Concatenate along the row axis (i.e., append the dataframes one below the other)
         all_games_df = pd.concat([home_df, away_df], axis=0)
@@ -196,9 +174,7 @@ class FeatureCreationPostMerge:
 
         # Drop the unnecessary 'team' columns
         df.drop(columns=["team_home", "team_away"], inplace=True)
-        df["rest_diff_hv"] = (
-            df["days_since_last_game_home"] - df["days_since_last_game_away"]
-        )
+        df["rest_diff_hv"] = df["days_since_last_game_home"] - df["days_since_last_game_away"]
         return df
 
     def _calculate_team_performance_metrics(self, inbound_df):
@@ -229,18 +205,16 @@ class FeatureCreationPostMerge:
 
             # Loop through each team
             # Metrics are calculated for each team
-            for team in pd.concat(
-                [season_df["home_team"], season_df["away_team"]]
-            ).unique():
-                mask = (season_df["home_team"] == team) | (
-                    season_df["away_team"] == team
-                )
+            for team in pd.concat([season_df["home_team"], season_df["away_team"]]).unique():
+                mask = (season_df["home_team"] == team) | (season_df["away_team"] == team)
                 team_df = season_df[mask].copy()
                 team_df["team"] = team
 
                 # Calculate the win/loss performance of the team in each game
+                # Ensure game_completed is boolean (SQLite stores as int 0/1)
+                game_not_completed = team_df["game_completed"].fillna(False).astype(bool) == False
                 conditions = [
-                    (~team_df["game_completed"]),
+                    game_not_completed,
                     (
                         (team_df["home_team"] == team)
                         & (team_df["home_score"] > team_df["away_score"])
@@ -267,11 +241,7 @@ class FeatureCreationPostMerge:
                 # with a value even if there are fewer than 5 previous games.
                 # Fill NaN with 0 for no prior games.
                 team_df["last_5_games_result"] = (
-                    team_df["performance"]
-                    .rolling(window=5, min_periods=1)
-                    .sum()
-                    .shift(1)
-                    .fillna(0)
+                    team_df["performance"].rolling(window=5, min_periods=1).sum().shift(1).fillna(0)
                 )
 
                 # Initialize an empty list to store the streaks
@@ -288,9 +258,7 @@ class FeatureCreationPostMerge:
                     # Update the streak based on the game outcome
                     performance = row["performance"]
 
-                    if (
-                        performance == 0
-                    ):  # If game is in progress, skip updating the streak
+                    if performance == 0:  # If game is in progress, skip updating the streak
                         continue
 
                     if current_streak == 0:
@@ -342,14 +310,10 @@ class FeatureCreationPostMerge:
                     df.loc[away_mask, f"away_team_{col}"] = team_df.loc[away_mask, col]
 
         # Compute the "home view" metrics
-        df["last_5_hv"] = (
-            df["home_team_last_5_games_result"] - df["away_team_last_5_games_result"]
-        )
+        df["last_5_hv"] = df["home_team_last_5_games_result"] - df["away_team_last_5_games_result"]
         df["streak_hv"] = df["home_team_streak"] - df["away_team_streak"]
         df["win_pct_hv"] = df["home_team_win_pct"] - df["away_team_win_pct"]
-        df["point_diff_hv"] = (
-            df["home_team_avg_point_diff"] - df["away_team_avg_point_diff"]
-        )
+        df["point_diff_hv"] = df["home_team_avg_point_diff"] - df["away_team_avg_point_diff"]
         df["point_diff_last_5_hv"] = (
             df["home_team_avg_point_diff_last_5"] - df["away_team_avg_point_diff_last_5"]
         )
