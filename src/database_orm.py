@@ -1,7 +1,5 @@
-# Import necessary modules
-import os
+"""SQLAlchemy ORM models for all database tables."""
 
-from dotenv import load_dotenv
 from sqlalchemy import (
     Boolean,
     Column,
@@ -9,19 +7,13 @@ from sqlalchemy import (
     DateTime,
     Float,
     Integer,
+    JSON,
     PrimaryKeyConstraint,
     String,
-    create_engine,
 )
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import declarative_base
 
-# Load environment variables from .env file
-load_dotenv()
-
-# Get database endpoint and password from environment variables
-DB_ENDPOINT = os.environ.get("DB_ENDPOINT")
-DB_PASSWORD = os.environ.get("DB_PASSWORD")
+from src.database import engine
 
 # Create a base class for declarative models
 Base = declarative_base()
@@ -46,7 +38,7 @@ class BetsTable(Base):
     bet_price = Column(Integer)  # Price of the bet
     bet_location = Column(String)  # Location of the bet
     bet_profit_loss = Column(Float)  # Profit or loss of the bet
-    bet_direction = Column(String)  # Direction of the bet (e.g., buy, sell)
+    bet_direction = Column(String)  # Direction of the bet (e.g., home, away)
     bet_line = Column(Float)  # Line of the bet
 
 
@@ -55,38 +47,33 @@ class AllFeaturesJSONTable(Base):
     __tablename__ = "all_features_json"
     __table_args__ = (PrimaryKeyConstraint("game_id"),)
     game_id = Column(String)  # Unique identifier for the game
-    data = Column(JSONB)  # JSON data containing all features
+    data = Column(JSON)  # JSON data containing all features
 
 
-# Define the PredictionsTable model
 class PredictionsTable(Base):
+    """
+    Stores predictions from trained models.
+
+    Each game can have multiple prediction records - one per model variant:
+    - "standard": Models without vegas line as a feature
+    - "vegas": Models that include vegas line as a feature
+
+    The model_variant column allows comparing accuracy between variants.
+    """
+
     __tablename__ = "predictions"
-    __table_args__ = (PrimaryKeyConstraint("game_id", "prediction_datetime"),)
-    game_id = Column(String)  # Unique identifier for the game
-    prediction_datetime = Column(DateTime)  # Date and time of the prediction
-    open_line_hv = Column(Float)  # Opening line for home vs. visitor
-    prediction_line_hv = Column(Float)  # Predicted line for home vs. visitor
-    ml_cls_rating_hv = Column(
-        Float
-    )  # Machine learning classification rating for home vs. visitor
-    dl_cls_rating_hv = Column(
-        Float
-    )  # Deep learning classification rating for home vs. visitor
-    game_rating_hv = Column(Float)  # Game rating for home vs. visitor
-    prediction_direction = Column(String)  # Predicted direction of the game
-    directional_game_rating = Column(Float)  # Directional game rating
-    ml_reg_pred_1 = Column(Float)  # Machine learning regression prediction 1
-    ml_reg_pred_2 = Column(Float)  # Machine learning regression prediction 2
-    ml_cls_pred_1 = Column(Float)  # Machine learning classification prediction 1
-    ml_cls_pred_2 = Column(Float)  # Machine learning classification prediction 2
-    ml_cls_prob_1 = Column(Float)  # Machine learning classification probability 1
-    ml_cls_prob_2 = Column(Float)  # Machine learning classification probability 2
-    dl_reg_pred_1 = Column(Float)  # Deep learning regression prediction 1
-    dl_reg_pred_2 = Column(Float)  # Deep learning regression prediction 2
-    dl_cls_pred_1 = Column(Float)  # Deep learning classification prediction 1
-    dl_cls_pred_2 = Column(Float)  # Deep learning classification prediction 2
-    dl_cls_prob_1 = Column(Float)  # Deep learning classification probability 1
-    dl_cls_prob_2 = Column(Float)  # Deep learning classification probability 2
+    __table_args__ = (PrimaryKeyConstraint("game_id", "model_variant"),)
+
+    game_id = Column(String)  # Unique game identifier (e.g., "202501150LAL")
+    model_variant = Column(String)  # "standard" or "vegas"
+    predicted_at = Column(DateTime)  # When this prediction was generated
+    open_spread = Column(Float)  # Opening spread (home team perspective, negative = home favored)
+    prediction_spread = Column(Float)  # Spread used for this prediction (open or current)
+    home_cover_prob = Column(Float)  # Probability home team covers spread (0-1)
+    home_cover_pred = Column(Boolean)  # True if model predicts home covers
+    predicted_margin = Column(Float)  # Regression: predicted home margin (home_score - away_score)
+    pick = Column(String)  # "Home" or "Away" - recommended bet direction
+    confidence = Column(Float)  # Confidence in pick (0-100 scale)
 
 
 # Define the GamesTable model
@@ -107,118 +94,23 @@ class GamesTable(Base):
 
 # Define the LinesTable model
 class LinesTable(Base):
+    """
+    Simplified betting lines table - stores open and current lines per game.
+
+    Open line comes from Covers (historical) or first Odds API fetch.
+    Current line is updated by Odds API with consensus/average across books.
+    Line movement = current_line - open_line (useful for modeling).
+    """
+
     __tablename__ = "lines"
-    # Add comments for each column
-    game_id = Column(String)  # Unique identifier for the game
-    game_datetime = Column(DateTime)  # Date and time of the game
-    home_team = Column(String)  # Home team
-    away_team = Column(String)  # Away team
-    open_line = Column(Float)  # Opening line
-    home_score = Column(Integer)  # Home team score
-    away_score = Column(Integer)  # Away team score
-    game_completed = Column(Boolean)  # Flag indicating if the game is completed
-    scores_last_update = Column(DateTime)  # Date and time of the last score update
-    odds_last_update = Column(DateTime)  # Date and time of the last odds update
-    __table_args__ = (PrimaryKeyConstraint("game_id", "line_datetime"),)
+    __table_args__ = (PrimaryKeyConstraint("game_id"),)
 
-    game_id = Column(String)
-    line_datetime = Column(DateTime)
-    # Columns for each bookmaker
-    # Barstool Sportsbook
-    barstool_home_line = Column(Float)
-    barstool_home_line_price = Column(Float)
-    barstool_away_line = Column(Float)
-    barstool_away_line_price = Column(Float)
-
-    # BetOnline.ag
-    betonlineag_home_line = Column(Float)
-    betonlineag_home_line_price = Column(Float)
-    betonlineag_away_line = Column(Float)
-    betonlineag_away_line_price = Column(Float)
-
-    # BetMGM
-    betmgm_home_line = Column(Float)
-    betmgm_home_line_price = Column(Float)
-    betmgm_away_line = Column(Float)
-    betmgm_away_line_price = Column(Float)
-
-    # BetRivers
-    betrivers_home_line = Column(Float)
-    betrivers_home_line_price = Column(Float)
-    betrivers_away_line = Column(Float)
-    betrivers_away_line_price = Column(Float)
-
-    # BetUS
-    betus_home_line = Column(Float)
-    betus_home_line_price = Column(Float)
-    betus_away_line = Column(Float)
-    betus_away_line_price = Column(Float)
-
-    # Bovada
-    bovada_home_line = Column(Float)
-    bovada_home_line_price = Column(Float)
-    bovada_away_line = Column(Float)
-    bovada_away_line_price = Column(Float)
-
-    # DraftKings
-    draftkings_home_line = Column(Float)
-    draftkings_home_line_price = Column(Float)
-    draftkings_away_line = Column(Float)
-    draftkings_away_line_price = Column(Float)
-
-    # FanDuel
-    fanduel_home_line = Column(Float)
-    fanduel_home_line_price = Column(Float)
-    fanduel_away_line = Column(Float)
-    fanduel_away_line_price = Column(Float)
-
-    # LowVig.ag
-    lowvig_home_line = Column(Float)
-    lowvig_home_line_price = Column(Float)
-    lowvig_away_line = Column(Float)
-    lowvig_away_line_price = Column(Float)
-
-    # MyBookie.ag
-    mybookieag_home_line = Column(Float)
-    mybookieag_home_line_price = Column(Float)
-    mybookieag_away_line = Column(Float)
-    mybookieag_away_line_price = Column(Float)
-
-    # PointsBet (US)
-    pointsbetus_home_line = Column(Float)
-    pointsbetus_home_line_price = Column(Float)
-    pointsbetus_away_line = Column(Float)
-    pointsbetus_away_line_price = Column(Float)
-
-    # SuperBook
-    superbook_home_line = Column(Float)
-    superbook_home_line_price = Column(Float)
-    superbook_away_line = Column(Float)
-    superbook_away_line_price = Column(Float)
-
-    # TwinSpires
-    twinspires_home_line = Column(Float)
-    twinspires_home_line_price = Column(Float)
-    twinspires_away_line = Column(Float)
-    twinspires_away_line_price = Column(Float)
-
-    # Unibet
-    unibet_us_home_line = Column(Float)
-    unibet_us_home_line_price = Column(Float)
-    unibet_us_away_line = Column(Float)
-    unibet_us_away_line_price = Column(Float)
-
-    # William Hill (Caesars)
-    williamhill_us_home_line = Column(Float)
-    williamhill_us_home_line_price = Column(Float)
-    williamhill_us_away_line = Column(Float)
-    williamhill_us_away_line_price = Column(Float)
-
-    # WynnBET
-    wynnbet_home_line = Column(Float)
-    wynnbet_home_line_price = Column(Float)
-    wynnbet_away_line = Column(Float)
-    wynnbet_away_line_price = Column(Float)
+    game_id = Column(String)  # FK to games table
+    open_line = Column(Float)  # Opening spread (home team perspective)
+    open_line_price = Column(Float)  # Opening price (e.g., -110)
+    current_line = Column(Float)  # Most recent spread
+    current_line_price = Column(Float)  # Most recent price
+    line_last_update = Column(DateTime)  # When current_line was last updated
 
 
 class NbastatsGeneralTraditionalTable(Base):
@@ -375,47 +267,8 @@ class NbastatsGeneralOpponentTable(Base):
     plus_minus = Column(Float)
 
 
-class FivethirtyeightGamesTable(Base):
-    """
-    Data source provider: fivethirtyeight
-    Data source URL: https://projects.fivethirtyeight.com/nba-model/nba_elo.csv
-    Data source description: CSV file going back to 1947. Also includes game scores.
-    """
-
-    __tablename__ = "team_fivethirtyeight_games"
-    __table_args__ = (PrimaryKeyConstraint("date", "team1", "team2"),)
-    date = Column(Date)
-    season = Column(String)
-    neutral = Column(Boolean)
-    season_type = Column(String)
-    team1 = Column(String)
-    team2 = Column(String)
-    elo1_pre = Column(Float)
-    elo2_pre = Column(Float)
-    elo_prob1 = Column(Float)
-    elo_prob2 = Column(Float)
-    elo1_post = Column(Float)
-    elo2_post = Column(Float)
-    carm_elo1_pre = Column(Float)
-    carm_elo2_pre = Column(Float)
-    carm_elo_prob1 = Column(Float)
-    carm_elo_prob2 = Column(Float)
-    carm_elo1_post = Column(Float)
-    carm_elo2_post = Column(Float)
-    raptor1_pre = Column(Float)
-    raptor2_pre = Column(Float)
-    raptor_prob1 = Column(Float)
-    raptor_prob2 = Column(Float)
-    score1 = Column(Float)
-    score2 = Column(Float)
-    quality = Column(Float)
-    importance = Column(Float)
-    total_rating = Column(Float)
-
-
 if __name__ == "__main__":
     # Creates all database tables defined above that haven't been created yet.
-    engine = create_engine(
-        f"postgresql://postgres:{DB_PASSWORD}@{DB_ENDPOINT}/nba_betting"
-    )
+    # Uses the centralized engine from src/database.py
     Base.metadata.create_all(engine)
+    print(f"Database tables created successfully.")

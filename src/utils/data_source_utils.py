@@ -1,26 +1,35 @@
-import os
+"""Data source utilities: date range generation, database upserts."""
+
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pandas as pd
-import pytz
-from dotenv import load_dotenv
-from scrapy import Spider
-from scrapy.spiders import Spider
-from sqlalchemy import create_engine, inspect
-from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
-here = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(here, "../.."))
+from src import config
+from src.database import engine
+from src.utils.timezone import get_current_time, get_current_year
 
-import config
+# NBA Stats API headers - updated to match modern browser fingerprints
+# These headers are required for NBA.com's API to accept requests
+# Based on nba_api library (https://github.com/swar/nba_api)
+NBA_STATS_HEADERS = {
+    "Host": "stats.nba.com",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "en-US,en;q=0.5",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+    "Referer": "https://stats.nba.com/",
+    "Pragma": "no-cache",
+    "Cache-Control": "no-cache",
+}
 
-load_dotenv()
-DB_ENDPOINT = os.environ.get("DB_ENDPOINT")
-DB_PASSWORD = os.environ.get("DB_PASSWORD")
-ZYTE_API_KEY = os.environ.get("ZYTE_API_KEY")
+
+# Import Spider for BaseSpider class
+from scrapy import Spider
 
 
 class BaseSpider(Spider):
@@ -99,6 +108,12 @@ class BaseSpider(Spider):
         )
 
     def _generate_dates_for_season(self, season_start_year):
+        """Generate dates for a given NBA season, stopping at tomorrow (no far-future dates).
+
+        Covers.com can show tomorrow's scheduled games, so we cap at tomorrow to get
+        upcoming games while avoiding requests for dates with no data. For historical
+        seasons that have fully completed, returns all dates in the season.
+        """
         if season_start_year < self.first_season_start_year:
             raise ValueError(
                 "Season start year cannot be before the first season of the data source."
@@ -112,6 +127,15 @@ class BaseSpider(Spider):
             config.NBA_IMPORTANT_DATES[full_season]["postseason_end_date"], "%Y-%m-%d"
         )
 
+        # Cap at tomorrow - Covers can show scheduled games for tomorrow but not beyond
+        tomorrow = get_current_time().replace(tzinfo=None) + timedelta(days=1)
+        if season_end_date > tomorrow:
+            season_end_date = tomorrow
+
+        # If season hasn't started yet, return empty list
+        if season_start_date > tomorrow:
+            return []
+
         # generate dates from start to end
         dates = [
             dt.strftime("%Y-%m-%d")
@@ -122,7 +146,7 @@ class BaseSpider(Spider):
 
     def _generate_all_dates(self):
         # Get the current year
-        current_year = datetime.now(pytz.timezone("America/Denver")).year
+        current_year = get_current_year()
 
         # Accumulates all dates from first_season_start_year to current_year
         all_dates = []
@@ -135,72 +159,71 @@ class BaseSpider(Spider):
 
         return all_dates
 
-    def start_requests(self):
+    async def start(self):
+        """Generate initial requests (Scrapy 2.13+ async API). Override in subclass."""
         pass
 
     def parse(self, response):
+        """Parse response. Override in subclass."""
         pass
-
-
-class BaseSpiderZyte(BaseSpider):
-    custom_settings = {
-        "DOWNLOAD_HANDLERS": {
-            "http": "scrapy_zyte_api.ScrapyZyteAPIDownloadHandler",
-            "https": "scrapy_zyte_api.ScrapyZyteAPIDownloadHandler",
-        },
-        "DOWNLOADER_MIDDLEWARES": {
-            "scrapy_zyte_api.ScrapyZyteAPIDownloaderMiddleware": 1000,
-        },
-        "REQUEST_FINGERPRINTER_CLASS": "scrapy_zyte_api.ScrapyZyteAPIRequestFingerprinter",
-        "ZYTE_API_KEY": ZYTE_API_KEY,
-        "ZYTE_API_TRANSPARENT_MODE": True,
-        "ZYTE_API_ENABLED": True,
-    }
 
 
 class BasePipeline:
     """
     The BasePipeline class is a Scrapy pipeline that you can use as a base for
     creating custom pipelines to process, clean, and verify data, and then save
-    it to a PostgreSQL database.
+    it to a SQLite database.
     """
 
-    engine = create_engine(
-        f"postgresql://postgres:{DB_PASSWORD}@{DB_ENDPOINT}/nba_betting"
-    )
+    # Use centralized engine from src/database.py
     ITEM_CLASS = None
 
     @classmethod
     def from_crawler(cls, crawler):
-        # Get the spider instance from the crawler
-        spider = crawler.spider
-        # Pass the spider instance to the pipeline
-        return cls(spider)
+        # Store crawler for later access to spider
+        instance = cls(crawler)
+        return instance
 
-    def __init__(self, spider):
-        self.Session = sessionmaker(bind=self.engine)
-        self.save_data = spider.save_data
-        self.view_data = spider.view_data
+    def __init__(self, crawler):
+        self.crawler = crawler
+        self.Session = sessionmaker(bind=engine)
 
         self.nba_data = []
         self.scraped_items = 0
         self.saved_items = 0
+
+        # These will be set when spider opens
+        self.save_data = False
+        self.view_data = False
+        self.errors = {
+            "find_season_information": [],
+            "processing": [],
+            "saving": {"integrity_error_count": 0, "other": []},
+        }
+
+    def open_spider(self):
+        """Called when spider opens - initialize spider-dependent attributes.
+
+        Note: Scrapy 2.13+ deprecates passing spider as argument. Access via
+        self.crawler.spider instead.
+        """
+        spider = self.crawler.spider
+        self.save_data = spider.save_data
+        self.view_data = spider.view_data
         self.errors = spider.errors
 
-    def process_item(self, item, spider):
+    def process_item(self, item):
         """
-        This method is called for each item that is scraped. It cleans, organizes, and verifies
+        Process each scraped item. Cleans, organizes, and verifies
         the item before appending it to the list of scraped data.
 
         Args:
             item (dict): The scraped item.
-            spider (scrapy.Spider): The spider that scraped the item.
 
         Returns:
             dict: The processed item.
         """
         # Increment the count of total items processed.
-        # This should happen whether or not the item is successfully processed or saved.
         self.scraped_items += 1
 
         try:
@@ -232,125 +255,81 @@ class BasePipeline:
         pks = [column.key for column in mapper.primary_key]  # Get list of primary keys
 
         rows = [dict(row) for row in self.nba_data]  # Rows to be inserted
-        stmt = pg_insert(table).values(rows)
+        stmt = sqlite_insert(table).values(rows)
 
-        # Handle conflict with composite primary key
+        # Handle conflict with composite primary key (SQLite syntax)
         stmt = stmt.on_conflict_do_nothing(index_elements=pks)
 
         with self.Session() as session:
             try:
-                initial_count = session.query(
-                    self.ITEM_CLASS
-                ).count()  # Count before insert
+                initial_count = session.query(self.ITEM_CLASS).count()  # Count before insert
                 session.execute(stmt)
                 session.commit()
-                final_count = session.query(
-                    self.ITEM_CLASS
-                ).count()  # Count after insert
+                final_count = session.query(self.ITEM_CLASS).count()  # Count after insert
 
-                # Count the number of IntegrityErrors
+                # Count the number of IntegrityErrors (duplicates ignored)
                 integrity_error_count = len(rows) - (final_count - initial_count)
                 self.errors["saving"]["integrity_error_count"] += integrity_error_count
 
                 self.saved_items += len(rows) - integrity_error_count
                 self.nba_data = []  # Empty the list after saving the data
+
             except IntegrityError as ie:
-                print(f"Integrity Error: Unable to insert data. Details: {str(ie)}")
+                print(f"  ERROR: Database integrity error: {str(ie)}")
                 self.errors["saving"]["integrity"].append(ie)
                 sys.exit(1)
 
             except Exception as e:
-                print(
-                    f"Error: Unable to insert data into the RDS table. Details: {str(e)}"
-                )
+                print(f"  ERROR: Database save failed: {str(e)}")
                 self.errors["saving"]["other"].append(e)
-                sys.exit(1)
-            finally:
-                integrity_error_pct = round(
-                    self.errors["saving"]["integrity_error_count"]
-                    / self.scraped_items
-                    * 100,
-                    2,
-                )
-                non_integrity_error_count = (
-                    len(self.errors["saving"]["other"])
-                    + len(self.errors["processing"])
-                    + len(self.errors["find_season_information"])
-                )
-
-                print(
-                    f"Inserted {len(rows) - integrity_error_count} rows successfully."
-                )
-                print(f"Total items inserted: {self.saved_items}")
-                print(
-                    f"Total integrity errors: {self.errors['saving']['integrity_error_count']} {integrity_error_pct}%"
-                )
-                print(f"Total other errors: {non_integrity_error_count}")
+                raise e
 
     def display_data(self):
-        """
-        This method displays a sample of the scraped data, along with its info
-        and the total number of items scraped.
-        """
-        pd.set_option("display.max_columns", 100)
-        # print(self.nba_data)
-        df = pd.DataFrame(self.nba_data)
-        print("Sample of scraped data:")
-        print(df.head(20))
-        print(df.info())
+        """Display a brief summary of scraped data (disabled by default for cleaner output)."""
+        # Verbose output disabled for cleaner terminal output
+        # Uncomment below for debugging:
+        # pd.set_option("display.max_columns", 100)
+        # df = pd.DataFrame(self.nba_data)
+        # print("Sample of scraped data:")
+        # print(df.head(10))
+        pass
 
-    def close_spider(self, spider):
+    def close_spider(self):
         """
-        This method is called when the spider finishes scraping. It processes
-        the dataset, displays the data (if view_data is True), saves the data
-        to the database (if save_to_database is True), and reports any errors
-        that occurred during cleaning and verification.
-        Args:
-        spider (scrapy.Spider): The spider that has finished scraping.
-        """
+        Called when spider finishes scraping. Processes the dataset,
+        displays data, saves to database, and reports errors.
 
+        Note: Scrapy 2.13+ deprecates passing spider as argument.
+        """
         # Process the dataset
         self.process_dataset()
 
-        if spider.view_data:
+        if self.view_data:
             self.display_data()
-        if spider.save_data:
+        if self.save_data:
             self.save_to_database()
 
-        print("\nErrors")
-        print("======")
-        print(">>>>> Finding season information errors:")
-        for error in self.errors["find_season_information"]:
-            print(error)
-        print(">>>>> Processing errors:")
-        for error in self.errors["processing"]:
-            print(error)
-
-        integrity_error_pct = 0
-        if spider.save_data:
-            print(">>>>> Saving errors:")
-            for error in self.errors["saving"]["other"]:
-                print(error)
-            integrity_error_pct = round(
-                self.errors["saving"]["integrity_error_count"]
-                / self.scraped_items
-                * 100,
-                2,
-            )
-
-        non_integrity_error_count = (
+        # Calculate error counts
+        error_count = (
             len(self.errors["saving"]["other"])
             + len(self.errors["processing"])
             + len(self.errors["find_season_information"])
         )
 
-        print("\nOverall Results")
-        print("===============")
-        print("Total items scraped:", self.scraped_items)
-        print(
-            f"Total integrity errors: {self.errors['saving']['integrity_error_count']} {integrity_error_pct}%"
-        )
-        print(f"Total other errors: {non_integrity_error_count}\n")
+        # Concise summary
+        if error_count == 0:
+            print(f"  Scraped {self.scraped_items} items, saved {self.saved_items}")
+        else:
+            print(
+                f"  Scraped {self.scraped_items} items, saved {self.saved_items}, {error_count} errors"
+            )
+            # Only show error details if there are errors
+            for error in self.errors["find_season_information"]:
+                print(f"    Season error: {error}")
+            for error in self.errors["processing"]:
+                print(f"    Processing error: {error}")
+            for error in self.errors["saving"]["other"]:
+                print(f"    Save error: {error}")
 
 
 def convert_season_to_long(season):

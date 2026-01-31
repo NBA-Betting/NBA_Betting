@@ -1,21 +1,10 @@
-import os
-import sys
+"""General utilities: season date lookups and helpers."""
+
 from datetime import datetime
 
 import pandas as pd
-from dotenv import load_dotenv
 
-here = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(here, "../.."))
-from config import NBA_IMPORTANT_DATES
-
-load_dotenv()
-DB_ENDPOINT = os.environ.get("DB_ENDPOINT")
-DB_PASSWORD = os.environ.get("DB_PASSWORD")
-ZYTE_API_KEY = os.environ.get("ZYTE_API_KEY")
-
-
-from datetime import datetime
+from src.config import NBA_IMPORTANT_DATES
 
 
 def find_season_information(date_str):
@@ -23,13 +12,9 @@ def find_season_information(date_str):
 
     # Iterate over each season
     for season, info in NBA_IMPORTANT_DATES.items():
-        reg_season_start_date = datetime.strptime(
-            info["reg_season_start_date"], "%Y-%m-%d"
-        )
+        reg_season_start_date = datetime.strptime(info["reg_season_start_date"], "%Y-%m-%d")
         reg_season_end_date = datetime.strptime(info["reg_season_end_date"], "%Y-%m-%d")
-        postseason_start_date = datetime.strptime(
-            info["postseason_start_date"], "%Y-%m-%d"
-        )
+        postseason_start_date = datetime.strptime(info["postseason_start_date"], "%Y-%m-%d")
         postseason_end_date = datetime.strptime(info["postseason_end_date"], "%Y-%m-%d")
 
         # Check if date_obj falls within this season's regular or postseason
@@ -71,25 +56,13 @@ def determine_season_type(date, important_dates):
         post_end_date = pd.to_datetime(dates["postseason_end_date"])
 
         if reg_start_date <= date <= reg_end_date:
-            month_of_season = (
-                date.to_period("M") - reg_start_date.to_period("M")
-            ).n + 1
-            week_of_season = (
-                date.to_period("W-SUN") - reg_start_date.to_period("W-SUN")
-            ).n + 1
-            return pd.Series(
-                [season, "reg", day_of_week, month, month_of_season, week_of_season]
-            )
+            month_of_season = (date.to_period("M") - reg_start_date.to_period("M")).n + 1
+            week_of_season = (date.to_period("W-SUN") - reg_start_date.to_period("W-SUN")).n + 1
+            return pd.Series([season, "reg", day_of_week, month, month_of_season, week_of_season])
         elif post_start_date <= date <= post_end_date:
-            month_of_season = (
-                date.to_period("M") - post_start_date.to_period("M")
-            ).n + 1
-            week_of_season = (
-                date.to_period("W-SUN") - post_start_date.to_period("W-SUN")
-            ).n + 1
-            return pd.Series(
-                [season, "post", day_of_week, month, month_of_season, week_of_season]
-            )
+            month_of_season = (date.to_period("M") - post_start_date.to_period("M")).n + 1
+            week_of_season = (date.to_period("W-SUN") - post_start_date.to_period("W-SUN")).n + 1
+            return pd.Series([season, "post", day_of_week, month, month_of_season, week_of_season])
 
     return pd.Series([None, None, None, None, None, None])
 
