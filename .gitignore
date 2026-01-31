@@ -1,19 +1,48 @@
+# =============================================================================
+# NBA Betting Project - .gitignore
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Project-specific
+# -----------------------------------------------------------------------------
 passkeys.py
-.vscode/
-.gitignore
-nba_venv
 .env
+.env.local
+.env.*.local
 models/
 all_data.csv
 data/
+release/
 
-# Tensorboard, PyCaret, AutoKeras
+# Syncthing conflict files
+*.sync-conflict-*
+.stfolder/
+.stignore
+
+# Virtual environment (12GB - definitely don't commit!)
+nba_venv/
+
+# ML experiment artifacts
 tensorboard_logs/
 mlruns/
-0/
 catboost_info/
-structured_data_regressor
-structured_data_classifier
+structured_data_classifier/
+structured_data_regressor/
+AutogluonModels/
+
+# Large log files
+*.log
+logs/
+
+# -----------------------------------------------------------------------------
+# IDE / Editor / AI Assistants
+# -----------------------------------------------------------------------------
+.vscode/
+.idea/
+.claude/
+*.swp
+*.swo
+*~
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
