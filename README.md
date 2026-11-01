@@ -165,7 +165,7 @@ A Flask web app displays games and predictions. The Dash dashboard shows betting
 # Quick Start
 
 > [!WARNING]
-> **Project Status:** This project is on hiatus and not actively maintained. It may require minor bug fixes to run. Feel free to [open an issue](https://github.com/NBA-Betting/NBA_Betting/issues) if you encounter problems—I monitor issues periodically.
+> **Project Status:** This project is on hiatus and not actively maintained. It may require minor bug fixes to run. The repository is archived (read-only); active development continues in [NBA AI](https://github.com/NBA-Betting/NBA_AI).
 
 > [!CAUTION]
 > **API Rate Limits:** The data pipeline calls the NBA Stats API, which has rate limits. Daily updates are fine, but full season backfills can take hours and make many API requests. Please be respectful of the API. Check the [Releases](https://github.com/NBA-Betting/NBA_Betting/releases) page for pre-collected data to reduce API usage.
