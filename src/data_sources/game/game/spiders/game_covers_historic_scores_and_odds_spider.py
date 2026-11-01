@@ -78,6 +78,19 @@ class GameCoversHistoricScoresAndOddsSpider(BaseSpider):
         query_params = parse_qs(parsed_url.query)
         game_date = query_params.get("selectedDate", [None])[0]
 
+        # On a date with no games, Covers shows the next game day instead. The active
+        # date-nav link (e.g. "Tue · Apr 14") names the day shown; skip mismatches so
+        # those games aren't saved again under the requested date.
+        shown = response.css('a.navigation-anchor[aria-current="page"]::attr(aria-label)').get()
+        shown_match = re.search(r"([A-Za-z]{3})\s+(\d{1,2})\s*$", shown or "")
+        if game_date and shown_match:
+            requested = datetime.strptime(game_date, "%Y-%m-%d")
+            if (shown_match.group(1).title(), int(shown_match.group(2))) != (
+                requested.strftime("%b"),
+                requested.day,
+            ):
+                return
+
         # Select game boxes using the new structure (article.gamebox)
         gameboxes = response.css("article.gamebox")
 
@@ -94,6 +107,16 @@ class GameCoversHistoricScoresAndOddsSpider(BaseSpider):
             # postgamebox = completed, pregamebox = not started, ingamebox = in progress
             gamebox_classes = gamebox.css("::attr(class)").get() or ""
             game_completed = "postgamebox" in gamebox_classes
+            # Covers leaves some finished games stuck as "Live" with clock "End";
+            # on a past date those are final
+            if (
+                not game_completed
+                and "ingamebox" in gamebox_classes
+                and game_date
+                and game_date < get_current_time().strftime("%Y-%m-%d")
+                and (gamebox.css("span.ingame-time::text").get() or "").strip().upper() == "END"
+            ):
+                game_completed = True
 
             # Extract game time for pregame boxes (postgame boxes show scores instead)
             # Time is in gamebox-time area, format like "8:00 PM ET"
