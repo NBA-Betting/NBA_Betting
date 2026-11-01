@@ -153,7 +153,10 @@ class NBAStatsFetcher:
 
     # Rate limiting configuration
     # NBA.com can be sensitive to rapid requests - use conservative delays
-    MIN_DELAY = 0.6  # Minimum delay between ALL requests (seconds) - prevents ban
+    # ~12 requests/min, the pace NBA_AI found holds up on large backfills; faster
+    # bulk runs get blocked for 30-60+ minutes after ~600-700 requests
+    MIN_DELAY = 4.5  # Minimum delay between ALL requests (seconds)
+    MAX_FAILED_REQUESTS_IN_ROW = 3  # Stop: the API is throttling us
     BASE_DELAY = 1.0  # Base delay for exponential backoff after errors
     MAX_DELAY = 60.0  # Maximum delay after repeated failures
     MAX_RETRIES = 3  # Maximum retries per request
@@ -183,6 +186,7 @@ class NBAStatsFetcher:
         }
         self._consecutive_errors = 0  # Track consecutive errors for backoff
         self._current_delay = self.BASE_DELAY
+        self._failed_requests_in_row = 0
 
     def _setup_dates(self, dates_input: str) -> list[str]:
         """Convert date input to list of date strings."""
@@ -358,6 +362,7 @@ class NBAStatsFetcher:
 
                 # Success - reset backoff
                 self._handle_success()
+                self._failed_requests_in_row = 0
                 return df
 
             except KeyError as e:
@@ -366,6 +371,7 @@ class NBAStatsFetcher:
                 # Don't retry - just return None
                 if "resultSet" in str(e) or "resultSets" in str(e):
                     self._handle_success()  # Reset backoff - this isn't a real error
+                    self._failed_requests_in_row = 0
                     return None
                 # Other KeyErrors should be retried
                 last_error = e
@@ -397,6 +403,14 @@ class NBAStatsFetcher:
             }
         )
         print(f"API Error (after {self.MAX_RETRIES} retries): {last_error}")
+        self._failed_requests_in_row += 1
+        if self._failed_requests_in_row >= self.MAX_FAILED_REQUESTS_IN_ROW:
+            # Throttling lasts 30-60+ minutes; stop rather than hang on timeouts.
+            # Unsaved dates are picked up by the next run (resume).
+            raise RuntimeError(
+                f"{self._failed_requests_in_row} failed requests in a row "
+                "(likely NBA API throttling) - stopping"
+            )
         return None
 
     def _process_dataframe(
@@ -487,6 +501,7 @@ class NBAStatsFetcher:
             List of record dictionaries
         """
         all_records = []
+        errors_before = len(self.errors["api_requests"])
 
         try:
             date = datetime.strptime(date_str, "%Y-%m-%d")
@@ -536,8 +551,9 @@ class NBAStatsFetcher:
             all_records.extend(records)
             self.stats["fetched"] += len(records)
 
-        # Save to database if requested
-        if save_data and all_records:
+        # Save to database if requested. Skip dates where a request failed: resume
+        # treats any saved date as done, so a partial save would never be completed.
+        if save_data and all_records and len(self.errors["api_requests"]) == errors_before:
             saved = self._save_to_database(all_records, table_class)
             self.stats["saved"] += saved
 
