@@ -538,11 +538,17 @@ NBA_IMPORTANT_DATES = {
         "postseason_start_date": "2025-04-19",
         "postseason_end_date": "2025-06-22",
     },
-    "2025-2026": {  # Estimated
+    "2025-2026": {
         "reg_season_start_date": "2025-10-21",
         "reg_season_end_date": "2026-04-12",
         "postseason_start_date": "2026-04-18",
-        "postseason_end_date": "2026-06-21",
+        "postseason_end_date": "2026-06-13",
+    },
+    "2026-2027": {  # Postseason dates estimated
+        "reg_season_start_date": "2026-10-20",
+        "reg_season_end_date": "2027-04-11",
+        "postseason_start_date": "2027-04-17",
+        "postseason_end_date": "2027-06-20",
     },
 }
 
