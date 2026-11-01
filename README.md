@@ -185,6 +185,11 @@ pip install -e "."         # Core only (data collection and ETL)
 pip install -e ".[ml]"     # Core + AutoGluon for modeling
 pip install -e ".[web]"    # Core + Flask/Dash web app
 
+# Download pre-collected data and trained models (recommended)
+# from https://github.com/NBA-Betting/NBA_Betting/releases/latest
+unzip nba_betting_database.zip -d data/
+unzip nba_betting_models.zip
+
 # Set up environment variables
 cp .env.example .env
 # Edit .env with your ODDS_API_KEY (optional, for live odds)
