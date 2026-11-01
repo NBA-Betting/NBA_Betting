@@ -44,7 +44,9 @@ scraping = [
 
 # Machine learning / AutoML dependencies
 ml = [
-    "autogluon.tabular>=1.2.0",  # SOTA AutoML for tabular data (includes LightGBM, XGBoost, CatBoost)
+    # Pinned: release models were saved with 1.5.0 and AutoGluon refuses other versions.
+    # The models are LightGBM/XGBoost ensembles; those backends are extras, not defaults.
+    "autogluon.tabular[lightgbm,xgboost]==1.5.0",
 ]
 
 # Web application dependencies

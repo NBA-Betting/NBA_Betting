@@ -323,6 +323,9 @@ class OddsAPI:
 
 def update_game_data(past_games=False):
     """Fetch and update NBA game data from The Odds API."""
+    if not ODDS_API_KEY:
+        print("ODDS_API_KEY not set, skipping Odds API")
+        return
     odds_api = OddsAPI(ODDS_API_KEY)
     odds_data = odds_api.fetch_odds_data()
     processed_odds_data = odds_api.process_odds_data(odds_data)
